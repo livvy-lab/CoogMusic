@@ -3,6 +3,7 @@ import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
 import { handleAdRoutes } from "./routes/advertisement.js";
+import { handleCompanyRoutes } from "./routes/company.js";
 
 const PORT = 3001;
 
@@ -16,6 +17,8 @@ const server = http.createServer((req, res) => {
     handleAlbumRoutes(req, res);
   } else if (req.url.startsWith("/ad_views")) {
     handleAdViewRoutes(req, res);
+  } else if (req.url.startsWith("/companies")) {
+    handleCompanyRoutes(req, res);
   } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
