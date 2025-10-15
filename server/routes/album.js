@@ -1,5 +1,5 @@
-const db = require("../db.js")
-const express = require("express");
+import db from "../db.js"
+import express from "express"
 
 const router = express.Router();
 
