@@ -1,15 +1,24 @@
-import cors from "cors"
-import express from "express"
-import pool from "./db.js"
+import http from "http";
+import { handleAdminRoutes } from "./routes/administrator.js";
+import { handleAdRoutes } from "./routes/ad_view.js";
+import { handleAlbumRoutes } from "./routes/album.js";
+import { handleAdViewRoutes } from "./routes/advertisement.js";
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const PORT = 3001;
 
-app.get('/users', async (req, res) => {
-  const [rows] = await pool.query('SELECT * FROM users');
-  res.json(rows);
+const server = http.createServer((req, res) => {
+  if (req.url.startsWith("/administrators")) {
+    handleAdminRoutes(req, res);
+  } else if (req.url.startsWith("/advertisements")) {
+    handleAdRoutes(req, res);
+  } else if (req.url.startsWith("/albums")) {
+    handleAlbumRoutes(req, res);
+  } else if (req.url.startsWith("/ad_views")) {
+    handleAdViewRoutes(req, res);
+  } else {
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Endpoint not found" }));
+  }
 });
 
-app.listen(3001, () => console.log('Server running on port 3001'));
-
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

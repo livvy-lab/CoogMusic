@@ -1,104 +1,137 @@
-import db from "../db.js"
-import express from "express"
+import db from "../db.js";
+import { parse } from "url";
 
-const router = express.Router();
+export async function handleAdViewRoutes(req, res) {
+  const { pathname } = parse(req.url, true);
+  const method = req.method;
 
-// Get all ad views
-router.get("/", async (req, res) => {
-    try {
-        const [rows] = await db.query("SELECT * FROM Ad_View WHERE IsDeleted = 0");
-        res.json(rows);
-    } catch (err) {
-        console.error("Error fetching ad views:", err);
-        res.status(500).json({ error: "Failed to fetch ad views"});
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  if (method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  try {
+    // ---------- GET all ad views ----------
+    if (pathname === "/ad_views" && method === "GET") {
+      const [rows] = await db.query("SELECT * FROM Ad_View WHERE IsDeleted = 0");
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows));
+      return;
     }
-});
 
-// Get one ad view by ID
-router.get("/:id", async (req, res) => {
-    try {
-        const viewId = req.params.id;
-        const [rows] = await db.query("SELECT * FROM Ad_View WHERE ViewID = ? AND IsDeleted = 0", [viewId]);
+    // ---------- GET one ad view by ID ----------
+    if (pathname.startsWith("/ad_views/") && method === "GET") {
+      const viewId = pathname.split("/")[2];
+      const [rows] = await db.query(
+        "SELECT * FROM Ad_View WHERE ViewID = ? AND IsDeleted = 0",
+        [viewId]
+      );
 
-        if (rows.length == 0){
-            return res.status(404).json({error: "Ad view not found"});
-        }
-        res.json(rows[0]);
-    } catch (err) {
-        console.error("Error fetching ad views:", err);
-        res.status(500).json({ error: "Failed to fetch ad views"});
+      if (rows.length === 0) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Ad view not found" }));
+        return;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows[0]));
+      return;
     }
-});
 
-// Add a new ad view
-router.post("/", async (req, res) => {
-    try {
-        const { ListenerID, AdID, DateViewed } = req.body;
-        
-        if (!ListenerID || !AdID || !DateViewed){
-            return res.status(400).json({ error: "Missing required fields"});
+    // ---------- POST new ad view ----------
+    if (pathname === "/ad_views" && method === "POST") {
+      let body = "";
+      req.on("data", chunk => (body += chunk));
+      req.on("end", async () => {
+        const { ListenerID, AdID, DateViewed } = JSON.parse(body);
+
+        if (!ListenerID || !AdID || !DateViewed) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing required fields" }));
+          return;
         }
 
         const [result] = await db.query(
-            "INSERT INTO Ad_View (ListenerID, AdID, DateViewed) VALUES (?, ?, ?)",
-            [ListenerID, AdID, DateViewed]
+          "INSERT INTO Ad_View (ListenerID, AdID, DateViewed) VALUES (?, ?, ?)",
+          [ListenerID, AdID, DateViewed]
         );
-        
-        res.status(201).json({
+
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
             ViewID: result.insertId,
             ListenerID,
             AdID,
             DateViewed,
-        });
-    } catch (err) {
-        console.error("Error creating ad view:", err);
-        res.status(500).json({ error: "Failed to create ad view"});
+          })
+        );
+      });
+      return;
     }
-});
 
-// Update ad view
-router.put("/:id", async (req, res) =>{
-    try {
-        const viewId = req.params.id;
-        const { ListenerID, AdID, DateViewed } = req.body;
+    // ---------- PUT update ad view ----------
+    if (pathname.startsWith("/ad_views/") && method === "PUT") {
+      const viewId = pathname.split("/")[2];
+      let body = "";
+      req.on("data", chunk => (body += chunk));
+      req.on("end", async () => {
+        const { ListenerID, AdID, DateViewed } = JSON.parse(body);
 
         const [result] = await db.query(
-            "UPDATE Ad_View SET ListenerID = ?, AdID = ?, DateViewed = ? WHERE ViewID = ? AND IsDeleted = 0",
-            [ListenerID, AdID, DateViewed, viewId]
+          "UPDATE Ad_View SET ListenerID = ?, AdID = ?, DateViewed = ? WHERE ViewID = ? AND IsDeleted = 0",
+          [ListenerID, AdID, DateViewed, viewId]
         );
 
         if (result.affectedRows === 0) {
-            return res.status(404).json({ error: "Ad view not found" });
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Ad view not found" }));
+          return;
         }
 
-        res.json({
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
             ViewID: viewId,
             ListenerID,
             AdID,
             DateViewed,
             message: "Ad view updated successfully",
-        });
-    } catch (err) {
-        console.error("Error updating ad view:", err);
-        res.status(500).json({ error: "Failed to update an ad view" });
+          })
+        );
+      });
+      return;
     }
-});
 
-// Delete an ad view
-router.delete("/:id", async (req, res) => {
-    try {
-        const viewId = req.params.id;
-        const [result] = await db.query("UPDATE Ad_View SET IsDeleted = 1 WHERE ViewID = ?", [viewId]);
+    // ---------- DELETE ad view (soft delete) ----------
+    if (pathname.startsWith("/ad_views/") && method === "DELETE") {
+      const viewId = pathname.split("/")[2];
+      const [result] = await db.query(
+        "UPDATE Ad_View SET IsDeleted = 1 WHERE ViewID = ?",
+        [viewId]
+      );
 
-        if (result.affectedRows === 0){
-            return res.status(404).json({ error: "Ad view not found or already deleted" });
-        }
+      if (result.affectedRows === 0) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Ad view not found or already deleted" }));
+        return;
+      }
 
-        res.json({ message: "Ad view soft deleted successfully" });
-    } catch (err) {
-        console.error("Error deleting ad view:", err);
-        res.status(500).json({ error: "Failed to delete ad view" });
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ message: "Ad view soft deleted successfully" }));
+      return;
     }
-});
 
-export default router;
+    // ---------- 404 Not found ----------
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Route not found" }));
+  } catch (err) {
+    console.error("Error handling ad view route:", err);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Server error" }));
+  }
+}
