@@ -5,7 +5,6 @@ export async function handleAdminRoutes(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
-  // Enable CORS manually
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -17,7 +16,7 @@ export async function handleAdminRoutes(req, res) {
   }
 
   try {
-    // ---------- GET all administrators ----------
+    //  GET all administrators 
     if (pathname === "/administrators" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Administrator WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -25,7 +24,7 @@ export async function handleAdminRoutes(req, res) {
       return;
     }
 
-    // ---------- GET one administrator by ID ----------
+    //  GET one administrator by ID 
     if (pathname.startsWith("/administrators/") && method === "GET") {
       const adminId = pathname.split("/")[2];
       const [rows] = await db.query(
@@ -44,7 +43,7 @@ export async function handleAdminRoutes(req, res) {
       return;
     }
 
-    // ---------- POST new administrator ----------
+    //  POST new administrator 
     if (pathname === "/administrators" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -74,7 +73,7 @@ export async function handleAdminRoutes(req, res) {
       return;
     }
 
-    // ---------- PUT update administrator ----------
+    //  PUT update administrator 
     if (pathname.startsWith("/administrators/") && method === "PUT") {
       const adminId = pathname.split("/")[2];
       let body = "";
@@ -106,7 +105,7 @@ export async function handleAdminRoutes(req, res) {
       return;
     }
 
-    // ---------- DELETE administrator (soft delete) ----------
+    //  DELETE administrator (soft delete) 
     if (pathname.startsWith("/administrators/") && method === "DELETE") {
       const adminId = pathname.split("/")[2];
       const [result] = await db.query(
@@ -125,7 +124,7 @@ export async function handleAdminRoutes(req, res) {
       return;
     }
 
-    // ---------- 404 Not Found ----------
+    //  404 Not Found 
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
 

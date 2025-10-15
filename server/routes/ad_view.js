@@ -16,7 +16,7 @@ export async function handleAdViewRoutes(req, res) {
   }
 
   try {
-    // ---------- GET all ad views ----------
+    // GET all ad views
     if (pathname === "/ad_views" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Ad_View WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -24,7 +24,7 @@ export async function handleAdViewRoutes(req, res) {
       return;
     }
 
-    // ---------- GET one ad view by ID ----------
+    // GET one ad view by ID
     if (pathname.startsWith("/ad_views/") && method === "GET") {
       const viewId = pathname.split("/")[2];
       const [rows] = await db.query(
@@ -43,7 +43,7 @@ export async function handleAdViewRoutes(req, res) {
       return;
     }
 
-    // ---------- POST new ad view ----------
+    // POST new ad view
     if (pathname === "/ad_views" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -74,7 +74,7 @@ export async function handleAdViewRoutes(req, res) {
       return;
     }
 
-    // ---------- PUT update ad view ----------
+    // PUT update ad view
     if (pathname.startsWith("/ad_views/") && method === "PUT") {
       const viewId = pathname.split("/")[2];
       let body = "";
@@ -107,7 +107,7 @@ export async function handleAdViewRoutes(req, res) {
       return;
     }
 
-    // ---------- DELETE ad view (soft delete) ----------
+    // DELETE ad view (soft delete)
     if (pathname.startsWith("/ad_views/") && method === "DELETE") {
       const viewId = pathname.split("/")[2];
       const [result] = await db.query(
@@ -126,7 +126,7 @@ export async function handleAdViewRoutes(req, res) {
       return;
     }
 
-    // ---------- 404 Not found ----------
+    // 404 Not found
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
   } catch (err) {

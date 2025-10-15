@@ -5,7 +5,6 @@ export async function handleAdRoutes(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
-  // ✅ Enable CORS manually
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -17,7 +16,7 @@ export async function handleAdRoutes(req, res) {
   }
 
   try {
-    // ---------- GET all advertisements ----------
+    // GET all advertisements
     if (pathname === "/advertisements" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Advertisement WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -25,7 +24,7 @@ export async function handleAdRoutes(req, res) {
       return;
     }
 
-    // ---------- GET one advertisement by ID ----------
+    // GET one advertisement by ID
     if (pathname.startsWith("/advertisements/") && method === "GET") {
       const adId = pathname.split("/")[2];
       const [rows] = await db.query(
@@ -44,7 +43,7 @@ export async function handleAdRoutes(req, res) {
       return;
     }
 
-    // ---------- POST (Add new advertisement) ----------
+    // POST (Add new advertisement)
     if (pathname === "/advertisements" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -75,7 +74,7 @@ export async function handleAdRoutes(req, res) {
       return;
     }
 
-    // ---------- PUT (Update advertisement) ----------
+    // PUT (Update advertisement)
     if (pathname.startsWith("/advertisements/") && method === "PUT") {
       const adId = pathname.split("/")[2];
       let body = "";
@@ -108,7 +107,7 @@ export async function handleAdRoutes(req, res) {
       return;
     }
 
-    // ---------- DELETE (Soft delete advertisement) ----------
+    // DELETE (Soft delete advertisement)
     if (pathname.startsWith("/advertisements/") && method === "DELETE") {
       const adId = pathname.split("/")[2];
       const [result] = await db.query(
@@ -127,7 +126,7 @@ export async function handleAdRoutes(req, res) {
       return;
     }
 
-    // ---------- 404 Not Found ----------
+    // 404 Not Found
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
 
