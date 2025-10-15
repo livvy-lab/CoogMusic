@@ -1,12 +1,13 @@
 import http from "http";
 import { handleAdminRoutes } from "./routes/administrator.js";
-import { handleAdViewRoutes } from "./routes/ad_view.js";        // ✅ for /ad_views
+import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
-import { handleAdRoutes } from "./routes/advertisement.js";      // ✅ for /advertisements
+import { handleAdRoutes } from "./routes/advertisement.js";
 
 const PORT = 3001;
 
 const server = http.createServer((req, res) => {
+
   if (req.url.startsWith("/administrators")) {
     handleAdminRoutes(req, res);
   } else if (req.url.startsWith("/advertisements")) {
@@ -21,4 +22,4 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server running on port ${PORT}`));

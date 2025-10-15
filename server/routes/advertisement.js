@@ -137,3 +137,4 @@ export async function handleAdRoutes(req, res) {
     res.end(JSON.stringify({ error: "Server error" }));
   }
 }
+
