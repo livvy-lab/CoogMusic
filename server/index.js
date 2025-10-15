@@ -1,8 +1,8 @@
 import http from "http";
 import { handleAdminRoutes } from "./routes/administrator.js";
-import { handleAdRoutes } from "./routes/ad_view.js";
+import { handleAdViewRoutes } from "./routes/ad_view.js";        // ✅ for /ad_views
 import { handleAlbumRoutes } from "./routes/album.js";
-import { handleAdViewRoutes } from "./routes/advertisement.js";
+import { handleAdRoutes } from "./routes/advertisement.js";      // ✅ for /advertisements
 
 const PORT = 3001;
 
