@@ -1,5 +1,5 @@
-import express from "express";
-import db from "../db.js";
+const db = require("../db.js")
+const express = require("express");
 
 const router = express.Router();
 
