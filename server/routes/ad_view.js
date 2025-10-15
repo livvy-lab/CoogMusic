@@ -6,7 +6,7 @@ const router = express.Router();
 // Get all ad views
 router.get("/", async (req, res) => {
     try {
-        const [rows] = await db.query("SELECT * FROM Ad_View");
+        const [rows] = await db.query("SELECT * FROM Ad_View WHERE IsDeleted = 0");
         res.json(rows);
     } catch (err) {
         console.error("Error fetching ad views:", err);
@@ -15,12 +15,12 @@ router.get("/", async (req, res) => {
 });
 
 // Get one ad view by ID
-router.get(":id", async (req, res) => {
+router.get("/:id", async (req, res) => {
     try {
-        const viewID = req.params.id;
-        const [rows] = await db.query("SELECT * FROM Ad_View WHERE ViewID = ?", [viewId]);
+        const viewId = req.params.id;
+        const [rows] = await db.query("SELECT * FROM Ad_View WHERE ViewID = ? AND IsDeleted = 0", [viewId]);
 
-        if (rows.length() == 0){
+        if (rows.length == 0){
             return res.status(404).json({error: "Ad view not found"});
         }
         res.json(rows[0]);
@@ -40,7 +40,7 @@ router.post("/", async (req, res) => {
         }
 
         const [result] = await db.query(
-            "INSERT INTO Ad_View (ListenerID, AdID, DataViewed) VALUES (?, ?, ?",
+            "INSERT INTO Ad_View (ListenerID, AdID, DateViewed) VALUES (?, ?, ?)",
             [ListenerID, AdID, DateViewed]
         );
         
@@ -52,7 +52,7 @@ router.post("/", async (req, res) => {
         });
     } catch (err) {
         console.error("Error creating ad view:", err);
-        res.status(500).json({ error: "Failed to creare ad view"});
+        res.status(500).json({ error: "Failed to create ad view"});
     }
 });
 
@@ -63,7 +63,7 @@ router.put("/:id", async (req, res) =>{
         const { ListenerID, AdID, DateViewed } = req.body;
 
         const [result] = await db.query(
-            "UPDATE Ad_View SET ListenerID = ?, AdID = ?, DateViewed = ? WHERE ViewID = ?",
+            "UPDATE Ad_View SET ListenerID = ?, AdID = ?, DateViewed = ? WHERE ViewID = ? AND IsDeleted = 0",
             [ListenerID, AdID, DateViewed, viewId]
         );
 
@@ -85,18 +85,20 @@ router.put("/:id", async (req, res) =>{
 });
 
 // Delete an ad view
-router.delete("/id", async (req, res) => {
+router.delete("/:id", async (req, res) => {
     try {
         const viewId = req.params.id;
-        const [result] = await db.query("DELETE From Ad_View WHERE ViewID = ?", [viewId]);
+        const [result] = await db.query("UPDATE Ad_View SET IsDeleted = 1 WHERE ViewID = ?", [viewId]);
 
         if (result.affectedRows === 0){
-            return res.status(404).json({ error: "Ad view not found" });
+            return res.status(404).json({ error: "Ad view not found or already deleted" });
         }
 
-        res.json({ message: "Ad view deleted successfully" });
+        res.json({ message: "Ad view soft deleted successfully" });
     } catch (err) {
         console.error("Error deleting ad view:", err);
         res.status(500).json({ error: "Failed to delete ad view" });
     }
 });
+
+export default router;
