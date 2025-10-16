@@ -4,6 +4,9 @@ import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
 import { handleAdRoutes } from "./routes/advertisement.js";
 import { handleCompanyRoutes } from "./routes/company.js";
+import { handleCompanyBuyRoutes } from "./routes/company_buy.js";
+import { handleFollowsRoutes } from "./routes/follows.js";
+import { handleGenreRoutes } from "./routes/genre.js";
 import { handleListenerRoutes } from "./routes/listener.js";
 import { handleListenHistoryRoutes } from "./routes/listen_history.js";
 import { handlePlaylistRoutes } from "./routes/playlist.js";
@@ -26,6 +29,12 @@ const server = http.createServer((req, res) => {
     handleAdViewRoutes(req, res);
   } else if (req.url.startsWith("/companies")) {
     handleCompanyRoutes(req, res);
+  } else if (req.url.startsWith("/company_buys")) {
+    handleCompanyBuyRoutes(req, res);
+  } else if (req.url.startsWith("/follows")) {
+    handleFollowsRoutes(req, res);
+  } else if (req.url.startsWith("/genres")) {
+    handleGenreRoutes(req, res); 
   } else if (req.url.startsWith("/listeners")) {
     handleListenerRoutes(req, res);
 }   else if (req.url.startsWith("/listen_history")) {
