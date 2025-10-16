@@ -1,6 +1,9 @@
 // routes/listener.js
 import db from "../db.js";
 import { parse } from "url";
+import bcrypt from "bcrypt";
+
+const SALT_ROUNDS = 10;
 
 export async function handleListenerRoutes(req, res) {
   const { pathname } = parse(req.url, true);
@@ -18,19 +21,84 @@ export async function handleListenerRoutes(req, res) {
   }
 
   try {
-    // GET all listeners (not deleted)
+    // -----------------------------
+    // LOGIN (username + password)
+    // POST /login
+    // Body: { Username, Password }
+    // -----------------------------
+    if (pathname === "/login" && method === "POST") {
+      let body = "";
+      req.on("data", (chunk) => (body += chunk));
+      req.on("end", async () => {
+        try {
+          const { Username, Password } = JSON.parse(body || "{}");
+          if (!Username || !Password) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Username and Password are required" }));
+            return;
+          }
+
+          const [rows] = await db.query(
+            "SELECT ListenerID, Username, Password FROM Listener WHERE Username = ? AND IsDeleted = 0",
+            [Username]
+          );
+
+          if (rows.length === 0) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid username or password" }));
+            return;
+          }
+
+          const ok = await bcrypt.compare(Password, rows[0].Password);
+          if (!ok) {
+            res.writeHead(401, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Invalid username or password" }));
+            return;
+          }
+
+          // successful login (do NOT return password)
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              ListenerID: rows[0].ListenerID,
+              Username: rows[0].Username,
+              message: "Login successful",
+            })
+          );
+        } catch (err) {
+          console.error("Error parsing POST /login:", err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+        }
+      });
+      return;
+    }
+
+    // -----------------------------
+    // GET all listeners (not deleted) - hide Password
+    // GET /listeners
+    // -----------------------------
     if (pathname === "/listeners" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Listener WHERE IsDeleted = 0");
+      const [rows] = await db.query(
+        `SELECT ListenerID, Username, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, IsDeleted
+         FROM Listener
+         WHERE IsDeleted = 0`
+      );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
-    // GET one listener by ID
+    // -----------------------------
+    // GET one listener by ID - hide Password
+    // GET /listeners/:id
+    // -----------------------------
     if (pathname.startsWith("/listeners/") && method === "GET") {
       const id = pathname.split("/")[2];
       const [rows] = await db.query(
-        "SELECT * FROM Listener WHERE ListenerID = ? AND IsDeleted = 0",
+        `SELECT ListenerID, Username, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, IsDeleted
+         FROM Listener
+         WHERE ListenerID = ? AND IsDeleted = 0`,
         [id]
       );
 
@@ -45,10 +113,14 @@ export async function handleListenerRoutes(req, res) {
       return;
     }
 
-    // POST create new listener
+    // -----------------------------
+    // CREATE listener (hash Password)
+    // POST /listeners
+    // Body: { Username, FirstName, LastName, DateCreated?, PFP?, Banner?, Bio?, Major?, Minor?, Password }
+    // -----------------------------
     if (pathname === "/listeners" && method === "POST") {
       let body = "";
-      req.on("data", chunk => (body += chunk));
+      req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
         try {
           const {
@@ -61,28 +133,41 @@ export async function handleListenerRoutes(req, res) {
             Bio,
             Major,
             Minor,
-          } = JSON.parse(body);
+            Password, // NEW
+          } = JSON.parse(body || "{}");
 
-          if (!Username || !FirstName || !LastName) {
+          const missing = [];
+          if (!Username) missing.push("Username");
+          if (!FirstName) missing.push("FirstName");
+          if (!LastName) missing.push("LastName");
+          if (!Password) missing.push("Password");
+
+          if (missing.length) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required fields: Username, FirstName, LastName" }));
+            res.end(
+              JSON.stringify({ error: `Missing required fields: ${missing.join(", ")}` })
+            );
             return;
           }
 
+          const hashed = await bcrypt.hash(Password, SALT_ROUNDS);
+          const usedDate = DateCreated || new Date();
+
           const [result] = await db.query(
             `INSERT INTO Listener 
-              (Username, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              (Username, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, Password, IsDeleted)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)`,
             [
               Username,
               FirstName,
               LastName,
-              DateCreated || new Date(),
+              usedDate,
               PFP || null,
               Banner || null,
               Bio || null,
               Major || null,
               Minor || null,
+              hashed,
             ]
           );
 
@@ -93,12 +178,13 @@ export async function handleListenerRoutes(req, res) {
               Username,
               FirstName,
               LastName,
-              DateCreated,
-              PFP,
-              Banner,
-              Bio,
-              Major,
-              Minor,
+              DateCreated: usedDate,
+              PFP: PFP || null,
+              Banner: Banner || null,
+              Bio: Bio || null,
+              Major: Major || null,
+              Minor: Minor || null,
+              message: "Listener registered successfully",
             })
           );
         } catch (err) {
@@ -110,14 +196,17 @@ export async function handleListenerRoutes(req, res) {
       return;
     }
 
-    // PUT update listener (partial updates allowed)
+    // -----------------------------
+    // UPDATE listener (partial; re-hash if Password provided)
+    // PUT /listeners/:id
+    // -----------------------------
     if (pathname.startsWith("/listeners/") && method === "PUT") {
       const id = pathname.split("/")[2];
       let body = "";
-      req.on("data", chunk => (body += chunk));
+      req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
         try {
-          const fields = JSON.parse(body);
+          const fields = JSON.parse(body || "{}");
           const validCols = [
             "Username",
             "FirstName",
@@ -128,15 +217,23 @@ export async function handleListenerRoutes(req, res) {
             "Bio",
             "Major",
             "Minor",
+            "Password", // allow password update
           ];
 
           const updates = [];
           const params = [];
 
           for (const [key, value] of Object.entries(fields)) {
-            if (validCols.includes(key)) {
+            if (!validCols.includes(key)) continue;
+
+            if (key === "Password") {
+              if (!value) continue; // ignore empty password
+              const hashed = await bcrypt.hash(value, SALT_ROUNDS);
+              updates.push("Password = ?");
+              params.push(hashed);
+            } else {
               updates.push(`${key} = ?`);
-              params.push(value);
+              params.push(value ?? null);
             }
           }
 
@@ -169,7 +266,10 @@ export async function handleListenerRoutes(req, res) {
       return;
     }
 
+    // -----------------------------
     // DELETE (soft delete)
+    // DELETE /listeners/:id
+    // -----------------------------
     if (pathname.startsWith("/listeners/") && method === "DELETE") {
       const id = pathname.split("/")[2];
       const [result] = await db.query(
