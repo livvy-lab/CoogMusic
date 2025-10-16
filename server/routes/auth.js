@@ -47,12 +47,12 @@ export async function handleAuthRoutes(req, res) {
         }
 
         const [existingUsers] = await db.query(
-          "SELECT * FROM Listeners WHERE Username = ?",
+          "SELECT * FROM Listener WHERE Username = ?",
           [username]
         );
 
         if (existingUsers.length > 0) {
-          res.writeHead(409, { "Content-Type": "application/json" }); // 409 Conflict
+          res.writeHead(409, { "Content-Type": "application/json" });
           return res.end(JSON.stringify({ error: "Username already exists" }));
         }
 
