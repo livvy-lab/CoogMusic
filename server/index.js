@@ -12,13 +12,11 @@ import { handleListenHistoryRoutes } from "./routes/listen_history.js";
 import { handlePlaylistRoutes } from "./routes/playlist.js";
 import { handlePlaylistTrackRoutes } from "./routes/playlist_track.js";
 import { handleSongRoutes } from "./routes/song.js";
-
-
+import { handleAuthRoutes } from "./routes/auth.js";
 
 const PORT = 3001;
 
 const server = http.createServer((req, res) => {
-
   if (req.url.startsWith("/administrators")) {
     handleAdminRoutes(req, res);
   } else if (req.url.startsWith("/advertisements")) {
@@ -34,18 +32,20 @@ const server = http.createServer((req, res) => {
   } else if (req.url.startsWith("/follows")) {
     handleFollowsRoutes(req, res);
   } else if (req.url.startsWith("/genres")) {
-    handleGenreRoutes(req, res); 
+    handleGenreRoutes(req, res);
   } else if (req.url.startsWith("/listeners")) {
     handleListenerRoutes(req, res);
-}   else if (req.url.startsWith("/listen_history")) {
+  } else if (req.url.startsWith("/listen_history")) {
     handleListenHistoryRoutes(req, res);
-}   else if (req.url.startsWith("/playlists")) {
+  } else if (req.url.startsWith("/playlists")) {
     handlePlaylistRoutes(req, res);
-}   else if (req.url.startsWith("/playlist_tracks")) {
+  } else if (req.url.startsWith("/playlist_tracks")) {
     handlePlaylistTrackRoutes(req, res);
-}   else if (req.url.startsWith("/songs")) {
+  } else if (req.url.startsWith("/songs")) {
     handleSongRoutes(req, res);
-}   else {
+  } else if (req.url.startsWith("/auth")) {
+    handleAuthRoutes(req, res);
+  } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
   }
