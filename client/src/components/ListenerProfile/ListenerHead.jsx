@@ -4,12 +4,12 @@ export default function ListenerHead({ listener }){
     if (!listener) return null;
 
     return (
-        <div className= "w-full mb -8 flex flex-col items-start md:flex-row md:items-center gap-6">
-            {/* Profile Picture*/}
+        <div className="w-full mb-8 flex flex-col items-start md:flex-row md:items-center gap-6">
+            {/* Profile Picture */}
             <img
-                src={listener.PFP || "default-pfp.jpg"}
+                src={listener.PFP || "/default-pfp.jpg"}
                 alt="Profile"
-                className="w-32 h-32 rounded-full border-4 border-gray-200 shadow-mid object-cover"
+                className="w-32 h-32 rounded-full border-4 border-gray-200 shadow-md object-cover"
             />
 
             {/* Info */}
@@ -20,5 +20,5 @@ export default function ListenerHead({ listener }){
                 <p className="text-gray-600 mt-1">{listener.Bio || "No bio yet."}</p>
             </div>
         </div>
-    )
+    );
 }
