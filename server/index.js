@@ -16,7 +16,6 @@ import { handleAuthRoutes } from "./routes/auth.js";
 import { handleArtistBuyRoutes } from "./routes/artist_buy.js";
 import { handleArtistRoutes } from "./routes/artist.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
-import { handleAlbumGenreRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
 import { handleAlbumTrackRoutes } from "./routes/album_track.js";
 
