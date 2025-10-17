@@ -47,7 +47,7 @@ export async function handleAuthRoutes(req, res) {
         }
 
         const [existingUsers] = await db.query(
-          "SELECT * FROM Listener WHERE Username = ?",
+          "SELECT * FROM AccountInfo WHERE Username = ?",
           [username]
         );
 
@@ -58,9 +58,16 @@ export async function handleAuthRoutes(req, res) {
 
         const hashed = await bcrypt.hash(password, 10);
 
-        await db.query(
-          "INSERT INTO Listener (Username, Password, DateCreated, IsDeleted) VALUES (?, ?, NOW(), 0)",
+        const [result] = await db.query(
+          "INSERT INTO AccountInfo (Username, PasswordHash, DateCreated, IsDeleted) VALUES (?, ?, NOW(), 0)",
           [username, hashed]
+        );
+
+        const accountId = result.insertId;
+
+        await db.query(
+          "INSERT INTO Listener (AccountID, DateCreated, IsDeleted) VALUES (?, NOW(), 0)",
+          [accountId]
         );
 
         res.writeHead(201, { "Content-Type": "application/json" });
