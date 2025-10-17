@@ -13,6 +13,7 @@ import { handlePlaylistRoutes } from "./routes/playlist.js";
 import { handlePlaylistTrackRoutes } from "./routes/playlist_track.js";
 import { handleSongRoutes } from "./routes/song.js";
 import { handleAuthRoutes } from "./routes/auth.js";
+import { handleArtistRoutes } from "./routes/artist.js";
 import { handleSongArtistRoutes } from "./routes/song_artist.js";
 import { handleSongGenreRoutes } from "./routes/song_genre.js";
 import { handleSubscriptionRoutes } from "./routes/subscription.js";
