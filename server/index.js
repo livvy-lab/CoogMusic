@@ -13,6 +13,7 @@ import { handlePlaylistRoutes } from "./routes/playlist.js";
 import { handlePlaylistTrackRoutes } from "./routes/playlist_track.js";
 import { handleSongRoutes } from "./routes/song.js";
 import { handleAuthRoutes } from "./routes/auth.js";
+import { handleArtistRoutes } from "./routes/artist.js";
 
 const PORT = 3001;
 
@@ -45,6 +46,8 @@ const server = http.createServer((req, res) => {
     handleSongRoutes(req, res);
   } else if (req.url.startsWith("/auth")) {
     handleAuthRoutes(req, res);
+  } else if (req.url.startsWith("/artists")) {
+    handleArtistRoutes(req, res);
   } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
