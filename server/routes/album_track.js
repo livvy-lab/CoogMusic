@@ -19,7 +19,7 @@ export async function handleAlbumTrackRoutes(req, res) {
   try {
     // GET all album-track relations
     if (pathname === "/album_tracks" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Album_Track WHERE IsDeleted = 0");
+      const [rows] = await db.query("SELECT * FROM Album_Track");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
@@ -29,7 +29,7 @@ export async function handleAlbumTrackRoutes(req, res) {
     if (pathname.startsWith("/album_tracks/") && method === "GET") {
       const [, , albumId, songId] = pathname.split("/");
       const [rows] = await db.query(
-        "SELECT * FROM Album_Track WHERE AlbumID = ? AND SongID = ? AND IsDeleted = 0",
+        "SELECT * FROM Album_Track WHERE AlbumID = ? AND SongID = ?",
         [albumId, songId]
       );
 
@@ -63,7 +63,7 @@ export async function handleAlbumTrackRoutes(req, res) {
         );
 
         res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ AlbumID, SongID, TrackNumber, IsDeleted: 0 }));
+        res.end(JSON.stringify({ AlbumID, SongID, TrackNumber }));
       });
       return;
     }
@@ -77,7 +77,7 @@ export async function handleAlbumTrackRoutes(req, res) {
         const { TrackNumber } = JSON.parse(body);
 
         const [result] = await db.query(
-          "UPDATE Album_Track SET TrackNumber = ? WHERE AlbumID = ? AND SongID = ? AND IsDeleted = 0",
+          "UPDATE Album_Track SET TrackNumber = ? WHERE AlbumID = ? AND SongID = ?",
           [TrackNumber, albumId, songId]
         );
 
@@ -100,22 +100,22 @@ export async function handleAlbumTrackRoutes(req, res) {
       return;
     }
 
-    // DELETE (soft delete)
+    // DELETE (hard delete)
     if (pathname.startsWith("/album_tracks/") && method === "DELETE") {
       const [, , albumId, songId] = pathname.split("/");
       const [result] = await db.query(
-        "UPDATE Album_Track SET IsDeleted = 1 WHERE AlbumID = ? AND SongID = ?",
+        "DELETE FROM Album_Track WHERE AlbumID = ? AND SongID = ?",
         [albumId, songId]
       );
 
       if (result.affectedRows === 0) {
         res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Album-Track not found or already deleted" }));
+        res.end(JSON.stringify({ error: "Album-Track not found" }));
         return;
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Album-Track soft deleted successfully" }));
+      res.end(JSON.stringify({ message: "Album-Track deleted successfully" }));
       return;
     }
 
