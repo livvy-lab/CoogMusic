@@ -1,4 +1,5 @@
 import http from "http";
+import { parse } from "url";
 import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
@@ -52,6 +53,14 @@ const server = http.createServer((req, res) => {
     handleAuthRoutes(req, res);
   } else if (req.url.startsWith("/artists")) {
     handleArtistRoutes(req, res);
+  } else if (req.url.startsWith("/song_artists")) {
+    handleSongArtistRoutes(req, res);
+  } else if (req.url.startsWith("/song_genres")) {
+    handleSongGenreRoutes(req, res);
+  } else if (req.url.startsWith("/subscriptions")) {
+    handleSubscriptionRoutes(req, res);
+  } else if (req.url.startsWith("/user_reports")) {
+    handleUserReportsRoutes(req, res);
   } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
