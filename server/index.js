@@ -50,15 +50,15 @@ const server = http.createServer((req, res) => {
     handleSongRoutes(req, res);
   } else if (req.url.startsWith("/auth")) {
     handleAuthRoutes(req, res);
-  } else if (req.url.startsWith("album_artists")){
+  } else if (req.url.startsWith("/album_artists")){
     handleAlbumArtistRoutes(req, res);
-  } else if (req.url.startsWith("album_genres")){
+  } else if (req.url.startsWith("/album_genres")){
     handleAlbumGenreRoutes(req, res);
-  } else if (req.url.startsWith("album_tracks")){
+  } else if (req.url.startsWith("/album_tracks")){
     handleAlbumTrackRoutes(req, res);
-  } else if (req.url.startsWith("artists")){
+  } else if (req.url.startsWith("/artists")){
     handleArtistRoutes(req, res);
-  } else if (req.url.startsWith("artist_buys")){
+  } else if (req.url.startsWith("/artist_buys")){
     handleArtistBuyRoutes(req, res);
   }
   else {
