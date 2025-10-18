@@ -14,11 +14,15 @@ import { handlePlaylistRoutes } from "./routes/playlist.js";
 import { handlePlaylistTrackRoutes } from "./routes/playlist_track.js";
 import { handleSongRoutes } from "./routes/song.js";
 import { handleAuthRoutes } from "./routes/auth.js";
+import { handleArtistBuyRoutes } from "./routes/artist_buy.js";
 import { handleArtistRoutes } from "./routes/artist.js";
 import { handleSongArtistRoutes } from "./routes/song_artist.js";
 import { handleSongGenreRoutes } from "./routes/song_genre.js";
 import { handleSubscriptionRoutes } from "./routes/subscription.js";
 import { handleUserReportsRoutes } from "./routes/user_reports.js";
+import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
+import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
+import { handleAlbumTrackRoutes } from "./routes/album_track.js";
 
 const PORT = 3001;
 
@@ -51,7 +55,13 @@ const server = http.createServer((req, res) => {
     handleSongRoutes(req, res);
   } else if (req.url.startsWith("/auth")) {
     handleAuthRoutes(req, res);
-  } else if (req.url.startsWith("/artists")) {
+  } else if (req.url.startsWith("/album_artists")){
+    handleAlbumArtistRoutes(req, res);
+  } else if (req.url.startsWith("/album_genres")){
+    handleAlbumGenreRoutes(req, res);
+  } else if (req.url.startsWith("/album_tracks")){
+    handleAlbumTrackRoutes(req, res);
+  } else if (req.url.startsWith("/artists")){
     handleArtistRoutes(req, res);
   } else if (req.url.startsWith("/song_artists")) {
     handleSongArtistRoutes(req, res);
@@ -61,7 +71,10 @@ const server = http.createServer((req, res) => {
     handleSubscriptionRoutes(req, res);
   } else if (req.url.startsWith("/user_reports")) {
     handleUserReportsRoutes(req, res);
-  } else {
+  } else if (req.url.startsWith("/artist_buys")){
+    handleArtistBuyRoutes(req, res);
+  }
+  else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
   }

@@ -1,7 +1,7 @@
 import db from "../db.js";
 import { parse } from "url";
 
-export async function handleArtistRoutes(req, res) {
+export async function handleArtistBuyRoutes(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
@@ -19,7 +19,7 @@ export async function handleArtistRoutes(req, res) {
 
   try {
     // GET all artists that are not deleted
-    if (pathname === "/artists" && method === "GET") {
+    if (pathname === "/artist_buys" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Artist WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
@@ -27,7 +27,7 @@ export async function handleArtistRoutes(req, res) {
     }
 
     // GET one artist by their ArtistID
-    if (pathname.startsWith("/artists/") && method === "GET") {
+    if (pathname.startsWith("/artist_buys/") && method === "GET") {
       const artistId = pathname.split("/")[2];
       const [rows] = await db.query(
         "SELECT * FROM Artist WHERE ArtistID = ? AND IsDeleted = 0",
@@ -46,7 +46,7 @@ export async function handleArtistRoutes(req, res) {
     }
 
     // POST create a new artist
-    if (pathname === "/artists" && method === "POST") {
+    if (pathname === "/artist_buys" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
@@ -84,7 +84,7 @@ export async function handleArtistRoutes(req, res) {
     }
 
     // PUT update artist profile info
-    if (pathname.startsWith("/artists/") && method === "PUT") {
+    if (pathname.startsWith("/artist_buys/") && method === "PUT") {
       const artistId = pathname.split("/")[2];
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -120,7 +120,7 @@ export async function handleArtistRoutes(req, res) {
     }
 
     // DELETE (soft delete) artist record
-    if (pathname.startsWith("/artists/") && method === "DELETE") {
+    if (pathname.startsWith("/artist_buys/") && method === "DELETE") {
       const artistId = pathname.split("/")[2];
       const [result] = await db.query(
         "UPDATE Artist SET IsDeleted = 1 WHERE ArtistID = ?",

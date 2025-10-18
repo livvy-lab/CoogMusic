@@ -20,7 +20,7 @@ export async function handleAlbumArtistRoutes(req, res) {
   try {
     // GET all album-artist relationships
     if (pathname === "/album_artists" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Album_Artist WHERE IsDeleted = 0");
+      const [rows] = await db.query("SELECT * FROM Album_Artist");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
@@ -30,7 +30,7 @@ export async function handleAlbumArtistRoutes(req, res) {
     if (pathname.startsWith("/album_artists/") && method === "GET") {
       const [, , albumId, artistId] = pathname.split("/");
       const [rows] = await db.query(
-        "SELECT * FROM Album_Artist WHERE AlbumID = ? AND ArtistID = ? AND IsDeleted = 0",
+        "SELECT * FROM Album_Artist WHERE AlbumID = ? AND ArtistID = ?",
         [albumId, artistId]
       );
 
@@ -64,29 +64,29 @@ export async function handleAlbumArtistRoutes(req, res) {
         ]);
 
         res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ AlbumID, ArtistID, IsDeleted: 0 }));
+        res.end(JSON.stringify({ AlbumID, ArtistID }));
       });
       return;
     }
 
-    // DELETE (soft delete) album-artist relationship
+    // DELETE (hard delete) album-artist relationship
     if (pathname.startsWith("/album_artists/") && method === "DELETE") {
       const [, , albumId, artistId] = pathname.split("/");
       const [result] = await db.query(
-        "UPDATE Album_Artist SET IsDeleted = 1 WHERE AlbumID = ? AND ArtistID = ?",
+        "DELETE FROM Album_Artist WHERE AlbumID = ? AND ArtistID = ?",
         [albumId, artistId]
       );
 
       if (result.affectedRows === 0) {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(
-          JSON.stringify({ error: "Album-Artist relation not found or already deleted" })
+          JSON.stringify({ error: "Album-Artist relation not found" })
         );
         return;
       }
 
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Album-Artist soft deleted successfully" }));
+      res.end(JSON.stringify({ message: "Album-Artist deleted successfully" }));
       return;
     }
 

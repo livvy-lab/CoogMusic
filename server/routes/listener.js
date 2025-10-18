@@ -1,4 +1,3 @@
-// routes/listener.js
 import db from "../db.js";
 import { parse } from "url";
 
@@ -24,7 +23,7 @@ export async function handleListenerRoutes(req, res) {
     // GET all listeners (not deleted)
     if (pathname === "/listeners" && method === "GET") {
       const [rows] = await db.query(
-        `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, IsDeleted
+        `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Bio, Major, Minor, IsDeleted
          FROM Listener
          WHERE IsDeleted = 0`
       );
@@ -37,7 +36,7 @@ export async function handleListenerRoutes(req, res) {
     if (pathname.startsWith("/listeners/") && method === "GET") {
       const id = pathname.split("/")[2];
       const [rows] = await db.query(
-        `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, IsDeleted
+        `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Bio, Major, Minor, IsDeleted
          FROM Listener
          WHERE ListenerID = ? AND IsDeleted = 0`,
         [id]
@@ -64,7 +63,6 @@ export async function handleListenerRoutes(req, res) {
           LastName,
           DateCreated,
           PFP,
-          Banner,
           Bio,
           Major,
           Minor,
@@ -73,6 +71,7 @@ export async function handleListenerRoutes(req, res) {
         const missing = [];
         if (!FirstName) missing.push("FirstName");
         if (!LastName) missing.push("LastName");
+        if (!Major) missing.push("Major");
 
         if (missing.length) {
           res.writeHead(400, { "Content-Type": "application/json" });
@@ -88,16 +87,15 @@ export async function handleListenerRoutes(req, res) {
 
         const [result] = await db.query(
           `INSERT INTO Listener
-            (FirstName, LastName, DateCreated, PFP, Banner, Bio, Major, Minor, IsDeleted)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)`,
+            (FirstName, LastName, DateCreated, PFP, Bio, Major, Minor, IsDeleted)
+           VALUES (?, ?, ?, ?, ?, ?, ?, 0)`,
           [
             FirstName,
             LastName,
             usedDate,
             PFP || null,
-            Banner || null,
             Bio || null,
-            Major || null,
+            Major,
             Minor || null,
           ]
         );
@@ -110,9 +108,8 @@ export async function handleListenerRoutes(req, res) {
             LastName,
             DateCreated: usedDate,
             PFP: PFP || null,
-            Banner: Banner || null,
             Bio: Bio || null,
-            Major: Major || null,
+            Major,
             Minor: Minor || null,
             message: "Listener created successfully",
           })
@@ -133,7 +130,6 @@ export async function handleListenerRoutes(req, res) {
           "LastName",
           "DateCreated",
           "PFP",
-          "Banner",
           "Bio",
           "Major",
           "Minor",

@@ -23,7 +23,7 @@ export async function handleArtistRoutes(req, res) {
   try {
     // GET all artists
     if (pathname === "/artists" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Artist WHERE IsDeleted = 0");
+      const [rows] = await db.query("SELECT ArtistID, ArtistName, DateCreated, PFP, Bio, IsDeleted, AccountID FROM Artist WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
@@ -33,7 +33,7 @@ export async function handleArtistRoutes(req, res) {
     if (pathname.startsWith("/artists/") && method === "GET") {
       const artistId = pathname.split("/")[2];
       const [rows] = await db.query(
-        "SELECT * FROM Artist WHERE ArtistID = ? AND IsDeleted = 0",
+        "SELECT ArtistID, ArtistName, DateCreated, PFP, Bio, IsDeleted, AccountID FROM Artist WHERE ArtistID = ? AND IsDeleted = 0",
         [artistId]
       );
 
@@ -53,12 +53,12 @@ export async function handleArtistRoutes(req, res) {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
-        const { AccountID, ArtistName, DateCreated, PFP, Banner, Bio } =
+        const { AccountID, ArtistName, DateCreated, PFP, Bio } =
           JSON.parse(body);
 
         const [result] = await db.query(
-          "INSERT INTO Artist (AccountID, ArtistName, DateCreated, PFP, Banner, Bio) VALUES (?, ?, ?, ?, ?, ?)",
-          [AccountID, ArtistName, DateCreated, PFP, Banner, Bio]
+          "INSERT INTO Artist (AccountID, ArtistName, DateCreated, PFP, Bio) VALUES (?, ?, ?, ?, ?)",
+          [AccountID, ArtistName, DateCreated, PFP, Bio]
         );
 
         res.writeHead(201, { "Content-Type": "application/json" });
@@ -69,7 +69,6 @@ export async function handleArtistRoutes(req, res) {
             ArtistName,
             DateCreated,
             PFP,
-            Banner,
             Bio,
             IsDeleted: 0,
           })
@@ -84,12 +83,12 @@ export async function handleArtistRoutes(req, res) {
       let body = "";
       req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
-        const { AccountID, ArtistName, DateCreated, PFP, Banner, Bio } =
+        const { AccountID, ArtistName, DateCreated, PFP, Bio } =
           JSON.parse(body);
 
         const [result] = await db.query(
-          "UPDATE Artist SET AccountID = ?, ArtistName = ?, DateCreated = ?, PFP = ?, Banner = ?, Bio = ? WHERE ArtistID = ? AND IsDeleted = 0",
-          [AccountID, ArtistName, DateCreated, PFP, Banner, Bio, artistId]
+          "UPDATE Artist SET AccountID = ?, ArtistName = ?, DateCreated = ?, PFP = ?, Bio = ? WHERE ArtistID = ? AND IsDeleted = 0",
+          [AccountID, ArtistName, DateCreated, PFP, Bio, artistId]
         );
 
         if (result.affectedRows === 0) {
@@ -106,7 +105,6 @@ export async function handleArtistRoutes(req, res) {
             ArtistName,
             DateCreated,
             PFP,
-            Banner,
             Bio,
             message: "Artist updated successfully",
           })
