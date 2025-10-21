@@ -20,6 +20,7 @@ export default function NavigationBar() {
         <nav className="navSection">
           <div className="navTitle">Social</div>
           <a className="navLink">👤 My Profile</a>
+          <a className="navLink">✏️ Edit Profile</a>
           <a className="navLink">👥 Friends</a>
         </nav>
 

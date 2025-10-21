@@ -1,9 +1,4 @@
 :root {
-  --bg: #100b1b;
-  --bg-2: #1b1430;
-  --fg: #f4e9ff;
-  --muted: #b8a9d3;
-  --accent: #8e6ad8;
   --sidebar: 240px;
   --topbar: 56px;
 }
@@ -12,37 +7,57 @@
   position: fixed;
   inset: 0 auto 0 0;
   width: var(--sidebar);
-  background: linear-gradient(180deg, var(--bg), var(--bg-2));
+  background: #612C4B;
   color: var(--fg);
   display: flex;
   flex-direction: column;
   gap: 20px;
   padding: 22px 16px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
   z-index: 10;
+  border-radius: 20px;
 }
 
 .navBrand {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 10px;
+}
+
+.navBurger {
+  position: absolute;      
+  top: 16px;             
+  right: 16px;         
+  background: none;
+  border: none;
+  color: #FFDAF0;
+  font-size: 22px;
+  cursor: pointer;
+  transition: color 0.25s ease;
+  z-index: 20;        
+}
+
+.navBurger:hover {
+  color: #4a0b30;
 }
 
 .logo {
   font-weight: 800;
-  font-size: 22px;
-  line-height: 1.2;
+  font-size: 30px;
+  line-height: 1.8;
+  font-family: 'Fira Code';
+  color: #FFEEF8
 }
 
 .navSection { display: flex; flex-direction: column; gap: 8px; }
 
 .navTitle {
-  font-size: 12px;
+  font-size: 16px;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin: 8px 0;
+  color: #FFFFFF;
 }
 
 .navLink {
@@ -53,12 +68,12 @@
   border-radius: 12px;
   cursor: pointer;
   text-decoration: none;
-  color: var(--fg);
+  color: #FFDAF0;
   transition: background .25s ease, color .25s ease;
 }
 
 .navLink:hover {
-  background: rgba(142, 106, 216, 0.25);
+  background: #4a0b30;
   color: #fff;
 }
 
