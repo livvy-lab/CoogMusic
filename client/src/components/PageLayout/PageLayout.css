@@ -1,0 +1,12 @@
+.pageContainer {
+    display: flex;
+    min-height: 100vh;
+    background: #E3BFD4;
+    font-family: "Inter", sans-serif;
+}
+
+.pageMain {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}

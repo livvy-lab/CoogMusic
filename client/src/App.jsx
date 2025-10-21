@@ -1,14 +1,11 @@
-import Nav from "./components/NavigationBar/NavigationBar";
+// src/App.jsx
+import PageLayout from "./components/PageLayout/PageLayout";
 
-function App() {
+export default function App() {
   return (
-    <>
-      <Nav />
-      <main style={{ padding: "24px", color: "white" }}>
-        <h1>Welcome to Coogs Music</h1>
-      </main>
-    </>
+    <PageLayout>
+      <h1>Welcome to Coogs Music 🎶</h1>
+      <p>This is your dashboard layout test.</p>
+    </PageLayout>
   );
 }
-
-export default App;

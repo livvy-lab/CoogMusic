@@ -8,7 +8,9 @@ export default function NavigationBar() {
     <>
       <aside className={`nav ${open ? "nav--open" : ""}`}>
         <div className="navBrand">
-          <button className="navBurger" onClick={() => setOpen(false)}>✕</button>
+          <button className="navBurger closeBtn" onClick={() => setOpen(false)}>
+            ✕
+          </button>
           <div className="logo">Coogs<br />Music</div>
         </div>
 
@@ -31,9 +33,14 @@ export default function NavigationBar() {
         </nav>
       </aside>
 
-      <header className="topbar">
-        <button className="navBurger" onClick={() => setOpen(true)}>☰</button>
-      </header>
+      {/* Only show burger when nav is closed */}
+      {!open && (
+        <header className="topbar">
+          <button className="navBurger openBtn" onClick={() => setOpen(true)}>
+            ☰
+          </button>
+        </header>
+      )}
     </>
   );
 }
