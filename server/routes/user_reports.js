@@ -1,7 +1,7 @@
 import db from "../db.js";
 import { parse } from "url";
 
-export async function handleUserReportRoutes(req, res) {
+export async function handleUserReportsRoutes(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
@@ -18,7 +18,7 @@ export async function handleUserReportRoutes(req, res) {
   try {
     // GET all user reports
     if (pathname === "/user_reports" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM User_Report WHERE IsDeleted = 0");
+      const [rows] = await db.query("SELECT * FROM UserReport WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
@@ -28,7 +28,7 @@ export async function handleUserReportRoutes(req, res) {
     if (pathname.startsWith("/user_reports/") && method === "GET") {
       const reportId = pathname.split("/")[2];
       const [rows] = await db.query(
-        "SELECT * FROM User_Report WHERE ReportID = ? AND IsDeleted = 0",
+        "SELECT * FROM UserReport WHERE ReportID = ? AND IsDeleted = 0",
         [reportId]
       );
 
@@ -58,7 +58,7 @@ export async function handleUserReportRoutes(req, res) {
           }
 
           const [result] = await db.query(
-            "INSERT INTO User_Report (ReporterID, ReportedUserID, Reason, DateReported, IsResolved) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO UserReport (ReporterID, ReportedUserID, Reason, DateReported, IsResolved) VALUES (?, ?, ?, ?, ?)",
             [ReporterID, ReportedUserID, Reason, DateReported || null, IsResolved !== undefined ? IsResolved : 0]
           );
 
@@ -108,7 +108,7 @@ export async function handleUserReportRoutes(req, res) {
 
           params.push(reportId);
           const [result] = await db.query(
-            `UPDATE User_Report SET ${fields.join(", ")} WHERE ReportID = ? AND IsDeleted = 0`,
+            `UPDATE UserReport SET ${fields.join(", ")} WHERE ReportID = ? AND IsDeleted = 0`,
             params
           );
 
@@ -133,7 +133,7 @@ export async function handleUserReportRoutes(req, res) {
     if (pathname.startsWith("/user_reports/") && method === "DELETE") {
       const reportId = pathname.split("/")[2];
       const [result] = await db.query(
-        "UPDATE User_Report SET IsDeleted = 1 WHERE ReportID = ?",
+        "UPDATE UserReport SET IsDeleted = 1 WHERE ReportID = ?",
         [reportId]
       );
 

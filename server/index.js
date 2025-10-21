@@ -1,4 +1,5 @@
 import http from "http";
+import { parse } from "url";
 import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
@@ -15,6 +16,10 @@ import { handleSongRoutes } from "./routes/song.js";
 import { handleAuthRoutes } from "./routes/auth.js";
 import { handleArtistBuyRoutes } from "./routes/artist_buy.js";
 import { handleArtistRoutes } from "./routes/artist.js";
+import { handleSongArtistRoutes } from "./routes/song_artist.js";
+import { handleSongGenreRoutes } from "./routes/song_genre.js";
+import { handleSubscriptionRoutes } from "./routes/subscription.js";
+import { handleUserReportsRoutes } from "./routes/user_reports.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
 import { handleAlbumTrackRoutes } from "./routes/album_track.js";
@@ -58,6 +63,14 @@ const server = http.createServer((req, res) => {
     handleAlbumTrackRoutes(req, res);
   } else if (req.url.startsWith("/artists")){
     handleArtistRoutes(req, res);
+  } else if (req.url.startsWith("/song_artists")) {
+    handleSongArtistRoutes(req, res);
+  } else if (req.url.startsWith("/song_genres")) {
+    handleSongGenreRoutes(req, res);
+  } else if (req.url.startsWith("/subscriptions")) {
+    handleSubscriptionRoutes(req, res);
+  } else if (req.url.startsWith("/user_reports")) {
+    handleUserReportsRoutes(req, res);
   } else if (req.url.startsWith("/artist_buys")){
     handleArtistBuyRoutes(req, res);
   }
