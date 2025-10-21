@@ -1,0 +1,3 @@
+.fa { display: flex; gap: 18px; }
+.fa__item { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 6px solid #6e4760; box-shadow: 0 4px 0 #4f3347; }
+.fa__item img { width: 100%; height: 100%; object-fit: cover; }
