@@ -4,25 +4,28 @@
   --pink-50:#FFE8F5;
 }
 
-/* the whole block */
+/* ===== Favorite Artists (row) ===== */
+
+/* container — let it grow to match the playlist width */
 .fa{
-  position: relative;
-  margin: 0;
+  /* match the playlist width set in the page layout (90% of left column) */
   width: 100%;
-  max-width: 700px;
-  padding-top: 0; /* title is rendered by page; start circles at top */
+  max-width: none;            /* <-- remove 700px cap */
+  margin: 0;
+  padding-top: 0;             /* title is outside */
+  --circle: clamp(160px, 20vw, 220px); /* one place to control circle size */
 }
 
-/* exactly three columns, but allow them to shrink to fit beside JamCard */
+/* Use flex so the 3 circles sit edge-to-edge across the row */
 .fa__grid{
-  display: grid;
-  grid-template-columns: repeat(3, minmax(140px, 1fr)); /* <= can shrink */
-  gap: clamp(24px, 3vw, 36px);
-  align-items: start;
-  justify-content: start;
+  display: flex;
+  flex-wrap: nowrap;          /* keep exactly 3 on one line */
+  justify-content: space-between; /* push first/last to the edges */
+  align-items: flex-start;
+  gap: 0;                     /* no extra spacing that shortens the row */
 }
 
-/* single artist item (static) */
+/* a single artist */
 .fa__item{
   display: flex;
   flex-direction: column;
@@ -33,12 +36,15 @@
   background: transparent;
   border: 0;
   cursor: default;
+
+  /* do not allow shrinking; keep fixed width equal to circle size */
+  flex: 0 0 var(--circle);
 }
 
-/* circle fills the grid cell while staying a perfect circle */
+/* the circle */
 .fa__ring{
-  width: 100%;
-  aspect-ratio: 1 / 1;
+  width: var(--circle);
+  height: var(--circle);
   border-radius: 50%;
   border: 5px solid var(--plum);
   background: #e7c4d6;
@@ -66,16 +72,18 @@
 
 .fa__name{
   font-weight:700;
-  font-size: clamp(12px, 1.4vw, 14px);
-  color: var(--plum);
+  font-size: clamp(16px, 1.4vw, 20px);
+  color: white;
   opacity:.95;
 }
 
-/* mobile: allow wrapping and shrink more if needed */
+/* mobile: allow wrapping and smaller circles so it still fits */
 @media (max-width: 700px){
+  .fa{ --circle: clamp(110px, 28vw, 140px); }
+
   .fa__grid{
-    grid-template-columns: repeat(3, minmax(110px, 1fr));
-    justify-content:center;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: clamp(14px, 2vw, 22px);
   }
 }
