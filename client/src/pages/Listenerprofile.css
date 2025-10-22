@@ -1,0 +1,94 @@
+/* Shared sizes and theme */
+:root {
+    --shell-width: min(96%, 1280px);   /* match the ProfileCard’s width rule */
+    --gap-col: clamp(20px, 2vw, 24px); /* space between artists and jam */
+    --plum: #895674;
+    --ink: #4b2c3d;
+  }
+  
+  /* Page container — EXACT same width and centering as ProfileCard */
+  .lp {
+    width: var(--shell-width);
+    margin: 0 auto;
+    padding: 0;                         /* avoid side padding offsets */
+    box-sizing: border-box;
+    display: grid;
+    row-gap: clamp(20px, 3vw, 36px);    /* ↑ more separation from ProfileCard */
+  }
+  
+  /* ProfileCard occupies full shell width */
+  .lp__header > * {
+    width: 100%;
+    margin: 0;
+  }
+  
+  /* Bottom row uses the SAME shell width and centering */
+  .lp__bottom {
+    width: var(--shell-width);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content; /* left grows, right fits JamCard */
+    grid-template-rows: auto auto;        /* row 1 = title, row 2 = content */
+    align-items: start;
+    column-gap: var(--gap-col);
+  }
+  
+  /* “Favorite Artists” title */
+  .lp__favTitle {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    margin: 0 0 clamp(6px, 1vw, 10px);    /* snug above the circles */
+    font-weight: 800;
+    color: #782355;
+    font-size: clamp(18px, 2.2vw, 26px);
+  }
+  
+  /* Favorite Artists (circles) — live in left column */
+  .lp__bottom .fa {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    padding-top: 0 !important;            /* ensure circle tops align with JamCard */
+    min-width: 0;                         /* prevent overflow pushing under JamCard */
+  }
+  
+  /* Hide internal FA title if the component still renders it */
+  .lp__bottom .fa__title {
+    display: none !important;
+  }
+  
+  /* ✅ JamCard aligned to EXACT right edge of the same shell as ProfileCard */
+  .lp__bottom .jam {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    justify-self: end;                    /* flush to the right edge */
+    align-self: start;                    /* top-align with circles */
+    width: clamp(260px, 26vw, 340px);
+    margin: 0 !important;                 /* ignore any margins from JamCard.css */
+  }
+  
+  /* Mobile stacking (kept simple; desktop-focused per your note) */
+  @media (max-width: 960px) {
+    .lp__bottom {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      row-gap: clamp(14px, 2.4vw, 22px);
+    }
+  
+    .lp__favTitle {
+      grid-column: 1 / -1;
+      grid-row: 1 / 2;
+    }
+  
+    .lp__bottom .fa {
+      grid-column: 1 / -1;
+      grid-row: 2 / 3;
+    }
+  
+    .lp__bottom .jam {
+      grid-column: 1 / -1;
+      grid-row: 3 / 4;
+      justify-self: center;
+      width: min(92vw, 340px);
+    }
+  }
+  

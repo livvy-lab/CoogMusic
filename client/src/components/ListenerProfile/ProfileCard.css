@@ -8,7 +8,7 @@
   display: grid;
   grid-template-columns: 240px 1fr auto;
   gap: 32px;                   /* scales better than fixed 16px */
-  box-shadow: 0 6px 0 #6e4760;
+  box-shadow: 0 5px 0 #6e4760;
   margin: 40px auto;           /* centers horizontally & spaces vertically */
   transition: all 0.3s ease;   /* smooth resizing transitions */
 }

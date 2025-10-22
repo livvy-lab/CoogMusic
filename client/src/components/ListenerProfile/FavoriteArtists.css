@@ -1,3 +1,82 @@
-.fa { display: flex; gap: 18px; }
-.fa__item { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 6px solid #6e4760; box-shadow: 0 4px 0 #4f3347; }
-.fa__item img { width: 100%; height: 100%; object-fit: cover; }
+:root{
+    --plum:#895674;
+    --ink:#4b2c3d;
+    --pink-50:#FFE8F5;
+  }
+  
+  /* the whole block */
+  .fa{
+    position: relative;
+    margin: 0;
+    width: 100%;
+    max-width: 700px;
+    padding-top: 0; /* title is rendered by page; start circles at top */
+  }
+  
+  /* exactly three columns, but allow them to shrink to fit beside JamCard */
+  .fa__grid{
+    display: grid;
+    grid-template-columns: repeat(3, minmax(140px, 1fr)); /* <= can shrink */
+    gap: clamp(24px, 3vw, 36px);
+    align-items: start;
+    justify-content: start;
+  }
+  
+  /* single artist item (static) */
+  .fa__item{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    cursor: default;
+  }
+  
+  /* circle fills the grid cell while staying a perfect circle */
+  .fa__ring{
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    border: 5px solid var(--plum);
+    background: #e7c4d6;
+    overflow: hidden;
+  }
+  
+  .fa__avatar{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    border-radius:50%;
+  }
+  
+  .fa__placeholder{
+    width:100%;
+    height:100%;
+    border-radius:50%;
+    display:grid;
+    place-items:center;
+    background:radial-gradient(120% 120% at 30% 30%, #d7a8be 0%, #c98eb0 60%, #b67797 100%);
+    color:#fff;
+    font-weight:800;
+    font-size: clamp(32px, 5vw, 40px);
+  }
+  
+  .fa__name{
+    font-weight:700;
+    font-size: clamp(12px, 1.4vw, 14px);
+    color: var(--plum);
+    opacity:.95;
+  }
+  
+  /* mobile: allow wrapping and shrink more if needed */
+  @media (max-width: 700px){
+    .fa__grid{
+      grid-template-columns: repeat(3, minmax(110px, 1fr));
+      justify-content:center;
+      gap: clamp(14px, 2vw, 22px);
+    }
+  }
+  
