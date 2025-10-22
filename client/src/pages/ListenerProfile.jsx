@@ -8,7 +8,6 @@ export default function ListenerProfile() {
   return (
     <PageLayout>
       <div className="lp">
-        {/* TOP: Profile card spans the full content width */}
         <div className="lp__header">
           <ProfileCard />
         </div>
