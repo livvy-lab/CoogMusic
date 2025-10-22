@@ -22,6 +22,7 @@
   .lp__bottom {
     width: var(--shell-width);
     margin: 0 auto;
+    margin-top: -34px;
     display: grid;
     grid-template-columns: 1fr clamp(260px, 26vw, 340px);
     grid-template-rows: auto 1fr;
@@ -39,7 +40,19 @@
     font-size: clamp(18px, 2.2vw, 26px);
     align-self: start;
   }
-  
+
+/* Profile header name */
+.lp__profileName {
+  font-weight: 800;
+  font-size: clamp(26px, 3vw, 34px);  /* slightly bigger than section titles */
+  color: #782355;                     /* matches the accent color */
+  text-align: left;                   /* aligns with the ProfileCard */
+  width: var(--shell-width);
+  margin: 0 auto clamp(10px, 1.5vw, 20px);
+  margin-bottom: -24px;
+}
+
+
   /* left column container — aligns vertically with JamCard */
   .lp__left {
     grid-column: 1 / 2;
