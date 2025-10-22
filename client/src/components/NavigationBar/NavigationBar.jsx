@@ -17,6 +17,7 @@ export default function NavigationBar() {
         <nav className="navSection">
           <div className="navTitle">Dashboard</div>
           <a className="navLink">⌂ Home</a>
+          <a className="navLink">⭐ Subscription</a>
         </nav>
 
         <nav className="navSection">
