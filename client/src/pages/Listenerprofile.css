@@ -1,11 +1,11 @@
-:root{
+:root {
     --shell-width: min(96%, 1280px);
     --gap-col: clamp(20px, 2vw, 24px);
-    --plum:#895674;
-    --ink:#4b2c3d;
+    --plum: #895674;
+    --ink: #4b2c3d;
   }
   
-  .lp{
+  .lp {
     width: var(--shell-width);
     margin: 0 auto;
     padding: 0;
@@ -14,12 +14,12 @@
     row-gap: clamp(20px, 3vw, 36px);
   }
   
-  .lp__header > *{
+  .lp__header > * {
     width: 100%;
     margin: 0;
   }
   
-  .lp__bottom{
+  .lp__bottom {
     width: var(--shell-width);
     margin: 0 auto;
     display: grid;
@@ -29,24 +29,48 @@
     column-gap: var(--gap-col);
   }
   
-  .lp__favTitle{
+  /* title aligned to top of jam */
+  .lp__favTitle {
     grid-column: 1 / 2;
     grid-row: 1 / 2;
-    margin: 0 0 clamp(6px, 1vw, 10px);
+    margin: 0 0 clamp(20px, 1vw, 24px);
     font-weight: 800;
     color: #782355;
     font-size: clamp(18px, 2.2vw, 26px);
+    align-self: start;
   }
   
-  .lp__bottom .fa{
+  /* left column container — aligns vertically with JamCard */
+  .lp__left {
     grid-column: 1 / 2;
     grid-row: 2 / 3;
-    padding-top: 0 !important;
-    min-width: 0;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* top aligns artists with JamCard top */
+    gap: clamp(12px, 1.6vw, 18px); /* tightened spacing */
   }
   
-  .lp__bottom .jam{
+  /* Favorite Artists area */
+  .lp__left .fa {
+    flex: 0 0 auto;
+    overflow: hidden;
+    min-width: 0;
+    padding-left: 0 !important;
+  }
+  
+  /* Playlist area smaller and aligned left */
+  .lp__left .playlistCard {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: 90%;           /* align perfectly with artists */
+    max-width: none;
+    margin-left: 0;
+    transform: translateY(-50px); /* move upward */
+    scale: 1;               /* remove scaling that caused inset */
+  }
+  
+  /* Jam card stays right-aligned and top-aligned */
+  .lp__bottom .jam {
     grid-column: 2 / 3;
     grid-row: 2 / 3;
     justify-self: end;
@@ -56,15 +80,31 @@
     margin-top: 0;
   }
   
-  @media (max-width: 960px){
-    .lp__bottom{
+  /* Responsive layout for smaller screens */
+  @media (max-width: 960px) {
+    .lp__bottom {
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto;
       row-gap: clamp(14px, 2.4vw, 22px);
     }
-    .lp__favTitle{ grid-column: 1 / -1; grid-row: 1 / 2; }
-    .lp__bottom .fa{ grid-column: 1 / -1; grid-row: 2 / 3; }
-    .lp__bottom .jam{
+  
+    .lp__favTitle {
+      grid-column: 1 / -1;
+      grid-row: 1 / 2;
+    }
+  
+    .lp__left {
+      grid-column: 1 / -1;
+      grid-row: 2 / 3;
+    }
+  
+    .lp__left .playlistCard {
+      scale: 1;
+      width: 100%;
+      transform: none;
+    }
+  
+    .lp__bottom .jam {
       grid-column: 1 / -1;
       grid-row: 3 / 4;
       justify-self: center;
