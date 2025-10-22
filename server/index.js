@@ -23,6 +23,7 @@ import { handleUserReportsRoutes } from "./routes/user_reports.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
 import { handleAlbumTrackRoutes } from "./routes/album_track.js";
+import { handleLikedSongRoutes } from "./routes/liked_song.js";
 
 const PORT = 3001;
 
@@ -43,6 +44,8 @@ const server = http.createServer((req, res) => {
     handleFollowsRoutes(req, res);
   } else if (req.url.startsWith("/genres")) {
     handleGenreRoutes(req, res);
+  } else if (req.url.includes("/liked_songs")) {
+    handleLikedSongRoutes(req, res);
   } else if (req.url.startsWith("/listeners")) {
     handleListenerRoutes(req, res);
   } else if (req.url.startsWith("/listen_history")) {
