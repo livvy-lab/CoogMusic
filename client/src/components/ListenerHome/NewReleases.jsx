@@ -12,18 +12,18 @@ export default function NewReleases({ title = "New releases", items = [] }) {
   };
 
   return (
-    <section className="nr">
-      <h2 className="nr__title">{title}</h2>
+    <section className="newRel">
+      <h2 className="newRel__title">{title}</h2>
 
-      <div className="nr__rail" ref={railRef}>
+      <div className="newRel__rail" ref={railRef}>
         {items.map((it, i) => (
-          <div className="nr__card" key={it.id ?? i}>
-            <img className="nr__img" src={it.image} alt={it.title ?? `Item ${i + 1}`} />
+          <div className="newRel__card" key={it.id ?? i}>
+            <img className="newRel__img" src={it.image} alt={it.title ?? `Item ${i + 1}`} />
           </div>
         ))}
       </div>
 
-      <div className="nr__controls">
+      <div className="newRel__controls">
         <button onClick={() => scrollByPage(-1)}>‹</button>
         <button onClick={() => scrollByPage(1)}>›</button>
       </div>
