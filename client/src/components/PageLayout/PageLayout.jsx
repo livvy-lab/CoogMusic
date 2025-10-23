@@ -1,7 +1,6 @@
 import NavigationBar from "../NavigationBar/NavigationBar";
 import recordImg from "../../assets/figmaRecord.svg";
 import "./PageLayout.css";
-import AlbumPage from "../../pages/src/pages/AlbumPage.jsx";
 
 export default function PageLayout({ children }) {
   return (
@@ -10,9 +9,7 @@ export default function PageLayout({ children }) {
       style={{ backgroundImage: `url("${recordImg}")` }}
     >
       <NavigationBar />
-      <main className="pageMain" style={{backgroundImage: "none"}}>{children}
-      <AlbumPage />
-      </main>
+      <main className="pageMain">{children}</main>
     </div>
   );
 }
