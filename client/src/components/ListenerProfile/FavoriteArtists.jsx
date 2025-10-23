@@ -12,6 +12,7 @@ export default function FavoriteArtists({
 }) {
   return (
     <section className="fa">
+      <h2 className="playlistSection__title">Favorite Artists</h2>
       <div className="fa__grid">
         {artists.map((a) => (
           <button
