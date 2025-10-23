@@ -2,13 +2,13 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import App from "./App.jsx";
-import AlbumPage from "./pages/AlbumPage.jsx";
 import "./index.css";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
+import AlbumPage from "./pages/AlbumPage";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -20,6 +20,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/profile" element={<ListenerProfile/>} />
         <Route path="/home" element={<ListenerHome/>} />
         <Route path="/user-report" element={<UserReport/>} />
+        <Route path="/album" element={<AlbumPage/>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
