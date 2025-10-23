@@ -1,58 +1,77 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../styles/auth.css";
+import leftRecord from "../assets/left_record.svg";
+import rightRecord from "../assets/right_record.svg";
+import earbuds from "../assets/earbuds.svg";
+import "./Auth.css";
 
 export default function Register() {
-  const [form, setForm] = useState({ username: "", password: "", firstName: "", lastName: "" });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const nav = useNavigate();
+  const [form, setForm] = useState({
+    first: "",
+    last: "",
+    major: "",
+    minor: "",
+    user: "",
+    password: "",
+  });
+  const navigate = useNavigate();
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
-  function upd(k, v) { setForm((f) => ({ ...f, [k]: v })); }
-
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:3001/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Sign up failed");
-      await res.json();
-      nav("/login");
-    } catch (e) {
-      setError(e.message || "Sign up failed");
-    } finally {
-      setLoading(false);
-    }
-  }
+    navigate("/login");
+  };
 
   return (
-    <div className="auth__page">
-      <div className="auth__card auth__card--wide">
-        <div className="auth__banner">LISTENER REGISTRATION</div>
-        <form className="auth__grid" onSubmit={onSubmit}>
-          <label className="auth__label">Username:</label>
-          <input className="auth__input" value={form.username} onChange={(e) => upd("username", e.target.value)} />
-          <label className="auth__label">Password:</label>
-          <input className="auth__input" type="password" value={form.password} onChange={(e) => upd("password", e.target.value)} />
-          <label className="auth__label">First name:</label>
-          <input className="auth__input" value={form.firstName} onChange={(e) => upd("firstName", e.target.value)} />
-          <label className="auth__label">Last name:</label>
-          <input className="auth__input" value={form.lastName} onChange={(e) => upd("lastName", e.target.value)} />
-          <div className="auth__actions">
-            <Link to="/login" className="auth__secondary">Cancel</Link>
-            <button className="auth__primary" disabled={loading} type="submit">Sign Up</button>
+    <div className="authShell">
+      <img src={leftRecord} alt="" className="bg bg-left-record" />
+      <img src={rightRecord} alt="" className="bg bg-right-record" />
+      <img src={earbuds} alt="" className="bg bg-earbuds" />
+
+      <div className="authCard authCardLarge">
+        <div className="authChip">LISTENER REGISTRATION</div>
+
+        <form className="regGrid" onSubmit={onSubmit}>
+          <label className="regField">
+            <span>First name:</span>
+            <input className="authInput" value={form.first} onChange={set("first")} />
+          </label>
+          <label className="regField">
+            <span>Last name:</span>
+            <input className="authInput" value={form.last} onChange={set("last")} />
+          </label>
+
+          <label className="regField">
+            <span>Major:</span>
+            <input className="authInput" value={form.major} onChange={set("major")} />
+          </label>
+          <label className="regField">
+            <span>Minor(optional):</span>
+            <input className="authInput" value={form.minor} onChange={set("minor")} />
+          </label>
+
+          <label className="regField">
+            <span>User:</span>
+            <input className="authInput" value={form.user} onChange={set("user")} />
+          </label>
+          <label className="regField">
+            <span>Password:</span>
+            <input className="authInput" type="password" value={form.password} onChange={set("password")} />
+          </label>
+
+          <div className="regActions">
+            <button type="button" className="authBtn authBtnGhost">Cancel</button>
+            <button type="button" className="authBtn authBtnChip">profile pic</button>
+            <button type="submit" className="authBtn authBtnPrimary">Sign Up</button>
           </div>
-          {error && <div className="auth__error">{error}</div>}
         </form>
-        <div className="auth__switch">
-          <span>already have an account?</span>
-          <Link to="/login" className="auth__link">login</Link>
-        </div>
+
+        <p className="authMeta">
+          Already have an account?{" "}
+          <Link to="/login" className="authLinkInline">
+            Login here
+          </Link>
+        </p>
       </div>
     </div>
   );

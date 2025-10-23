@@ -1,65 +1,56 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../styles/auth.css";
+import leftRecord from "../assets/left_record.svg";
+import rightRecord from "../assets/right_record.svg";
+import earbuds from "../assets/earbuds.svg";
+import "./Auth.css";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const nav = useNavigate();
+  const navigate = useNavigate();
 
-  async function onSubmit(e) {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      const res = await fetch("http://localhost:3001/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      if (!res.ok) throw new Error("Login failed");
-      await res.json();
-      nav("/profile");
-    } catch (e) {
-      setError(e.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
-  }
+    navigate("/dashboard");
+  };
 
   return (
-    <div className="auth__page">
-      <div className="auth__card">
-        <div className="auth__title">
-          <div>Welcome</div>
-          <div>to</div>
-          <div>Coogs Music</div>
+    <div className="authShell">
+      <img src={leftRecord} alt="" className="bg bg-left-record" />
+      <img src={rightRecord} alt="" className="bg bg-right-record" />
+      <img src={earbuds} alt="" className="bg bg-earbuds" />
+      <div className="authCard">
+        <div className="authTitleBlock">
+          <div className="authTitle">Welcome</div>
+          <div className="authSubtitle">to</div>
+          <div className="authBrand">Coogs Music</div>
         </div>
-        <form className="auth__form" onSubmit={onSubmit}>
+        <form className="authForm" onSubmit={onSubmit}>
           <input
-            className="auth__input"
+            className="authInput"
             placeholder="username"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
           <input
-            className="auth__input"
+            className="authInput"
             placeholder="password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <button className="auth__primary" disabled={loading} type="submit">
-            <span className="auth__play" />
+          <button className="authBtn authBtnPlay" type="submit">
+            <span className="playIcon" />
           </button>
         </form>
-        <div className="auth__switch">
-          <span>no account?</span>
-          <Link to="/register" className="auth__link">register</Link>
-        </div>
-        {error && <div className="auth__error">{error}</div>}
+
+        <p className="authMeta">
+          Don’t have an account?{" "}
+          <Link to="/register" className="authLinkInline">
+            Register here
+          </Link>
+        </p>
       </div>
     </div>
   );
