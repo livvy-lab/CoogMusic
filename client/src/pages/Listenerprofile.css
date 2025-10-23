@@ -1,0 +1,128 @@
+:root {
+    --shell-width: min(96%, 1280px);
+    --gap-col: clamp(20px, 2vw, 24px);
+    --plum: #895674;
+    --ink: #4b2c3d;
+  }
+  
+  .lp {
+    width: var(--shell-width);
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+    display: grid;
+    row-gap: clamp(20px, 3vw, 36px);
+  }
+  
+  .lp__header > * {
+    width: 100%;
+    margin: 0;
+  }
+  
+  .lp__bottom {
+    width: var(--shell-width);
+    margin: 0 auto;
+    margin-top: -34px;
+    display: grid;
+    grid-template-columns: 1fr clamp(260px, 26vw, 340px);
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    column-gap: var(--gap-col);
+  }
+  
+  /* title aligned to top of jam */
+  .lp__favTitle {
+    grid-column: 1 / 2;
+    grid-row: 1 / 2;
+    margin: 0 0 clamp(20px, 1vw, 24px);
+    font-weight: 800;
+    color: #782355;
+    font-size: clamp(18px, 2.2vw, 26px);
+    align-self: start;
+  }
+
+/* Profile header name */
+.lp__profileName {
+  font-weight: 800;
+  font-size: clamp(26px, 3vw, 34px);  /* slightly bigger than section titles */
+  color: #782355;                     /* matches the accent color */
+  text-align: left;                   /* aligns with the ProfileCard */
+  width: var(--shell-width);
+  margin: 0 auto clamp(10px, 1.5vw, 20px);
+  margin-bottom: -24px;
+}
+
+
+  /* left column container — aligns vertically with JamCard */
+  .lp__left {
+    grid-column: 1 / 2;
+    grid-row: 2 / 3;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* top aligns artists with JamCard top */
+    gap: clamp(12px, 1.6vw, 18px); /* tightened spacing */
+  }
+  
+  /* Favorite Artists area */
+  .lp__left .fa {
+    flex: 0 0 auto;
+    overflow: hidden;
+    min-width: 0;
+    padding-left: 0 !important;
+  }
+  
+  /* Playlist area smaller and aligned left */
+  .lp__left .playlistCard {
+    flex: 0 0 auto;
+    align-self: flex-start;
+    width: 90%;           /* align perfectly with artists */
+    max-width: none;
+    margin-left: 0;
+    transform: translateY(-50px); /* move upward */
+    scale: 1;               /* remove scaling that caused inset */
+  }
+  
+  /* Jam card stays right-aligned and top-aligned */
+  .lp__bottom .jam {
+    grid-column: 2 / 3;
+    grid-row: 2 / 3;
+    justify-self: end;
+    align-self: start;
+    inline-size: 100%;
+    max-inline-size: clamp(260px, 26vw, 340px);
+    margin-top: 0;
+  }
+  
+  /* Responsive layout for smaller screens */
+  @media (max-width: 960px) {
+    .lp__bottom {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto auto auto;
+      row-gap: clamp(14px, 2.4vw, 22px);
+    }
+  
+    .lp__favTitle {
+      grid-column: 1 / -1;
+      grid-row: 1 / 2;
+    }
+  
+    .lp__left {
+      grid-column: 1 / -1;
+      grid-row: 2 / 3;
+    }
+  
+    .lp__left .playlistCard {
+      scale: 1;
+      width: 100%;
+      transform: none;
+    }
+  
+    .lp__bottom .jam {
+      grid-column: 1 / -1;
+      grid-row: 3 / 4;
+      justify-self: center;
+      inline-size: min(92vw, 340px);
+      max-inline-size: none;
+    }
+  }
+  

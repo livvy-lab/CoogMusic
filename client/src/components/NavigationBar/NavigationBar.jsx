@@ -16,7 +16,8 @@ export default function NavigationBar() {
 
         <nav className="navSection">
           <div className="navTitle">Dashboard</div>
-          <a className="navLink">⌂ Home</a>
+          <a className="navLink">🏠 Home</a>
+          <a className="navLink">⭐ Subscription</a>
         </nav>
 
         <nav className="navSection">
@@ -28,7 +29,7 @@ export default function NavigationBar() {
 
         <nav className="navSection">
           <div className="navTitle">Library</div>
-          <a className="navLink">❤ Favorite Songs</a>
+          <a className="navLink">🤍 Favorite Songs</a>
           <a className="navLink">🎧 Playlists</a>
         </nav>
       </aside>

@@ -1,3 +1,89 @@
-.fa { display: flex; gap: 18px; }
-.fa__item { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; border: 6px solid #6e4760; box-shadow: 0 4px 0 #4f3347; }
-.fa__item img { width: 100%; height: 100%; object-fit: cover; }
+:root{
+  --plum:#895674;
+  --ink:#4b2c3d;
+  --pink-50:#FFE8F5;
+}
+
+/* ===== Favorite Artists (row) ===== */
+
+/* container — let it grow to match the playlist width */
+.fa{
+  /* match the playlist width set in the page layout (90% of left column) */
+  width: 100%;
+  max-width: none;            /* <-- remove 700px cap */
+  margin: 0;
+  padding-top: 0;             /* title is outside */
+  --circle: clamp(160px, 20vw, 220px); /* one place to control circle size */
+}
+
+/* Use flex so the 3 circles sit edge-to-edge across the row */
+.fa__grid{
+  display: flex;
+  flex-wrap: nowrap;          /* keep exactly 3 on one line */
+  justify-content: space-between; /* push first/last to the edges */
+  align-items: flex-start;
+  gap: 0;                     /* no extra spacing that shortens the row */
+}
+
+/* a single artist */
+.fa__item{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  color: var(--ink);
+  background: transparent;
+  border: 0;
+  cursor: default;
+
+  /* do not allow shrinking; keep fixed width equal to circle size */
+  flex: 0 0 var(--circle);
+}
+
+/* the circle */
+.fa__ring{
+  width: var(--circle);
+  height: var(--circle);
+  border-radius: 50%;
+  border: 5px solid var(--plum);
+  background: #e7c4d6;
+  overflow: hidden;
+}
+
+.fa__avatar{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
+}
+
+.fa__placeholder{
+  width:100%;
+  height:100%;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:radial-gradient(120% 120% at 30% 30%, #d7a8be 0%, #c98eb0 60%, #b67797 100%);
+  color:#fff;
+  font-weight:800;
+  font-size: clamp(32px, 5vw, 40px);
+}
+
+.fa__name{
+  font-weight:700;
+  font-size: clamp(16px, 1.4vw, 20px);
+  color: white;
+  opacity:.95;
+}
+
+/* mobile: allow wrapping and smaller circles so it still fits */
+@media (max-width: 700px){
+  .fa{ --circle: clamp(110px, 28vw, 140px); }
+
+  .fa__grid{
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: clamp(14px, 2vw, 22px);
+  }
+}

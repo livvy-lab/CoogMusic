@@ -3,6 +3,9 @@
     min-height: 100vh;
     background: #E3BFD4;
     font-family: "Inter", sans-serif;
+    background-repeat: no-repeat;
+    background-position: right;
+    background-size: auto 100%;
 }
 
 .pageMain {
