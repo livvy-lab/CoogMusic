@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import "./NavigationBar.css";
 
 export default function NavigationBar() {
@@ -11,30 +12,31 @@ export default function NavigationBar() {
           <button className="navBurger closeBtn" onClick={() => setOpen(false)}>
             ✕
           </button>
-          <div className="logo">Coogs<br />Music</div>
+          <div className="logo">
+            Coogs<br />Music
+          </div>
         </div>
 
         <nav className="navSection">
           <div className="navTitle">Dashboard</div>
-          <a className="navLink">🏠 Home</a>
-          <a className="navLink">⭐ Subscription</a>
+          <Link className="navLink" to="/home" onClick={() => setOpen(false)}>🏠 Home</Link>
+          <Link className="navLink" to="/subscription" onClick={() => setOpen(false)}>⭐ Subscription</Link>
         </nav>
 
         <nav className="navSection">
           <div className="navTitle">Social</div>
-          <a className="navLink">👤 My Profile</a>
-          <a className="navLink">✏️ Edit Profile</a>
-          <a className="navLink">👥 Friends</a>
+          <Link className="navLink" to="/profile" onClick={() => setOpen(false)}>👤 My Profile</Link>
+          <Link className="navLink" to="/edit-profile" onClick={() => setOpen(false)}>✏️ Edit Profile</Link>
+          <Link className="navLink" to="/friends" onClick={() => setOpen(false)}>👥 Friends</Link>
         </nav>
 
         <nav className="navSection">
           <div className="navTitle">Library</div>
-          <a className="navLink">🤍 Favorite Songs</a>
-          <a className="navLink">🎧 Playlists</a>
+          <Link className="navLink" to="/favorites" onClick={() => setOpen(false)}>🤍 Favorite Songs</Link>
+          <Link className="navLink" to="/playlists" onClick={() => setOpen(false)}>🎧 Playlists</Link>
         </nav>
       </aside>
 
-      {/* Only show burger when nav is closed */}
       {!open && (
         <header className="topbar">
           <button className="navBurger openBtn" onClick={() => setOpen(true)}>
