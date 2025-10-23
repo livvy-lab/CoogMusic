@@ -1,0 +1,34 @@
+.about {
+    width: min(96%, 1280px);
+    margin: 0 auto;
+  }
+  
+  /* Title same size as TopTracks, lighter weight */
+  .about__title {
+    margin: 0 0 10px 0;
+    font-size: clamp(28px, 3vw, 32px);
+    font-weight: 600; /* lighter than TopTracks */
+    color: #ffffff; /* matches the box */
+  }
+  
+  /* Card container — identical to TopTracks */
+  .about__card {
+    background: #f9eaf3;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 #6e4760;
+    padding: 24px 30px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Text content — subtle and readable */
+  .about__text {
+    font-size: clamp(18px, 1.6vw, 20px);
+    line-height: 1.5;
+    color: #5b2f46;
+    font-weight: 500;
+    margin: 0;
+    word-break: break-word;
+  }
+  

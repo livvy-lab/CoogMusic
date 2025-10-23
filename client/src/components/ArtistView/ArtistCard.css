@@ -1,0 +1,148 @@
+.artistCard {
+    position: relative;
+    width: min(96%, 1280px);
+    margin: 32px auto;
+    padding: 26px 30px;
+    display: grid;
+    grid-template-columns: clamp(160px, 18vw, 240px) 1fr;
+    align-items: center;
+    gap: 32px;
+    background: #f9eaf3;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 #6e4760;
+  }
+  
+  /* Avatar */
+  .artistCard__avatarWrap {
+    display: grid;
+    place-items: center;
+  }
+  
+  .artistCard__avatar {
+    width: clamp(160px, 18vw, 240px);
+    height: clamp(160px, 18vw, 240px);
+    border-radius: 50%;
+    border: 4px solid #895674;
+    background: #d3a6bb;
+    overflow: hidden;
+  }
+  
+  .artistCard__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  
+  /* Info */
+  .artistCard__info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start; 
+    gap: 8px;
+  }
+  
+  .artistCard__name {
+    margin: 0;
+    font-size: clamp(50px, 5vw, 64px);
+    font-weight: 800;
+    color: #782355;
+    line-height: 1.05;
+  }
+  
+  .artistCard__followers {
+    margin: 0;
+    font-weight: 700;
+    color: #af578a;
+    font-size: 24px;
+  
+    /* tweak this value to taste: -1px to -4px usually works */
+    --optical-nudge: 6px;
+    transform: translateX(var(--optical-nudge));
+  }
+  
+  /* Songs badge */
+  .artistCard__songs {
+    position: absolute;
+    top: 16px;
+    right: 22px;
+    font-size: 20px;
+    font-weight: 700;
+    color: #6e4760;
+  }
+  
+  /* Favorite button */
+  .artistCard__fav {
+    position: absolute;
+    right: 26px;
+    bottom: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 20px;
+    border: 4px solid #895674;
+    background: #f2c0d6;
+    box-shadow: 0 5px 0 #6e4760, inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  }
+  
+  .artistCard__fav:hover {
+    transform: translateY(-2px);
+    background: #f8d0e0;
+    box-shadow: 0 7px 0 #6e4760;
+  }
+  
+  .artistCard__fav:active {
+    transform: translateY(0);
+    box-shadow: 0 3px 0 #6e4760;
+  }
+  
+  /* Star icon */
+  .artistCard__favIcon {
+    width: 34px;
+    height: 34px;
+    color: #fff1fa; /* uses currentColor from CSS */
+    transition: color 0.15s ease, filter 0.15s ease;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1));
+  }
+  
+  /* Active (favorited) */
+  .artistCard__fav.is-active {
+    background: #ffd1e6;
+  }
+  
+  .artistCard__fav.is-active .artistCard__favIcon {
+    color: #612C4B;
+    filter: drop-shadow(0 0 4px rgba(255, 79, 163, 0.5));
+  }
+  
+  /* Responsive */
+  @media (max-width: 720px) {
+    .artistCard {
+      grid-template-columns: clamp(120px, 28vw, 160px) 1fr;
+      padding: 20px;
+    }
+  
+    .artistCard__songs {
+      top: 10px;
+      right: 14px;
+    }
+  
+    .artistCard__fav {
+      right: 14px;
+      bottom: 12px;
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+    }
+  
+    .artistCard__favIcon {
+      width: 28px;
+      height: 28px;
+    }
+  }
+  

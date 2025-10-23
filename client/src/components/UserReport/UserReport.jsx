@@ -2,54 +2,67 @@ import React, { useState } from 'react';
 import './UserReport.css';
 
 const UserReport = () => {
-    const [reason, setReason] = useState('');
+    const [reason, setReason] = useState(''); 
     const [details, setDetails] = useState('');
+    // manage if the dropdown is open or closed
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        console.log({
-            reason: reason,
-            details: details,
-        });
+        // validation to ensure a reason is selected
+        if (!reason) {
+            alert('Please select a reason.');
+            return;
+        }
+        console.log({ reason, details });
     };
+
+    // handle selecting an option
+    const handleSelectOption = (selectedReason) => {
+        setReason(selectedReason);
+        setIsDropdownOpen(false); // close the dropdown after selection
+    };
+
+    const options = ["Inappropriate Content", "Copyright", "Other"];
 
     return (
         <form className="report-form-container" onSubmit={handleSubmit}>
-            {/* Header frame */}
-            <div className="frame-header">
-                <h1>Submit a report</h1>
-            </div>
             
-            {/* Reporting info and dropdown frame */}
-            <div className="reporting-info">
-                <p>You are reporting &lt;entity&gt; for:</p>
-                <select value={reason} onChange={(e) => setReason(e.target.value)} required>
-                    <option value="" disabled>Select a reason</option>
-                    <option value="Inappropriate Content">Inappropriate Content</option>
-                    <option value="Copyright">Copyright</option>
-                    <option value="Other">Other</option>
-                </select>
+            <h1>Submit a report</h1>
+            <p className="reporting-info-text">You are reporting &lt;entity&gt; for:</p>
+            <div className="custom-dropdown-wrapper">
+                <button 
+                    type="button" // prevents form submission on click
+                    className="dropdown-trigger" 
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                >
+                    {reason || "Select a reason"}
+                </button>
+
+                {isDropdownOpen && (
+                    <div className="dropdown-options">
+                        {options.map((option) => (
+                            <div
+                                key={option}
+                                className="dropdown-option"
+                                onClick={() => handleSelectOption(option)}
+                            >
+                                {option}
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
+            <label htmlFor="details">Additional Details:</label>
+            <textarea
+                id="details"
+                placeholder="Provide more information here..."
+                value={details}
+                onChange={(e) => setDetails(e.target.value)}
+            />
             
-            {/* Additional Details label frame */}
-            <div className="frame-details-label">
-                <label htmlFor="details">Additional Details:</label>
-            </div>
-            
-            {/* Textarea wrapper */}
-            <div className="textarea-wrapper"> 
-                <textarea
-                    id="details"
-                    placeholder="Provide more information here..."
-                    value={details}
-                    onChange={(e) => setDetails(e.target.value)}
-                />
-            </div>
-            
-            {/* Submit Button frame */}
-            <div className="frame-submit-wrapper">
-                <button type="submit" className="submit-button">Submit</button>
-            </div>
+            <button type="submit" className="submit-button">Submit</button>
+
         </form>
     );
 };

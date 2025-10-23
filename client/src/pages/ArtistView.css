@@ -1,0 +1,44 @@
+.artistView__bottom {
+    width: min(96%, 1280px);
+    margin: 40px auto 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: clamp(24px, 3vw, 40px);
+    align-items: stretch;
+  }
+  
+  /* Force equal card height visually */
+  .artistView__bottom > * {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  
+  /* Match AboutBox to TopTracks height */
+  .about__card {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    background: #f9eaf3;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 #6e4760;
+    padding: 24px 30px;
+    overflow-y: auto; /* if text overflows */
+  }
+  
+  /* Ensure scroll behavior looks same as tracks */
+  .about__card::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .about__card::-webkit-scrollbar-thumb {
+    background: #ad7d9b;
+    border-radius: 8px;
+  }
+  
+  .about__card {
+    scrollbar-width: thin;
+    scrollbar-color: #ad7d9b transparent;
+  }
+  
