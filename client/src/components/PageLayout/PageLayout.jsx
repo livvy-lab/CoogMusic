@@ -1,6 +1,7 @@
 import NavigationBar from "../NavigationBar/NavigationBar";
 import recordImg from "../../assets/figmaRecord.png";
 import "./PageLayout.css";
+import AlbumPage from "../../pages/src/pages/AlbumPage.jsx";
 
 export default function PageLayout({ children }) {
   return (
@@ -14,7 +15,9 @@ export default function PageLayout({ children }) {
       }}
     >
       <NavigationBar />
-      <main className="pageMain">{children}</main>
+      <main className="pageMain" style={{backgroundImage: "none"}}>{children}
+      <AlbumPage />
+      </main>
     </div>
   );
 }

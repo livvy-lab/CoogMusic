@@ -1,3 +1,12 @@
+@import "tailwindcss";
+
+
+:root {
+  --light-bg-color: #f8deed;
+  --accent-bg-color: #e3bdf4;
+  --dark-bg-color: #782355;
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -40,3 +49,4 @@
 .read-the-docs {
   color: #888;
 }
+
