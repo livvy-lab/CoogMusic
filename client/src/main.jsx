@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import AlbumPage from "./pages/AlbumPage.jsx";
+import AlbumPage from "./pages/AlbumPage";
 import "./index.css";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
