@@ -4,28 +4,35 @@
   --pink-50:#FFE8F5;
 }
 
-/* ===== Favorite Artists (row) ===== */
-
-/* container — let it grow to match the playlist width */
+/* Full section */
 .fa{
-  /* match the playlist width set in the page layout (90% of left column) */
   width: 100%;
-  max-width: none;            /* <-- remove 700px cap */
+  max-width: none;     
   margin: 0;
-  padding-top: 0;             /* title is outside */
-  --circle: clamp(160px, 20vw, 220px); /* one place to control circle size */
+  padding-top: 0;       
+  --circle: clamp(100px, 20vw, 180px); 
 }
 
-/* Use flex so the 3 circles sit edge-to-edge across the row */
+/* Title sits above row and aligns with circles */
+.fa .playlistSection__title {
+  font-size: clamp(26px, 2vw, 32px);
+  font-weight: 800;
+  color: #782355;
+  margin: 0 0 14px;
+  text-align: left;          /* keep flush with layout */
+  padding-left: 8px;         /* nudge to align with first circle edge */
+}
+
+/* Flex so the 3 circles sit edge-to-edge */
 .fa__grid{
   display: flex;
   flex-wrap: nowrap;          /* keep exactly 3 on one line */
-  justify-content: space-between; /* push first/last to the edges */
+  justify-content: space-between; /* push first/last to edges */
   align-items: flex-start;
-  gap: 0;                     /* no extra spacing that shortens the row */
+  gap: 0;                     /* no extra spacing that shortens row */
 }
 
-/* a single artist */
+/* single artist */
 .fa__item{
   display: flex;
   flex-direction: column;
@@ -36,12 +43,10 @@
   background: transparent;
   border: 0;
   cursor: default;
-
-  /* do not allow shrinking; keep fixed width equal to circle size */
-  flex: 0 0 var(--circle);
+  flex: 0 0 var(--circle);   /* fixed width per circle */
 }
 
-/* the circle */
+/* circle wrapper */
 .fa__ring{
   width: var(--circle);
   height: var(--circle);
@@ -64,12 +69,12 @@
   border-radius:50%;
   display:grid;
   place-items:center;
-  background:radial-gradient(120% 120% at 30% 30%, #d7a8be 0%, #c98eb0 60%, #b67797 100%);
   color:#fff;
   font-weight:800;
   font-size: clamp(32px, 5vw, 40px);
 }
 
+/* artist name */
 .fa__name{
   font-weight:700;
   font-size: clamp(16px, 1.4vw, 20px);
@@ -77,7 +82,7 @@
   opacity:.95;
 }
 
-/* mobile: allow wrapping and smaller circles so it still fits */
+/* mobile: smaller circles, allow wrapping */
 @media (max-width: 700px){
   .fa{ --circle: clamp(110px, 28vw, 140px); }
 
@@ -85,5 +90,10 @@
     flex-wrap: wrap;
     justify-content: center;
     gap: clamp(14px, 2vw, 22px);
+  }
+
+  .fa .playlistSection__title {
+    text-align: center;
+    padding-left: 0;
   }
 }

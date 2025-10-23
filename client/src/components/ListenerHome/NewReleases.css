@@ -7,7 +7,7 @@
 
 /* container */
 .newRel {
-  width: min(96%, 950px);           /* tweak size here */
+  width: min(96%, 1000px);           /* tweak size here */
   margin: 28px auto;
   text-align: center;
 }
