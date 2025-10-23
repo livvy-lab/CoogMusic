@@ -1,0 +1,104 @@
+.tt {
+    width: min(96%, 1280px);
+    margin: 0 auto;
+  }
+  
+  /* Section Title */
+  .tt__title {
+    margin: 0 0 10px 0;
+    font-size: clamp(28px, 3vw, 32px);
+    font-weight: 800;
+    color: #782355;
+  }
+  
+  /* Card Container */
+  .tt__card {
+    background: #f9eaf3;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    box-shadow: 0 5px 0 #6e4760;
+    padding: 14px 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Scrollable Track List */
+  .tt__list {
+    margin: 0;
+    padding: 8px;
+    list-style: none;
+    max-height: clamp(160px, 34vh, 220px);
+    overflow-y: auto;
+    display: grid;
+    gap: 18px;
+  }
+  
+  /* Scrollbar Styling */
+  .tt__list::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .tt__list::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 8px;
+  }
+  
+  .tt__list::-webkit-scrollbar-thumb {
+    background: #ad7d9b;
+    border-radius: 8px;
+  }
+  
+  .tt__list {
+    scrollbar-width: thin;
+    scrollbar-color: #ad7d9b transparent;
+  }
+  
+  /* Track Row Base */
+  .tt__row {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    align-items: center;
+    gap: 16px;
+    border-radius: 16px;
+    padding: 14px 16px;
+    transition: background 0.25s ease, transform 0.2s ease;
+  }
+  
+  /* Alternating Colors */
+  .tt__row:nth-child(odd) {
+    background: rgba(173, 125, 155, 0.35); /* 35% opacity */
+  }
+  
+  .tt__row:nth-child(even) {
+    background: rgba(173, 125, 155, 0.1); /* 10% opacity */
+  }
+  
+  /* Hover Effect — slightly darker */
+  .tt__row:hover {
+    background: rgba(173, 125, 155, 0.55); /* darker hover tone */
+    transform: translateY(-2px);
+  }
+  
+  /* Track Thumbnail Placeholder */
+  .tt__art {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+    background: #5b2f46;
+    box-shadow: inset 0 0 0 4px rgba(137, 86, 116, 0.35);
+  }
+  
+  /* Track Name */
+  .tt__name {
+    font-weight: 700;
+    color: #6e4760;
+    font-size: clamp(16px, 1.6vw, 20px);
+  }
+  
+  /* Track Duration */
+  .tt__dur {
+    font-weight: 800;
+    color: #a87c96;
+    font-size: clamp(16px, 1.6vw, 20px);
+  }
+  
