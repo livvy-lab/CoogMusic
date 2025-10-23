@@ -1,40 +1,16 @@
 .report-form-container {
-    position: relative;
     position: absolute;
     left: 55%;
     top: 50%;
     transform: translate(-50%, -50%);
     width: 809px;
     height: 541px;
-}
-
-/* creates the main pink box */
-.report-form-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
     background: #FFE8F5;
     border: 4px solid #895674;
     border-radius: 16px;
     box-sizing: border-box;
-    z-index: -1; 
-}
-
-/* creates the darker outline box behind */
-.report-form-container::after {
-    content: '';
-    position: absolute;
-    top: 10px;
-    left: 15px;
-    width: 96%;
-    height: 101%;
-    border: 4px solid #895674;
-    border-radius: 16px;
-    box-sizing: border-box;
-    z-index: -2;
+    box-shadow: 5px 5px 0 0 #895674;
+    z-index: 1;
 }
 
 /* heading: "Submit a report" */
@@ -76,7 +52,7 @@
 }
 
 .dropdown-trigger {
-    width: 277px; 
+    width: 277px;
     height: 40px;
     background: #AD7D9B;
     color: #F2F2F2;
