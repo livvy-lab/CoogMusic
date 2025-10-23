@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import leftRecord from "../assets/left_record.svg";
-import rightRecord from "../assets/right_record.svg";
-import earbuds from "../assets/earbuds.svg";
 import "./Auth.css";
+import Loading from "../components/LoadingLayout/Loading";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -16,10 +14,7 @@ export default function Login() {
   };
 
   return (
-    <div className="authShell">
-      <img src={leftRecord} alt="" className="bg bg-left-record" />
-      <img src={rightRecord} alt="" className="bg bg-right-record" />
-      <img src={earbuds} alt="" className="bg bg-earbuds" />
+    <Loading>
       <div className="authCard">
         <div className="authTitleBlock">
           <div className="authTitle">Welcome</div>
@@ -52,6 +47,6 @@ export default function Login() {
           </Link>
         </p>
       </div>
-    </div>
+    </Loading>
   );
 }
