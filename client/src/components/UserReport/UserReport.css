@@ -1,0 +1,161 @@
+.report-form-container {
+    position: absolute;
+    
+    /* Centering with absolute position */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    
+    width: 1200px; 
+    height: 810px;
+    
+    background: #FFE8F5;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    box-sizing: border-box;
+}
+
+/* Heading: "Submit a report" */
+.report-form-container h1 {
+    position: absolute;
+    left: 108px;
+    top: 42px;
+    
+    width: 607px;
+    height: 86px;
+    
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 58px;
+    line-height: 150%;
+    letter-spacing: -0.01em;
+    color: #782355;
+    margin: 0;
+}
+
+/* Text and Dropdown Wrapper */
+.reporting-info {
+    position: absolute;
+    left: 108px;
+    top: 154px;
+    
+    width: 984px;
+    height: 60px;
+}
+
+/* Text: "You are reporting <entity> for:" */
+.reporting-info p {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 607px;
+    height: 58px;
+    
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 38px;
+    line-height: 150%;
+    letter-spacing: -0.01em;
+    color: #782355;
+    margin: 0;
+}
+
+/* Dropdown Select Box */
+.reporting-info select {
+    position: absolute;
+    right: 0;
+    top: 0;
+    
+    width: 360px; 
+    height: 60px;
+
+    box-sizing: border-box;
+    background: #AD7D9B;
+    border: 4.76px solid #895674;
+    border-radius: 19px;
+    
+    text-align: center;
+    text-align-last: center;
+    
+    padding: 8px 12px;
+    color: #F2F2F2;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 29px;
+    line-height: 150%;
+    
+    appearance: none;
+    cursor: pointer;
+}
+
+/* Label: "Additional Details:" */
+.report-form-container label {
+    position: absolute;
+    left: 108px;
+    top: 253px;
+    
+    width: 371px;
+    height: 50px;
+    
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 34px;
+    line-height: 150%;
+    letter-spacing: -0.01em;
+    color: #AD7D9B;
+    margin: 0;
+}
+
+/* Text Area */
+.report-form-container textarea {
+    position: absolute;
+    left: 108px;
+    top: 310px;
+    
+    width: 1012px;
+    height: 358px;
+    
+    box-sizing: border-box;
+    background: #F2F2F2;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    
+    font-family: 'Inter', sans-serif;
+    font-size: 1.44em;
+    padding: 18px;
+    resize: none;
+}
+
+/* Submit Button */
+.submit-button {
+    position: absolute;
+    left: 925px;
+    top: 694px;
+
+    width: 194px;
+    height: 76px;
+
+    box-sizing: border-box;
+    background: #AD7D9B;
+    border: 5px solid #895674;
+    border-radius: 20px;
+    
+    color: #F2F2F2;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 29px;
+    line-height: 150%;
+    
+    /* Text Centering */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    
+    padding: 0;
+    
+    cursor: pointer;
+}
+
+.submit-button:hover {
+    background: #895674;
+}
