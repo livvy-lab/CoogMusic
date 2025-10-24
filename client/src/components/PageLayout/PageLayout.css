@@ -1,15 +1,38 @@
+/* make the viewport truly full-height with no hidden margins */
+html, body, #root { height: 100%; margin: 0; }
+
+/* container stays scrollable */
 .pageContainer {
-    display: flex;
-    min-height: 100vh;
-    background: #E3BFD4;
-    font-family: "Inter", sans-serif;
-    background-repeat: no-repeat;
-    background-position: right;
-    background-size: auto 100%;
+  position: relative;
+  display: flex;
+  min-height: 100%;
+  background: #E3BFD4;
+  font-family: "Inter", sans-serif;
+  overflow-x: hidden;
 }
 
+/* fixed, full-bleed right-side artwork */
+.recordBg {
+  position: fixed;
+  inset: 0 0 0 auto;          /* top:0; right:0; bottom:0 */
+  width: min(55vw, 900px);    /* adjust to taste */
+  background-repeat: no-repeat;
+  background-position: right top;
+  background-size: auto 100vh; /* touches top & bottom without distortion */
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* your page content */
 .pageMain {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* optional: hide/resize on small screens */
+@media (max-width: 900px) {
+  .recordBg { width: 70vw; }
 }

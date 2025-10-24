@@ -1,0 +1,25 @@
+.pageContainer {
+    display: flex;
+    min-height: 100vh;
+    background-color: #e3bfd4;
+    font-family: "Inter", sans-serif;
+  
+    --rec-size: clamp(520px, 48vw, 780px);
+    --bud-size: clamp(160px, 14vw, 240px);
+  
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-position: 8% 6%, right -14% top -18%, left -18% bottom -22%;
+  
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .pageMain {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  

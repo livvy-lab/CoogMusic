@@ -1,4 +1,5 @@
 import http from "http";
+import dotenv from "dotenv";
 import { parse } from "url";
 import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
