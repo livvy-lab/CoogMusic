@@ -1,12 +1,15 @@
 /* make the viewport truly full-height with no hidden margins */
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { 
+  height: 100%;
+  margin: 0;
+  background: #E3BFD4;
+}
 
 /* container stays scrollable */
 .pageContainer {
   position: relative;
   display: flex;
   min-height: 100%;
-  background: #E3BFD4;
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
 }
