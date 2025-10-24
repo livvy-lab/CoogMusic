@@ -9,6 +9,8 @@ import ListenerProfile from "./pages/ListenerProfile";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
 import ArtistView from "./pages/ArtistView"; 
+import Song from "./pages/Songs";
+import LikedSong from "./pages/LikedPage";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -21,7 +23,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/home" element={<ListenerHome/>} />
         <Route path="/user-report" element={<UserReport/>} />
         <Route path= "/artist" element={<ArtistView/>} />
-        <Route path="/like" element={<LikedPage/>} />
+        <Route path="/album" element={<AlbumPage/>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>
