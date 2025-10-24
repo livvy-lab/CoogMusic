@@ -1,44 +1,66 @@
+.artistView {
+  position: relative;
+  z-index: 1;
+  padding-right: calc(24px + var(--right-art-w));
+  width: min(92%, 1280px);
+  margin: 0 auto;
+}
+
+/* widen gaps and give more visual room */
 .artistView__bottom {
-    width: min(96%, 1280px);
-    margin: 40px auto 0;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(24px, 3vw, 40px);
-    align-items: stretch;
+  width: 100%;
+  margin: 50px auto 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(40px, 4vw, 60px);
+  align-items: start;
+}
+
+/* ensure all cards fill height visually */
+.artistView__bottom > * {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* keep AboutBox matching TopTracks height but with wider breathing */
+.about__card {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  background: #f9eaf3;
+  border: 5px solid #895674;
+  border-radius: 20px;
+  box-shadow: 0 5px 0 #6e4760;
+  padding: 28px 36px;
+  overflow-y: auto;
+}
+
+/* consistent scrollbar style */
+.about__card::-webkit-scrollbar {
+  width: 8px;
+}
+.about__card::-webkit-scrollbar-thumb {
+  background: #ad7d9b;
+  border-radius: 8px;
+}
+.about__card {
+  scrollbar-width: thin;
+  scrollbar-color: #ad7d9b transparent;
+}
+
+/* make Discography align cleanly below */
+.discography {
+  margin-top: 60px;
+}
+
+/* responsive fix: remove right gutter on small screens */
+@media (max-width: 1100px) {
+  .artistView {
+    padding-right: 24px;
   }
-  
-  /* Force equal card height visually */
-  .artistView__bottom > * {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+  .artistView__bottom {
+    grid-template-columns: 1fr;
+    gap: 32px;
   }
-  
-  /* Match AboutBox to TopTracks height */
-  .about__card {
-    flex: 1;
-    display: flex;
-    align-items: flex-start;
-    background: #f9eaf3;
-    border: 5px solid #895674;
-    border-radius: 20px;
-    box-shadow: 0 5px 0 #6e4760;
-    padding: 24px 30px;
-    overflow-y: auto; /* if text overflows */
-  }
-  
-  /* Ensure scroll behavior looks same as tracks */
-  .about__card::-webkit-scrollbar {
-    width: 8px;
-  }
-  
-  .about__card::-webkit-scrollbar-thumb {
-    background: #ad7d9b;
-    border-radius: 8px;
-  }
-  
-  .about__card {
-    scrollbar-width: thin;
-    scrollbar-color: #ad7d9b transparent;
-  }
-  
+}
