@@ -2,7 +2,6 @@ import RecommendedSongs from "../components/ListenerHome/RecommendedSongs";
 import NewReleases from "../components/ListenerHome/NewReleases";
 import Genres from "../components/ListenerHome/Genres";
 import PageLayout from "../components/PageLayout/PageLayout";
-import SearchBar from "../components/SearchBar/SearchBar";
 import "./ListenerHome.css";
 
 export default function ListenerHome() {
@@ -21,9 +20,6 @@ export default function ListenerHome() {
   return (
     <PageLayout>
       <div className="listenerHome">
-        <div className="listenerHome__topbar">
-          <SearchBar placeholder="What are you looking for?" onSearch={handleSearch} />
-        </div>
 
         <RecommendedSongs />
         <NewReleases title="New releases" items={demoReleases} />
