@@ -9,7 +9,6 @@ export default function ListenerProfile() {
   return (
     <PageLayout>
       <div className="lp">
-        {/* Profile section container */}
         <div className="lp__profileSection">
           <ProfileCard />
         </div>

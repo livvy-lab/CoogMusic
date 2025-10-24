@@ -4,10 +4,12 @@ import "./PageLayout.css";
 
 export default function PageLayout({ children }) {
   return (
-    <div
-      className="pageContainer"
-      style={{ backgroundImage: `url("${recordImg}")` }}
-    >
+    <div className="pageContainer">
+      <div
+        className="recordBg"
+        aria-hidden="true"
+        style={{ backgroundImage: `url("${recordImg}")` }}
+      />
       <NavigationBar />
       <main className="pageMain">{children}</main>
     </div>
