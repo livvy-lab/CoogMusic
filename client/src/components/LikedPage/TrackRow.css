@@ -1,0 +1,117 @@
+/* ===== Liked Songs Track Row ===== */
+
+/* Layout grid — same structure */
+.likedRow {
+  display: grid;
+  grid-template-columns: 40px 40px 1.5fr 1fr 1fr 60px;
+  align-items: center;
+  margin: 10px 0;
+  padding: 14px 16px;
+  border: 3px solid #895674;
+  border-radius: 28px;
+  box-shadow: 0 4px 0 #6e4760;
+  transition: background 0.25s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: #782355 !important;
+}
+
+/* 🎨 Alternating row colors */
+.likedRow:nth-child(odd) {
+  background: rgba(173, 125, 155, 0.35); /* 35% opacity plum-pink */
+}
+
+.likedRow:nth-child(even) {
+  background: rgba(173, 125, 155, 0.1); /* lighter row */
+}
+
+/* ✨ Hover effect — slightly darker + lift */
+.likedRow:hover {
+  background: rgba(173, 125, 155, 0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #6e4760;
+}
+
+/* ===== Text Colors & Typography ===== */
+.likedRow * {
+  color: #782355 !important;
+  font-family: inherit;
+}
+
+.trackIndex,
+.trackTitle,
+.trackArtist,
+.trackAlbum,
+.trackDate,
+.trackDuration {
+  color: #782355 !important;
+  font-weight: 600;
+}
+
+/* Song Title & Artist formatting */
+.trackTitle {
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.trackArtist {
+  font-size: 13px;
+  color: #782355;
+}
+
+/* Album, Date, Duration columns */
+.trackAlbum,
+.trackDate,
+.trackDuration {
+  color: #782355 !important;
+}
+
+/* Track Index (far left) */
+.trackIndex {
+  text-align: center;
+  font-weight: 700;
+  color: #782355 !important;
+}
+
+/* Heart button setup */
+.heartBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+/* Glow + enlarge on hover */
+.heartBtn:hover svg {
+  transform: scale(1.2);
+  filter: drop-shadow(0 0 4px rgba(120, 35, 85, 0.4));
+}
+
+/* Default state — force filled */
+.trackHeart {
+  fill: #782355 !important;
+  stroke: #782355 !important;
+  transition: fill 0.25s ease, transform 0.2s ease, filter 0.25s ease;
+}
+
+/* Unliked state (outline only) */
+.heartBtn:not(.active) .trackHeart {
+  fill: none !important;
+  stroke: #782355 !important;
+}
+
+
+/* ===== Cover Placeholder ===== */
+.trackCover img,
+.songCoverPlaceholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+.songCoverPlaceholder {
+  background: linear-gradient(135deg, #b989b1, #8d5a8c);
+}

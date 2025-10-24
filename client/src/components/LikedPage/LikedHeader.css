@@ -1,0 +1,36 @@
+/* Full manual control version — fixed */
+.likedTableHeader {
+  position: relative;           /* ✅ Ensures children move within this box */
+  height: 60px;
+  background: #fbeaf3;
+  font-weight: 800;
+  color: #782355;
+  border-bottom: 2px solid #6e4760;
+  display: block;               /* ✅ Switch from flex → block so absolute works */
+}
+
+/* Each header element is absolutely positioned — now movable */
+.th-num,
+.th-heart,
+.th-title,
+.th-album,
+.th-date,
+.th-dur {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;          /* Prevent wrapping */
+}
+
+/* Now you can freely adjust these */
+.th-num   { left: 60px; }
+.th-heart { left: 120px; }
+.th-title { left: 190px; }
+.th-album { left: 650px; }
+.th-date  { left: 950px; }
+.th-dur   { left: 1180px; }
+
+/* Optional: fine-tune clock icon */
+.th-dur svg {
+  vertical-align: middle;
+}

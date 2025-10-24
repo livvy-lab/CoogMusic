@@ -6,12 +6,15 @@ import earbuds from "../../assets/earbuds.svg";
 export default function Loading({ children }) {
   return (
     <div
-      className="pageContainer"
+      className="authShell"
       style={{
-        backgroundImage: `url("${earbuds}"), url("${rightRecord}"), url("${leftRecord}")`,
+        // pass URLs via CSS variables so CSS controls ALL bg props
+        "--bg-left": `url("${leftRecord}")`,
+        "--bg-right": `url("${rightRecord}")`,
+        "--bg-buds": `url("${earbuds}")`,
       }}
     >
-      <main className="pageMain">{children}</main>
+      <main className="authMain">{children}</main>
     </div>
   );
 }

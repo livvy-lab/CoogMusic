@@ -4,25 +4,28 @@ import blankCover from "../../assets/blank-cover.jpg";
 import "./TrackRow.css";
 
 export default function TrackRow({ index, track }) {
-  const [liked, setLiked] = useState(false);
+  // 💜 Since it's the Liked Songs page, start as liked
+  const [liked, setLiked] = useState(true);
 
   const toggleLike = () => setLiked(!liked);
 
   return (
     <div className="likedRow">
+      {/* Track number */}
       <div className="trackIndex">{index}</div>
 
-      {/* Heart toggle button */}
+      {/* Heart toggle */}
       <button
         className={`heartBtn ${liked ? "active" : ""}`}
-        aria-label="Like"
+        aria-label={liked ? "Unlike" : "Like"}
         onClick={toggleLike}
       >
         <Heart
           size={18}
-          stroke="#6e4760"
-          fill={liked ? "#6e4760" : "none"} // filled if liked
+          stroke="#782355"
+          fill={liked ? "#782355" : "none"}
           strokeWidth={2}
+          className="trackHeart"
         />
       </button>
 
@@ -31,7 +34,7 @@ export default function TrackRow({ index, track }) {
         <img src={blankCover} alt="album cover" />
       </div>
 
-      {/* Song title and artist */}
+      {/* Song title & artist */}
       <div className="trackInfo">
         <div className="trackTitle">{track.title}</div>
         <div className="trackArtist">{track.artist}</div>

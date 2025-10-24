@@ -1,25 +1,40 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.authShell {
+  display: flex;
+  min-height: 100vh;
+  background-color: #e3bfd4;
+  font-family: "Inter", sans-serif;
+  justify-content: center;
+  align-items: center;
+
+  /* all bg layers */
+  background-image: var(--bg-buds), var(--bg-right), var(--bg-left);
+  background-repeat: no-repeat, no-repeat, no-repeat;
+
+  /* earbuds centered + fixed; other two positioned manually */
+  background-position: center center, right -14% top -18%, left -18% bottom -22%;
+
+  /* earbuds fill entire page; others normal */
+  background-size: 100% 100%, auto, auto;
+
+  /* earbuds fixed behind everything */
+  background-attachment: fixed, scroll, scroll;
+}
+
+.authMain {
+  flex: 1;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+}
+
+/* stop other layouts from interfering */
 .pageContainer {
-    display: flex;
-    min-height: 100vh;
-    background-color: #e3bfd4;
-    font-family: "Inter", sans-serif;
-  
-    --rec-size: clamp(520px, 48vw, 780px);
-    --bud-size: clamp(160px, 14vw, 240px);
-  
-    background-repeat: no-repeat, no-repeat, no-repeat;
-    background-position: 8% 6%, right -14% top -18%, left -18% bottom -22%;
-  
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .pageMain {
-    flex: 1;
-    padding: 24px;
-    overflow-y: auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
+  background: none !important;
+}
