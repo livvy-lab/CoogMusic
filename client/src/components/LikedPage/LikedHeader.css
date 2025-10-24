@@ -1,0 +1,60 @@
+.likedHeader {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+.likedInfo {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+}
+
+/* Heart gradient box */
+.likedCover {
+  width: 200px; /* larger image */
+  height: 200px;
+  background: linear-gradient(180deg, #b57bb5, #774a75);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #773b77;
+  box-shadow: 0 4px 0 #5a2759;
+}
+
+/* Directly target the SVG that Lucide renders */
+/* Force Lucide Heart SVG to scale up */
+.likedIcon {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+
+
+.playlistLabel {
+  font-size: 16px;
+  font-weight: 600;
+  color: #782355;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+}
+
+.likedTitle {
+  font-size: 82px; /* slightly bigger text */
+  font-weight: 800;
+  color: #782355;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.likedUser {
+  font-size: 18px;
+  color: #782355;
+  margin-top: 4px;
+}

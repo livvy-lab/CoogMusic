@@ -1,0 +1,54 @@
+/* Full manual control version */
+.likedTableHeader {
+  position: relative;
+  height: 60px;
+  background: #fbeaf3;
+  font-weight: 800;
+  color: #782355;
+  border-bottom: 2px solid #6e4760;
+  display: flex;
+  align-items: center;
+}
+
+/* Each header element is absolutely positioned — now they can move independently */
+.th-num,
+.th-heart,
+.th-title,
+.th-album,
+.th-date,
+.th-dur {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* You can move each one by adjusting only these values 👇 */
+.th-num {
+  left: 90px;
+}
+
+.th-heart {
+  left: 144px;
+}
+
+.th-title {
+  left: 190px;
+}
+
+.th-album {
+  left: 700px;
+}
+
+.th-date {
+  left: 1025px;
+}
+
+.th-dur {
+  left: 1300px;
+}
+
+/* Optional fine-tuning for clock icon */
+.th-dur svg {
+  vertical-align: middle;
+}
+

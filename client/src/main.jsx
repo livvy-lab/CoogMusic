@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, RouterProvider, BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import AlbumPage from "./pages/AlbumPage";
+import LikedPage from "./pages/LikedPage";
 import "./index.css";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -21,7 +21,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         <Route path="/home" element={<ListenerHome/>} />
         <Route path="/user-report" element={<UserReport/>} />
         <Route path= "/artist" element={<ArtistView/>} />
-        <Route path="/album" element={<AlbumPage/>} />
+        <Route path="/like" element={<LikedPage/>} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

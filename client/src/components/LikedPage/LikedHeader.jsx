@@ -6,7 +6,13 @@ export default function LikedHeader({ title = "Liked Songs", owner = "coolgirl",
     <div className="likedHeader">
       <div className="likedInfo">
         <div className="likedCover">
-          <Heart className="likedIcon" />
+          <Heart
+  className="likedIcon"
+  size={220}        // controls overall SVG size
+  strokeWidth={1.5} // keep the outline thickness proportional
+  style={{ width: "220px", height: "220px", color: "white" }}
+/>
+
         </div>
         <div>
           <p className="playlistLabel">PLAYLIST</p>
