@@ -71,7 +71,7 @@
   color: #782355 !important;
 }
 
-/* ===== Heart Button ===== */
+/* Heart button setup */
 .heartBtn {
   background: none;
   border: none;
@@ -79,25 +79,28 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease;
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
-.heartBtn:hover {
+/* Glow + enlarge on hover */
+.heartBtn:hover svg {
   transform: scale(1.2);
+  filter: drop-shadow(0 0 4px rgba(120, 35, 85, 0.4));
 }
 
-.heartBtn svg {
-  width: 18px;
-  height: 18px;
-  stroke: #782355;
-  fill: none;
-  transition: fill 0.2s ease, transform 0.2s ease;
+/* Default state — force filled */
+.trackHeart {
+  fill: #782355 !important;
+  stroke: #782355 !important;
+  transition: fill 0.25s ease, transform 0.2s ease, filter 0.25s ease;
 }
 
-.heartBtn.active svg {
-  fill: #782355;
-  stroke: #782355;
+/* Unliked state (outline only) */
+.heartBtn:not(.active) .trackHeart {
+  fill: none !important;
+  stroke: #782355 !important;
 }
+
 
 /* ===== Cover Placeholder ===== */
 .trackCover img,

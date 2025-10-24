@@ -1,5 +1,6 @@
-/* Page stack */
 .albumPage {
+  width: 100%;
+  max-width: none !important;
   display: flex;
   flex-direction: column;
   gap: 32px;
@@ -7,20 +8,32 @@
 }
 
 
-.albumCard.headerCard {
-  width: min(96%, 1230px);
-  height: px; /* slightly smaller height */
-  margin: 0 auto;
-  background: #ffe8f5;
-  border: 3px solid #895674;
-  border-radius: 20px;
-  box-shadow: 0 5px 0 #6e4760;
 
+.albumCard {
+  width: 1250px;
+   /* Increase to 1350px max */
+  margin: 0 auto;
+  border-radius: 20px;
+  border: 3px solid #895674;
+  box-shadow: 0 5px 0 #6e4760;
+  background: #fbeaf3;
+}
+
+/* Header box (Liked Songs top section) */
+.albumCard.headerCard {
+  padding: 30px 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 40px 60px;
+  background: #ffe8f5;
+  border: 5px solid #895674;
+  box-shadow: 0 5px 0 #6e4760;
 }
+.albumCard.headerCard {
+  min-height: 180px;  /* ↓ Makes the box shorter */
+  padding: 20px 0px; /* ↓ Less inner space vertically */
+}
+
 
 
 
@@ -59,7 +72,7 @@
   background: linear-gradient(135deg, #D7A1D7, #5E2750);
   color: #fff; font-weight: 900; font-size: 28px;
   display: grid; place-items: center;
-    margin-left: -30px; /* move slightly left */
+    margin-left: 20px; /* move slightly left */
 
 }
 
@@ -69,8 +82,8 @@
 
 /* Buttons */
 .likedControls { display: flex; gap: 12px; align-items: center;
-  margin-top: 165px; /* moves play/shuffle buttons down */
-   margin-right: -35px
+  margin-top: 175px; /* moves play/shuffle buttons down */
+   margin-right: 15px
  }
 .playButton, .shuffleButton {
   width: 50px; height: 50px; border-radius: 50%;
@@ -85,21 +98,18 @@
 
 /* List card */
 .listCard {
-  box-shadow: none;
-  border: 3px solid #895674;
   background: #fbeaf3;
-  width: min(98%, 1350px);
-  margin: 0 auto;
+  border: 5px solid #895674;
   border-radius: 20px;
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 5px 0 #6e4760;
+  width: min(96%, 1350px);   /* match headerCard width */
+  margin: 0 auto;
   overflow: hidden;
 }
-
 /* Header row — full-width divider, same grid as rows */
 .likedTableHeader {
   display: grid;
-  grid-template-columns: 80px 100px 1.50fr 1.0fr 0.8fr 80px; /* adjust frs if you want different spacing */
+  grid-template-columns: 80px 100px 1.48fr 1.0fr 0.8fr 90px; /* adjust frs if you want different spacing */
   align-items: center;
   padding: 12px 24px;
   margin: 0 -24px; /* extend divider to edges */
@@ -216,3 +226,13 @@
   color: #782355;
   vertical-align: middle;
 }
+
+/* 💜 Match both boxes visually */
+.albumCard.headerCard,
+.albumCard.listCard,
+.listCard {
+  width: min(96%, 1250px) !important;   /* aligns with the header visually */
+  max-width: 1250px !important;
+  margin: 0 auto !important;
+}
+
