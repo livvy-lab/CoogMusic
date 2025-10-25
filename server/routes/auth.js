@@ -1,16 +1,12 @@
 import "dotenv/config";
 import db from "../db.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-import { parse } from "url";
-
-const SECRET_KEY = process.env.SECRET_KEY;
 
 export async function handleAuthRoutes(req, res) {
-  const { pathname } = parse(req.url, true);
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -21,65 +17,74 @@ export async function handleAuthRoutes(req, res) {
   }
 
   if (pathname === "/auth/register" && method === "POST") {
-    let body = "";
-    req.on("data", (chunk) => (body += chunk));
-    req.on("end", async () => {
+    try {
+      let body = "";
+      for await (const chunk of req) body += chunk;
+
+      let parsed;
       try {
-        const { username, password } = JSON.parse(body);
-
-        if (!username || !password) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(
-            JSON.stringify({ error: "Missing username or password" })
-          );
-        }
-
-        const passwordRequirements =
-          /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/;
-        if (!passwordRequirements.test(password)) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          return res.end(
-            JSON.stringify({
-              error:
-                "Password must be at least 8 characters long, include one uppercase letter, and one special character.",
-            })
-          );
-        }
-
-        const [existingUsers] = await db.query(
-          "SELECT * FROM AccountInfo WHERE Username = ?",
-          [username]
-        );
-
-        if (existingUsers.length > 0) {
-          res.writeHead(409, { "Content-Type": "application/json" });
-          return res.end(JSON.stringify({ error: "Username already exists" }));
-        }
-
-        const hashed = await bcrypt.hash(password, 10);
-
-        const [result] = await db.query(
-          "INSERT INTO AccountInfo (Username, PasswordHash, DateCreated, IsDeleted) VALUES (?, ?, NOW(), 0)",
-          [username, hashed]
-        );
-
-        const accountId = result.insertId;
-
-        await db.query(
-          "INSERT INTO Listener (AccountID, DateCreated, IsDeleted) VALUES (?, NOW(), 0)",
-          [accountId]
-        );
-
-        res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "User registered successfully" }));
-      } catch (err) {
-        console.error("Error registering user:", err);
-        res.writeHead(500, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "User registration failed" }));
+        parsed = JSON.parse(body || "{}");
+      } catch {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Invalid JSON" }));
+        return;
       }
-    });
-    return;
+
+      const first = parsed.first?.trim();
+      const last = parsed.last?.trim();
+      const major = parsed.major?.trim();
+      const minor = parsed.minor?.trim() || null;
+      const username = (parsed.username ?? parsed.user)?.trim();
+      const password = parsed.password ?? "";
+
+      if (!first || !last || !major || !username || !password) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Missing required fields" }));
+        return;
+      }
+
+      const pwOk = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
+      if (!pwOk) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          error: "Password must be ≥8 chars, include one uppercase and one special character."
+        }));
+        return;
+      }
+
+      const [existing] = await db.execute(
+        "SELECT 1 FROM AccountInfo WHERE Username = ? LIMIT 1",
+        [username]
+      );
+      if (existing.length > 0) {
+        res.writeHead(409, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Username already exists" }));
+        return;
+      }
+
+      const hash = await bcrypt.hash(password, 10);
+      const [result] = await db.execute(
+        "INSERT INTO AccountInfo (Username, PasswordHash, DateCreated, IsDeleted) VALUES (?, ?, NOW(), 0)",
+        [username, hash]
+      );
+      const accountId = result.insertId;
+
+      await db.execute(
+        "INSERT INTO Listener (AccountID, FirstName, LastName, Major, Minor, DateCreated, IsDeleted) VALUES (?, ?, ?, ?, ?, NOW(), 0)",
+        [accountId, first, last, major, minor]
+      );
+
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, message: "User registered successfully" }));
+      return;
+    } catch (err) {
+      console.error("Error registering user:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "User registration failed" }));
+      return;
+    }
   }
+
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "Auth route not found" }));
 }

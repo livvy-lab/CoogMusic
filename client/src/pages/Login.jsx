@@ -8,9 +8,32 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const onSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    navigate("/dashboard");
+    
+    try {
+      const response = await fetch("http://localhost:3001/login", {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ username, password})
+      });
+
+      const data = await response.json();
+
+      if (data.success){
+        alert(
+          'You are logged in!'
+        );
+        navigate('/home');
+      }
+      else{
+        alert(`Log in failed: ${data.message}`);
+      }
+    }
+    catch (err){
+      console.error('Error occured while trying to log in: ', err);
+      alert('Log in failed. Please try again.');
+    }
   };
 
   return (
@@ -21,7 +44,7 @@ export default function Login() {
           <div className="authSubtitle">to</div>
           <div className="authBrand">Coogs Music</div>
         </div>
-        <form className="authForm" onSubmit={onSubmit}>
+        <form className="authForm" onSubmit={handleSubmit}>
           <input
             className="authInput"
             placeholder="username"

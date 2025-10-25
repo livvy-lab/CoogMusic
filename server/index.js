@@ -25,6 +25,7 @@ import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
 import { handleAlbumTrackRoutes } from "./routes/album_track.js";
 import { handleLikedSongRoutes } from "./routes/liked_song.js";
+import { handleLogin } from "./routes/login.js";  
 
 const PORT = 3001;
 
@@ -33,7 +34,9 @@ const server = http.createServer((req, res) => {
     handleAdminRoutes(req, res);
   } else if (req.url.startsWith("/advertisements")) {
     handleAdRoutes(req, res);
-  } else if (req.url.startsWith("/albums")) {
+  } else if (req.url.startsWith("/login")){
+    handleLogin(req, res);
+  }else if (req.url.startsWith("/albums")) {
     handleAlbumRoutes(req, res);
   } else if (req.url.startsWith("/ad_views")) {
     handleAdViewRoutes(req, res);
@@ -51,7 +54,7 @@ const server = http.createServer((req, res) => {
     handleListenerRoutes(req, res);
   } else if (req.url.startsWith("/listen_history")) {
     handleListenHistoryRoutes(req, res);
-  } else if (req.url.startsWith("/playlists")) {
+  } else if (req.url.startsWith("/playlists") && method === "GET") {
     handlePlaylistRoutes(req, res);
   } else if (req.url.startsWith("/playlist_tracks")) {
     handlePlaylistTrackRoutes(req, res);
@@ -59,13 +62,13 @@ const server = http.createServer((req, res) => {
     handleSongRoutes(req, res);
   } else if (req.url.startsWith("/auth")) {
     handleAuthRoutes(req, res);
-  } else if (req.url.startsWith("/album_artists")){
+  } else if (req.url.startsWith("/album_artists")) {
     handleAlbumArtistRoutes(req, res);
-  } else if (req.url.startsWith("/album_genres")){
+  } else if (req.url.startsWith("/album_genres")) {
     handleAlbumGenreRoutes(req, res);
-  } else if (req.url.startsWith("/album_tracks")){
+  } else if (req.url.startsWith("/album_tracks")) {
     handleAlbumTrackRoutes(req, res);
-  } else if (req.url.startsWith("/artists")){
+  } else if (req.url.startsWith("/artists")) {
     handleArtistRoutes(req, res);
   } else if (req.url.startsWith("/song_artists")) {
     handleSongArtistRoutes(req, res);
@@ -75,10 +78,9 @@ const server = http.createServer((req, res) => {
     handleSubscriptionRoutes(req, res);
   } else if (req.url.startsWith("/user_reports")) {
     handleUserReportsRoutes(req, res);
-  } else if (req.url.startsWith("/artist_buys")){
+  } else if (req.url.startsWith("/artist_buys")) {
     handleArtistBuyRoutes(req, res);
-  }
-  else {
+  } else {
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
   }
