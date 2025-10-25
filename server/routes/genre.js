@@ -1,20 +1,28 @@
 import db from "../db.js";
-import { parse } from "url";
 
 export async function handleGenreRoutes(req, res) {
-  const url = parse(req.url, true);
-  const idMatch = url.pathname.match(/^\/genres\/(\d+)$/);
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  const method = req.method;
+
+
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+
+
+  //const idMatch = url.pathname.match(/^\/genres\/(\d+)$/);
 
   try {
     // Return all genres
-    if (req.method === "GET" && url.pathname === "/genres") {
+    if (method === "GET" && pathname === "/genres") {
       const [rows] = await db.query("SELECT * FROM Genre");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
-    // Return a single genre
+    /*// Return a single genre
     if (req.method === "GET" && idMatch) {
       const genreId = idMatch[1];
       const [rows] = await db.query("SELECT * FROM Genre WHERE GenreID = ?", [genreId]);
@@ -105,7 +113,7 @@ export async function handleGenreRoutes(req, res) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Genre deleted successfully" }));
       return;
-    }
+    }*/
 
     // Fallback for unsupported routes
     res.writeHead(404, { "Content-Type": "application/json" });
