@@ -2,6 +2,7 @@ import RecommendedSongs from "../components/ListenerHome/RecommendedSongs";
 import NewReleases from "../components/ListenerHome/NewReleases";
 import Genres from "../components/ListenerHome/Genres";
 import PageLayout from "../components/PageLayout/PageLayout";
+import "./ListenerHome.css";
 
 export default function ListenerHome() {
   const demoReleases = [
@@ -12,9 +13,14 @@ export default function ListenerHome() {
     { id: 5, image: "https://placehold.co/600x600/AF578A/fff?text=E" },
   ];
 
+  const handleSearch = (q) => {
+    console.log("ListenerHome search:", q);
+  };
+
   return (
     <PageLayout>
       <div className="listenerHome">
+
         <RecommendedSongs />
         <NewReleases title="New releases" items={demoReleases} />
         <Genres />

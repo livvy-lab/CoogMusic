@@ -1,17 +1,29 @@
 import NavigationBar from "../NavigationBar/NavigationBar";
 import recordImg from "../../assets/figmaRecord.svg";
+import SearchBar from "../SearchBar/SearchBar";
 import "./PageLayout.css";
 
 export default function PageLayout({ children }) {
   return (
     <div className="pageContainer">
+      {/* Background record image */}
       <div
         className="recordBg"
         aria-hidden="true"
         style={{ backgroundImage: `url("${recordImg}")` }}
       />
+
+      {/* Sidebar Navigation */}
       <NavigationBar />
-      <main className="pageMain">{children}</main>
+
+      {/* Main content area */}
+      <main className="pageMain">
+        <div className="pageHeader">
+          <SearchBar />
+        </div>
+
+        <div className="pageContent">{children}</div>
+      </main>
     </div>
   );
 }

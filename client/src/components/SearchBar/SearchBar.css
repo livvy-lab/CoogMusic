@@ -1,0 +1,40 @@
+.cmSearchBar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #e9d2df;
+    border: 3px solid #895674;
+    border-radius: 999px;
+    width: 100%;
+    max-width: 420px;
+    padding: 6px 14px;
+    box-shadow: 0 4px 0 #734561;
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  
+  .cmSearchBar:focus-within {
+    box-shadow: 0 6px 0 #734561;
+    transform: translateY(-1px);
+  }
+  
+  .cmSearchIcon {
+    color: #895674;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+  
+  .cmSearchInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: "Inter", sans-serif;
+    font-size: 15px;
+    color: #4b2c3d;
+  }
+  
+  .cmSearchInput::placeholder {
+    color: #734561;
+    opacity: 0.8;
+  }
+  

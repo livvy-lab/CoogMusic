@@ -1,12 +1,15 @@
 /* make the viewport truly full-height with no hidden margins */
-html, body, #root { height: 100%; margin: 0; }
+html, body, #root { 
+  height: 100%;
+  margin: 0;
+  background: #E3BFD4;
+}
 
 /* container stays scrollable */
 .pageContainer {
   position: relative;
   display: flex;
   min-height: 100%;
-  background: #E3BFD4;
   font-family: "Inter", sans-serif;
   overflow-x: hidden;
 }
@@ -30,6 +33,28 @@ html, body, #root { height: 100%; margin: 0; }
   flex: 1;
   padding: 24px;
   overflow-y: auto;
+
+  /* ensure column stacking */
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* centered search bar */
+.pageHeader {
+  width: 100%;
+  display: flex;
+  justify-content: center;   /* centers horizontally */
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+/* content area below search bar */
+.pageContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 /* optional: hide/resize on small screens */
