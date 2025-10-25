@@ -20,12 +20,22 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (data.success){
-        alert(
-          'You are logged in!'
-        );
-        navigate('/home');
-      }
+      if (data?.success) {
+        // 1) persist for refreshes / other pages
+        localStorage.setItem("user", JSON.stringify({
+          username:   data.username,
+          listenerId: data.listenerId,   // <-- important
+          accountId:  data.accountId,
+          accountType:data.accountType,
+          name:       data.name
+        }));
+
+        // 2) (optional) also forward via router state
+        navigate("/home", { state: {
+          username: data.username,
+          listenerId: data.listenerId
+        }});
+      } 
       else{
         alert(`Log in failed: ${data.message}`);
       }

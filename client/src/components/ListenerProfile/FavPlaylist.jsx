@@ -1,34 +1,93 @@
+import { useEffect, useState } from "react";
 import "./FavPlaylist.css";
 
-export default function FavPlaylist({
-  title = "Caught in my matcha run",
-  description = "Girl i was otw to get matcha and i ran into drizzy",
-  coverUrl = "",
-  playlistUrl,            // optional: external link
-  onOpen,                  // optional: callback to open a modal/page
-}) {
-  const isDisabled = !playlistUrl && !onOpen;
+export default function FavPlaylist({ listenerId }) {
+  const [playlist, setPlaylist] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleClick = (e) => {
-    if (isDisabled) {
-      e.preventDefault();
+  useEffect(() => {
+    const stored = JSON.parse(localStorage.getItem("user") || "null");
+    const id = listenerId || stored?.listenerId;
+    if (!id) {
+      setError("No listener ID found");
+      setLoading(false);
       return;
     }
-    if (onOpen) {
-      e.preventDefault();
-      onOpen();
-    }
-    // if playlistUrl exists and no onOpen, normal <a> navigation happens
-  };
 
+    const fetchPlaylist = async () => {
+      try {
+        const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
+        if (!res.ok) {
+          const errTxt = await res.text();
+          throw new Error(`HTTP ${res.status} ${errTxt}`);
+        }
+
+        const data = await res.json();
+        console.log("[FavPlaylist] pinned playlist:", data.favorites?.pinnedPlaylist);
+        setPlaylist(data.favorites?.pinnedPlaylist || null);
+      } catch (err) {
+        console.error("[FavPlaylist] fetch error", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaylist();
+  }, [listenerId]);
+
+  if (loading) {
+    return (
+      <section className="playlistSection">
+        <h2 className="playlistSection__title">Go-to Playlist</h2>
+        <p>Loading playlist...</p>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="playlistSection">
+        <h2 className="playlistSection__title">Go-to Playlist</h2>
+        <p style={{ color: "red" }}>Error loading playlist: {error}</p>
+      </section>
+    );
+  }
+
+  // 🟣 Case 1: No pinned playlist
+  if (!playlist) {
+    return (
+      <section className="playlistSection">
+        <h2 className="playlistSection__title">Go-to Playlist</h2>
+        <div className="playlistCard playlistCard--empty">
+          <div className="playlistCard__body">
+            <div className="playlistCard__placeholder" aria-hidden="true" />
+            <div className="playlistCard__text">
+              <h3 className="playlistCard__title">None pinned yet</h3>
+              <p className="playlistCard__desc">
+                Pin a playlist from your library to show it here!
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // 🟢 Case 2: Playlist exists
   return (
     <section className="playlistSection">
       <h2 className="playlistSection__title">Go-to Playlist</h2>
 
       <div className="playlistCard">
         <div className="playlistCard__body">
-          {coverUrl ? (
-            <img className="playlistCard__image" src={coverUrl} alt="Playlist cover" />
+          {playlist.CoverURL ? (
+            <img
+              className="playlistCard__image"
+              src={playlist.CoverURL}
+              alt={`${playlist.Name} cover`}
+            />
           ) : (
             <div className="playlistCard__placeholder" aria-hidden="true" />
           )}
@@ -37,16 +96,17 @@ export default function FavPlaylist({
             <h3 className="playlistCard__title">
               <a
                 className="playlistCard__titleLink"
-                href={playlistUrl || "#"}
-                onClick={handleClick}
-                aria-disabled={isDisabled ? "true" : undefined}
-                title={isDisabled ? "Playlist coming soon" : "Open playlist"}
+                href={playlist.PlaylistURL || "#"}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                {title}
+                {playlist.Name || "Untitled Playlist"}
               </a>
             </h3>
 
-            <p className="playlistCard__desc">{description}</p>
+            <p className="playlistCard__desc">
+              {playlist.Description || "No description available."}
+            </p>
           </div>
         </div>
       </div>
