@@ -4,6 +4,11 @@ import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
+import ArtistView from "./pages/ArtistView"; 
+import Song from "./pages/Songs";
+import LikedSong from "./pages/LikedPage";
+import Playlist from "./pages/Playlist";
+import Subscription from "./pages/Subscription";
 
 export default function App() {
   return (
@@ -15,6 +20,11 @@ export default function App() {
         <Route path="/profile" element={<ListenerProfile/>} />
         <Route path="/home" element={<ListenerHome/>} />
         <Route path="/user-report" element={<UserReport/>} />
+        <Route path="/artist" element={<ArtistView/>} />
+        <Route path="/song" element={<Song/>} />
+        <Route path="/likedsongs" element={<LikedSong/>}/>
+        <Route path="/playlist" element={<Playlist/>}/>
+        <Route path="/subscription" element={<Subscription/>}/>
       </Routes>
     </BrowserRouter>
   );
