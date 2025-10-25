@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
+import { setUser } from "../lib/userStorage";
 import Loading from "../components/LoadingLayout/Loading";
 
 export default function Login() {
@@ -20,22 +21,17 @@ export default function Login() {
 
       const data = await response.json();
 
-      if (data?.success) {
-        // 1) persist for refreshes / other pages
-        localStorage.setItem("user", JSON.stringify({
-          username:   data.username,
-          listenerId: data.listenerId,   // <-- important
-          accountId:  data.accountId,
-          accountType:data.accountType,
-          name:       data.name
-        }));
-
-        // 2) (optional) also forward via router state
-        navigate("/home", { state: {
+      if (data.success) {
+        const user = {
           username: data.username,
-          listenerId: data.listenerId
-        }});
-      } 
+          listenerId: data.listenerId,  // must be non-null to load profile
+          accountId: data.accountId,
+          accountType: data.accountType,
+          name: data.name
+        };
+        setUser(user);                 // <-- persist
+        navigate("/home");             // no state needed anymore
+      }      
       else{
         alert(`Log in failed: ${data.message}`);
       }

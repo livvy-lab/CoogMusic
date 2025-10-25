@@ -1,69 +1,74 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import "./ProfileCard.css";
 
-export default function ProfileCard({ listenerId, username }) {
-  const [profile, setProfile] = useState(null);
+export default function ProfileCard() {
+  const [listenerId, setListenerId] = useState(null);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Load listenerId from localStorage once on mount
   useEffect(() => {
-    // If no listenerId was passed in, try from localStorage
-    const stored = JSON.parse(localStorage.getItem("user") || "null");
-    const id = listenerId || stored?.listenerId;
-    if (!id) {
-      setError("No listener ID found");
-      return;
-    }
-
-    console.log("[ProfileCard] fetching profile for listener:", id);
-
-    const fetchProfile = async () => {
-      try {
-        const response = await fetch(`http://localhost:3001/listeners/${id}/profile`);
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`HTTP ${response.status} ${errText}`);
-        }
-        const data = await response.json();
-        console.log("[ProfileCard] loaded:", data);
-        setProfile(data);
-      } catch (err) {
-        console.error("[ProfileCard] fetch error", err);
-        setError(err.message);
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      if (stored?.listenerId) {
+        setListenerId(stored.listenerId);
+      } else {
+        setError("No listener ID found. Please log in again.");
+        setLoading(false);
       }
-    };
+    } catch (e) {
+      console.error("Failed to read localStorage:", e);
+      setError("Error loading user data");
+      setLoading(false);
+    }
+  }, []);
 
-    fetchProfile();
+  // Fetch profile data when listenerId is available
+  useEffect(() => {
+    if (!listenerId) return;
+    let cancel = false;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const url = `http://localhost:3001/listeners/${listenerId}/profile`;
+        console.log("[ProfileCard] fetching", url);
+
+        const r = await fetch(url);
+        if (!r.ok) {
+          const txt = await r.text();
+          throw new Error(`HTTP ${r.status} ${txt}`);
+        }
+
+        const j = await r.json();
+        if (!cancel) setData(j);
+      } catch (e) {
+        console.error("[ProfileCard] fetch error", e);
+        if (!cancel) setError(e.message || "Failed to fetch profile");
+      } finally {
+        if (!cancel) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancel = true;
+    };
   }, [listenerId]);
 
-  if (error) {
-    return (
-      <section className="pc">
-        <p style={{ color: "red" }}>Error loading profile: {error}</p>
-      </section>
-    );
-  }
+  // Conditional renders
+  if (loading) return <section className="pc">Loading…</section>;
+  if (error || !data) return <section className="pc">Error: {error || "No data"}</section>;
 
-  if (!profile) {
-    return (
-      <section className="pc">
-        <p>Loading profile...</p>
-      </section>
-    );
-  }
-
-  const { listener, counts } = profile;
+  const { listener, counts } = data;
 
   return (
     <section className="pc">
       <div className="pc__avatarWrap">
         {listener.PFP ? (
-          <img
-            src={listener.PFP}
-            alt={`${listener.FirstName}'s profile`}
-            className="pc__avatarImg"
-          />
+          <img className="pc__avatarImg" src={listener.PFP} alt="Profile" />
         ) : (
-          <div className="pc__avatarPlaceholder"></div>
+          <div className="pc__avatarPlaceholder" />
         )}
       </div>
 
@@ -72,10 +77,10 @@ export default function ProfileCard({ listenerId, username }) {
           About {listener.FirstName} {listener.LastName}
         </h2>
         <div className="pc__meta">
-          <span>Major: {listener.Major || "N/A"}</span>
-          <span>Minor: {listener.Minor || "N/A"}</span>
+          <span>Major: {listener.Major || "—"}</span>
+          <span>Minor: {listener.Minor || "—"}</span>
         </div>
-        <p className="pc__bio">{listener.Bio || "No bio yet."}</p>
+        <p className="pc__bio">{listener.Bio || "No bio available."}</p>
 
         <div className="pc__stats">
           <button>{counts.followers} followers</button>
