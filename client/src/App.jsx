@@ -9,6 +9,7 @@ import Song from "./pages/Songs";
 import LikedSong from "./pages/LikedPage";
 import Playlist from "./pages/Playlist";
 import Subscription from "./pages/Subscription";
+import FollowsPage from "./pages/FollowsPage";
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/likedsongs" element={<LikedSong/>}/>
         <Route path="/playlist" element={<Playlist/>}/>
         <Route path="/subscription" element={<Subscription/>}/>
+        <Route path="/follows" element={<FollowsPage/>}/>
       </Routes>
     </BrowserRouter>
   );
