@@ -4,6 +4,7 @@ import "./NewReleases.css";
 export default function NewReleases({ title = "New releases" }) {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [streams, setStreams] = useState({});
   const railRef = useRef(null);
 
   const scrollByPage = (dir) => {
@@ -19,8 +20,7 @@ export default function NewReleases({ title = "New releases" }) {
         const res = await fetch("http://localhost:3001/songs/latest?limit=10");
         const data = await res.json();
         setSongs(Array.isArray(data) ? data : []);
-      } catch (e) {
-        console.error("latest songs fetch failed", e);
+      } catch {
         setSongs([]);
       } finally {
         setLoading(false);
@@ -29,13 +29,24 @@ export default function NewReleases({ title = "New releases" }) {
     run();
   }, []);
 
-  // Build cards: keep exactly ONE img per .newRel__card to match CSS
+  async function handlePlay(songId) {
+    try {
+      const res = await fetch("http://localhost:3001/plays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStreams((prev) => ({ ...prev, [songId]: Number(data.streams) || 0 }));
+    } catch {}
+  }
+
   const totalSlots = 10;
   const realCards = songs.map((s) => ({
     key: s.SongID,
-    img:
-      "https://placehold.co/600x600/AF578A/ffffff?text=" +
-      encodeURIComponent(s.Title || "Song"),
+    songId: s.SongID,
+    img: "https://placehold.co/600x600/AF578A/ffffff?text=" + encodeURIComponent(s.Title || "Song"),
     alt: s.Title || "Song",
     placeholder: false,
   }));
@@ -43,6 +54,7 @@ export default function NewReleases({ title = "New releases" }) {
     .fill(null)
     .map((_, i) => ({
       key: `ph-${i}`,
+      songId: null,
       img: "https://placehold.co/600x600/FFE8F5/895674?text=Coming+Soon",
       alt: "Coming Soon",
       placeholder: true,
@@ -55,20 +67,28 @@ export default function NewReleases({ title = "New releases" }) {
 
       <div className="newRel__rail" ref={railRef}>
         {loading ? (
-          // keep a few skeleton squares so layout stays consistent while loading
-          Array(5).fill(0).map((_, i) => (
-            <div className="newRel__card placeholder" key={`sk-${i}`}>
-              <img
-                className="newRel__img"
-                src="https://placehold.co/600x600/f4d6e6/ffffff?text=Loading..."
-                alt="Loading"
-              />
-            </div>
-          ))
+          Array(5)
+            .fill(0)
+            .map((_, i) => (
+              <div className="newRel__card placeholder" key={`sk-${i}`}>
+                <img
+                  className="newRel__img"
+                  src="https://placehold.co/600x600/f4d6e6/ffffff?text=Loading..."
+                  alt="Loading"
+                />
+              </div>
+            ))
         ) : (
           cards.map((c) => (
-            <div className={`newRel__card ${c.placeholder ? "placeholder" : ""}`} key={c.key}>
+            <div
+              className={`newRel__card ${c.placeholder ? "placeholder" : ""}`}
+              key={c.key}
+              onClick={() => c.songId && handlePlay(c.songId)}
+            >
               <img className="newRel__img" src={c.img} alt={c.alt} />
+              {!c.placeholder && streams[c.songId] !== undefined && (
+                <div className="newRel__badge">{streams[c.songId]} streams</div>
+              )}
             </div>
           ))
         )}

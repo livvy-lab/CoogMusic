@@ -1,8 +1,8 @@
 import PageLayout from "../components/PageLayout/PageLayout";
-import ArtistCard from "../components/ArtistView/ArtistCard";
-import TopTracks from "../components/ArtistView/TopTracks";
-import AboutBox from "../components/ArtistView/AboutBox";
-import Discography from "../components/ArtistView/DiscographyGrid";
+import ArtistCard from "../components/ArtistProfile/ArtistCard";
+import TopTracks from "../components/ArtistProfile/TopTracks";
+import AboutBox from "../components/ArtistProfile/AboutBox";
+import Discography from "../components/ArtistProfile/DiscographyGrid";
 import "./ArtistView.css";
 
 export default function ArtistView() {

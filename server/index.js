@@ -26,6 +26,8 @@ import { handleLikedSongRoutes } from "./routes/liked_song.js";
 import { handleLogin } from "./routes/login.js";
 import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.js";
 import { handleListenerProfile } from "./routes/listener_profile.js";
+import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
+import { handlePlayRoutes } from "./routes/plays.js";
 
 const PORT = 3001;
 
@@ -48,6 +50,13 @@ const server = http.createServer(async (req, res) => {
 
     if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) {
       await handleListenerFavoriteArtist(req, res); return;
+    }
+    if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) {
+      await handleArtistProfileRoutes(req, res); return;
+    }
+    
+    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) {
+      await handlePlayRoutes(req, res); return;
     }
 
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
