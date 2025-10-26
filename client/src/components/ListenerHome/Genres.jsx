@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Genres.css";
 
 export default function Genres() {
@@ -35,6 +37,7 @@ export default function Genres() {
     <section className="genres">
       <h2 className="genres__title">Genres</h2>
 
+
       <div className="genres__grid">
         {filtered.map(g => (
           <button
@@ -42,7 +45,14 @@ export default function Genres() {
             key={g.GenreID}
             onClick={() => navigate(`/genre/${g.GenreID}`)}
           >
+        {filtered.map(g => (
+          <button
+            className="genres__card"
+            key={g.GenreID}
+            onClick={() => navigate(`/genre/${g.GenreID}`)}
+          >
             <span className="genres__icon">🎸</span>
+            <span className="genres__text">{g.Name}</span>
             <span className="genres__text">{g.Name}</span>
           </button>
         ))}
