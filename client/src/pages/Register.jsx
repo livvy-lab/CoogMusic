@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Auth.css";
 import Loading from "../components/LoadingLayout/Loading";
 
@@ -7,9 +7,16 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // get account type from URL query (?role=artist or ?role=listener)
+  const params = new URLSearchParams(location.search);
+  const roleParam = (params.get("role") || "").toLowerCase();
+  const accountType = roleParam === "artist" ? "Artist" : "Listener";
 
   const [first, setFirstName] = useState("");
   const [last, setLastName] = useState("");
+  const [bio, setBio] = useState("");
   const [major, setMajor] = useState("");
   const [minor, setMinor] = useState("");
   const [username, setUsername] = useState("");
@@ -31,38 +38,62 @@ export default function Register() {
     setSubmitting(true);
 
     try {
-      // 1) Register first (no image yet)
-      const regRes = await fetch(`${API_BASE}/auth/register`, {
+      // pick the right endpoint
+      const endpoint =
+        accountType === "Artist"
+          ? `${API_BASE}/auth/register/artist`
+          : `${API_BASE}/auth/register`;
+
+      // build the request body
+      const body =
+        accountType === "Artist"
+          ? { first, bio, username, password }
+          : { first, last, major, minor, username, password };
+
+      const regRes = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ first, last, major, minor, username, password }),
+        body: JSON.stringify(body),
       });
 
       const regData = await regRes.json().catch(() => ({}));
       if (!regRes.ok || !regData?.success) {
-        alert(`Sign up failed: ${regData?.message || regData?.error || "Unknown error"}`);
+        alert(
+          `Sign up failed: ${regData?.message || regData?.error || "Unknown error"}`
+        );
         setSubmitting(false);
         return;
       }
 
-      const listenerId = regData.listenerId;
+      // extract correct ID depending on role
+      const entityId =
+        accountType === "Artist" ? regData.artistId : regData.listenerId;
 
-      // 2) If a file was chosen, upload avatar with the new listenerId
-      if (file && listenerId) {
+      // upload avatar (works for both artist & listener)
+      if (file && entityId) {
         const fd = new FormData();
         fd.append("file", file);
 
-        const upRes = await fetch(`${API_BASE}/listeners/${listenerId}/avatar`, {
-          method: "POST",
-          body: fd,
-        });
+        const upRes = await fetch(
+          `${API_BASE}/${accountType.toLowerCase()}s/${entityId}/avatar`,
+          {
+            method: "POST",
+            body: fd,
+          }
+        );
 
         const upData = await upRes.json().catch(() => ({}));
         if (upRes.ok && upData?.url) {
           const cached = JSON.parse(localStorage.getItem("user") || "{}");
           localStorage.setItem(
             "user",
-            JSON.stringify({ ...cached, listenerId, username, pfpUrl: upData.url })
+            JSON.stringify({
+              ...cached,
+              entityId,
+              username,
+              pfpUrl: upData.url,
+              accountType,
+            })
           );
         } else {
           console.warn("Avatar upload failed:", upData);
@@ -73,7 +104,6 @@ export default function Register() {
       navigate("/login");
     } catch (err) {
       console.error("Error during sign-up:", err);
-      // If you see "TypeError: Failed to fetch", your API is unreachable or blocked by CORS.
       alert("Sign up failed. Please ensure the API is running and try again.");
     } finally {
       setSubmitting(false);
@@ -85,14 +115,18 @@ export default function Register() {
   return (
     <Loading>
       <div className="authCard authCardLarge">
-        <div className="authChip">LISTENER REGISTRATION</div>
+        <div className="authChip">{accountType.toUpperCase()} REGISTRATION</div>
 
-        {/* Optional preview */}
-        {previewUrl && <img className="pfpThumb" src={previewUrl} alt="profile preview" />}
+        {previewUrl && (
+          <img className="pfpThumb" src={previewUrl} alt="profile preview" />
+        )}
 
         <form className="regGrid" onSubmit={handleSubmit}>
+          {/* first name or artist name */}
           <label className="regField">
-            <span>First name:</span>
+            <span>
+              {accountType === "Artist" ? "Artist name:" : "First name:"}
+            </span>
             <input
               className="authInput"
               type="text"
@@ -102,40 +136,61 @@ export default function Register() {
             />
           </label>
 
-          <label className="regField">
-            <span>Last name:</span>
-            <input
-              className="authInput"
-              type="text"
-              value={last}
-              onChange={(e) => setLastName(e.target.value)}
-              required
-            />
-          </label>
+          {/* only show last name for listeners */}
+          {accountType === "Listener" && (
+            <label className="regField">
+              <span>Last name:</span>
+              <input
+                className="authInput"
+                type="text"
+                value={last}
+                onChange={(e) => setLastName(e.target.value)}
+                required
+              />
+            </label>
+          )}
+
+          {/* Artist bio */}
+          {accountType === "Artist" && (
+            <label className="regField">
+              <span>Bio (optional):</span>
+              <textarea
+                className="authInput"
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={3}
+              />
+            </label>
+          )}
+
+          {/* Listener academic info */}
+          {accountType === "Listener" && (
+            <>
+              <label className="regField">
+                <span>Major:</span>
+                <input
+                  className="authInput"
+                  type="text"
+                  value={major}
+                  onChange={(e) => setMajor(e.target.value)}
+                  required
+                />
+              </label>
+
+              <label className="regField">
+                <span>Minor (optional):</span>
+                <input
+                  className="authInput"
+                  type="text"
+                  value={minor}
+                  onChange={(e) => setMinor(e.target.value)}
+                />
+              </label>
+            </>
+          )}
 
           <label className="regField">
-            <span>Major:</span>
-            <input
-              className="authInput"
-              type="text"
-              value={major}
-              onChange={(e) => setMajor(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="regField">
-            <span>Minor (optional):</span>
-            <input
-              className="authInput"
-              type="text"
-              value={minor}
-              onChange={(e) => setMinor(e.target.value)}
-            />
-          </label>
-
-          <label className="regField">
-            <span>User:</span>
+            <span>Username:</span>
             <input
               className="authInput"
               type="text"
@@ -166,7 +221,7 @@ export default function Register() {
               Cancel
             </button>
 
-            {/* Hidden file input + styled label that looks like your chip */}
+            {/* Hidden file input */}
             <input
               id="pfpInput"
               className="fileInputHidden"
@@ -178,7 +233,11 @@ export default function Register() {
               profile pic
             </label>
 
-            <button type="submit" className="authBtn authBtnPrimary" disabled={submitting}>
+            <button
+              type="submit"
+              className="authBtn authBtnPrimary"
+              disabled={submitting}
+            >
               {submitting ? "Signing Up…" : "Sign Up"}
             </button>
           </div>
