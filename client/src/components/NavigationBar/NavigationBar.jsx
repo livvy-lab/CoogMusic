@@ -32,8 +32,8 @@ export default function NavigationBar() {
 
         <nav className="navSection">
           <div className="navTitle">Library</div>
-          <Link className="navLink" to="/favorites" onClick={() => setOpen(false)}>🤍 Favorite Songs</Link>
-          <Link className="navLink" to="/playlists" onClick={() => setOpen(false)}>🎧 Playlists</Link>
+          <Link className="navLink" to="/likedsongs" onClick={() => setOpen(false)}>🤍 Favorite Songs</Link>
+          <Link className="navLink" to="/playlist" onClick={() => setOpen(false)}>🎧 Playlists</Link>
         </nav>
       </aside>
 
