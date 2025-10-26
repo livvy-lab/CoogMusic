@@ -28,6 +28,8 @@ import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.
 import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
+import { handlePfpRoutes } from "./routes/pfp.js";
+import { handleSetListenerAvatar } from "./routes/avatar.js";
 
 const PORT = 3001;
 
@@ -59,6 +61,12 @@ const server = http.createServer(async (req, res) => {
       await handlePlayRoutes(req, res); return;
     }
 
+    if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
+      const id = pathname.split("/")[2];
+      return handleSetListenerAvatar(req, res, id);
+    }
+
+    if (pathname.startsWith("/pfp")) return handlePfpRoutes(req, res);
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }

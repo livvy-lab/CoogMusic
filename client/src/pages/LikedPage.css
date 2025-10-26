@@ -106,22 +106,39 @@
   margin: 0 auto;
   overflow: hidden;
 }
-/* Header row — full-width divider, same grid as rows */
+/* 🧭 Fully manual header alignment */
 .likedTableHeader {
-  display: grid;
-  grid-template-columns: 80px 100px 1.48fr 1.0fr 0.8fr 90px; /* adjust frs if you want different spacing */
-  align-items: center;
-  padding: 12px 24px;
-  margin: 0 -24px; /* extend divider to edges */
-  border-bottom: 2px solid #6e4760;
-  position: sticky; top: 0; z-index: 2;
+  position: relative;           /* anchor for absolute children */
+  display: block !important;    /* disable grid/flex layout */
+  height: 60px;
   background: #fbeaf3;
-  font-weight: 800; color: #782355;
+  border-bottom: 2px solid #6e4760;
+  font-weight: 800;
+  color: #782355;
+  z-index: 5;
 }
-.th-heart { justify-self: center; }
-.th-dur { justify-self: end; }
-/* Align "Title" with text start (36 cover + 12 gap) */
-.th-title { padding-left: 48px; }
+
+/* make each item absolutely positioned */
+.likedTableHeader .th {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+}
+
+/* 🎯 move each one manually — adjust these left: values as needed */
+.likedTableHeader .th-num   { left: 60px; }     /* # */
+.likedTableHeader .th-heart { left: 120px; }    /* ♥ */
+.likedTableHeader .th-title { left: 210px; }    /* Title */
+.likedTableHeader .th-album { left: 630px; }    /* Album */
+.likedTableHeader .th-date  { left: 925px; }    /* Date Added */
+.likedTableHeader .th-dur   { left: 1180px; }   /* Clock icon */
+
+/* optional tweak for the clock */
+.likedTableHeader .th-dur svg {
+  vertical-align: middle;
+  margin-left: 2px;
+}
 
 /* Scrollable body area */
 .tableBody {

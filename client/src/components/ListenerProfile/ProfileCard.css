@@ -1,95 +1,101 @@
+/* ====== Card shell ====== */
 .pc {
   background: #FFE8F5;
   border: 5px solid #895674;
   border-radius: 20px;
-  width: min(96%, 1280px);      /* scales smoothly with screen size */
-  height: auto;
-  padding: 24px;               /* more consistent spacing */
+  width: min(96%, 1280px);
+  padding: 24px;
+  margin: 40px auto;
   display: grid;
-  grid-template-columns: 240px 1fr auto;
-  gap: 32px;                   /* scales better than fixed 16px */
+  grid-template-columns: 220px 1fr auto; /* avatar | details | songs */
+  gap: 32px;
   box-shadow: 0 5px 0 #6e4760;
-  margin: 40px auto;           /* centers horizontally & spaces vertically */
-  transition: all 0.3s ease;   /* smooth resizing transitions */
+  transition: box-shadow .25s ease, transform .25s ease;
 }
 
+.pc:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,.12), 0 6px 0 #6e4760;
+}
+
+/* ====== Avatar ====== */
 .pc__avatarWrap {
   display: grid;
-  place-items: center;
+  place-items: start center;
 }
 
+.pc__avatarImg,
 .pc__avatarPlaceholder {
-  width: clamp(140px, 15vw, 200px); /* dynamic size: 140–200px */
+  width: clamp(140px, 15vw, 200px);
   height: clamp(140px, 15vw, 200px);
   border-radius: 50%;
-  background: #d3a6bb;
   border: 5px solid #895674;
+  background: #d3a6bb;
+}
+
+.pc__avatarImg {
+  object-fit: cover;
+  display: block;
+}
+
+/* ====== Details ====== */
+.pc__details {
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 .pc__heading {
-  font-size: clamp(20px, 2vw, 26px); /* resizes with screen */
-  font-weight: 700;
-  margin-bottom: 20px;
+  font-size: clamp(22px, 2.2vw, 30px);
+  font-weight: 800;
+  margin: 0 0 6px;
   color: #895674;
 }
 
 .pc__meta {
   display: flex;
-  flex-wrap: wrap;              /* prevents overlap on smaller screens */
-  gap: clamp(20px, 4vw, 50px);  /* flexible spacing */
+  flex-wrap: wrap;
+  gap: clamp(16px, 3.5vw, 48px);
   font-size: clamp(14px, 1.2vw, 16px);
   color: #AF578A;
   font-weight: 700;
-  margin-bottom: 20px;
 }
 
 .pc__bio {
-  margin: 0 0 60px;
-  font-size: clamp(14px, 1.3vw, 16px);
+  margin: 4px 0 14px;
+  font-size: clamp(14px, 1.25vw, 16px);
   color: #AF578A;
   font-weight: 600;
 }
 
+/* ====== Stats row ====== */
 .pc__stats {
   display: flex;
-  justify-content: center;       /* center horizontally */
-  flex-wrap: wrap;               /* allow wrapping if too narrow */
-  gap: clamp(40px, 6vw, 90px);   /* flexible spacing */
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: clamp(28px, 5vw, 80px);
   width: 100%;
-  margin-top: 24px;
+  margin-top: 8px;
 }
 
 .pc__stats button {
-  flex: 1 1 0;
-  min-width: clamp(120px, 12vw, 150px);
-  font-size: clamp(16px, 1.5vw, 20px);
+  min-width: clamp(120px, 12vw, 160px);
+  font-size: clamp(15px, 1.4vw, 18px);
   background: #895674;
   color: #FFDAF0;
   border: 0;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  cursor: pointer;
 }
 
-.pc__stats button {
-  flex: 1 1 0;
-  min-width: clamp(120px, 12vw, 150px);
-  font-size: clamp(16px, 1.5vw, 20px);
-  background: #895674;
-  color: #FFDAF0;
-  border: 0;
-  padding: 8px 12px;
-  border-radius: 10px;
-  font-weight: 600;
-  transition: all 0.25s ease; /* add smooth hover transition */
-}
-
-/* 👇 Add these hover and active states right after the button styles */
 .pc__stats button:hover {
-  background: #a46e8b;     /* lighter plum tone */
-  color: #fff;             /* text pops on hover */
+  background: #a46e8b;
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 12px rgba(0,0,0,.18);
 }
 
 .pc__stats button:active {
@@ -97,27 +103,44 @@
   box-shadow: none;
 }
 
+/* ====== Songs badge (right column) ====== */
 .pc__songs {
   align-self: start;
-  font-weight: 700;
-  opacity: 0.8;
-  font-size: clamp(14px, 1.4vw, 18px);
+  font-weight: 800;
+  opacity: .9;
+  font-size: clamp(14px, 1.3vw, 18px);
   color: #4b2c3d;
+  white-space: nowrap;
 }
 
-@media (max-width: 960px) {
+/* ====== Responsive ====== */
+@media (max-width: 1024px) {
   .pc {
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 180px 1fr;
+  }
+  .pc__songs {
+    justify-self: end;
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .pc {
+    grid-template-columns: 1fr;
     gap: 20px;
+    padding: 18px;
+  }
+
+  .pc__avatarWrap {
+    justify-content: center;
+  }
+
+  .pc__songs {
+    justify-self: center;
   }
 
   .pc__stats {
     justify-content: center;
-    gap: 30px;
-  }
-
-  .pc__songs {
-    grid-column: 1 / -1;
-    justify-self: end;
+    gap: 20px;
   }
 }
