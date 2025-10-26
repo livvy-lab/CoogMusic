@@ -15,19 +15,26 @@ export default function TrackRow({ index, track }) {
       <div className="trackIndex">{index}</div>
 
       {/* Heart toggle */}
-      <button
-        className={`heartBtn ${liked ? "active" : ""}`}
-        aria-label={liked ? "Unlike" : "Like"}
-        onClick={toggleLike}
-      >
-        <Heart
-          size={18}
-          stroke="#782355"
-          fill={liked ? "#782355" : "none"}
-          strokeWidth={2}
-          className="trackHeart"
-        />
-      </button>
+<button
+  className={`heartBtn ${liked ? "" : "unliked"}`}
+  aria-label={liked ? "Unlike" : "Like"}
+  onClick={toggleLike}
+>
+<Heart
+  size={22}
+  stroke="currentColor"
+  fill={liked ? "currentColor" : "transparent"} // <-- key change
+  strokeWidth={1.8}
+  className={`trackHeart ${liked ? "filled" : ""}`}
+  style={{
+    color: "#782355", // sets the color for both stroke + fill
+    transition: "all 0.25s ease",
+    transform: liked ? "scale(1.1)" : "scale(1.0)",
+  }}
+/>
+
+</button>
+
 
       {/* Album cover */}
       <div className="trackCover">
