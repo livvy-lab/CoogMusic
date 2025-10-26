@@ -1,4 +1,6 @@
 import http from "http";
+import fs from "fs";
+import path from "path";
 import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
@@ -28,6 +30,7 @@ import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.
 import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
+import { handleUploadRoutes } from "./routes/upload.js";
 
 const PORT = 3001;
 
@@ -38,26 +41,27 @@ const server = http.createServer(async (req, res) => {
 
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
   if (req.method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
   try {
-    // Most specific → least specific
-    if (/^\/listeners\/\d+\/profile$/.test(pathname)) {
-      await handleListenerProfile(req, res); return;
+    if (pathname.startsWith("/uploads/")) {
+      const filePath = path.join(path.resolve("."), "server", pathname.replace("/uploads/", "uploads/"));
+      if (fs.existsSync(filePath)) { res.writeHead(200); fs.createReadStream(filePath).pipe(res); return; }
+      res.writeHead(404); res.end(); return;
     }
 
-    if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) {
-      await handleListenerFavoriteArtist(req, res); return;
-    }
-    if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) {
-      await handleArtistProfileRoutes(req, res); return;
-    }
+    await handleUploadRoutes(req, res);
+    if (res.writableEnded) return;
+
+    if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
+
+    if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
+
+    if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
     
-    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) {
-      await handlePlayRoutes(req, res); return;
-    }
+    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
 
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
@@ -70,7 +74,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/genres")) { await handleGenreRoutes(req, res); return; }
     if (pathname.includes("/liked_songs")) { await handleLikedSongRoutes(req, res); return; }
     if (pathname.startsWith("/listen_history")) { await handleListenHistoryRoutes(req, res); return; }
-    if (pathname.startsWith("/playlists")) { await handlePlaylistRoutes(req, res); return; } // removed method check
+    if (pathname.startsWith("/playlists")) { await handlePlaylistRoutes(req, res); return; }
     if (pathname.startsWith("/playlist_tracks")) { await handlePlaylistTrackRoutes(req, res); return; }
     if (pathname.startsWith("/songs")) { await handleSongRoutes(req, res); return; }
     if (pathname.startsWith("/auth")) { await handleAuthRoutes(req, res); return; }

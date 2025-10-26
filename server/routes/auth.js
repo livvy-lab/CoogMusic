@@ -8,7 +8,7 @@ export async function handleAuthRoutes(req, res) {
 
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (method === "OPTIONS") {
     res.writeHead(204);
@@ -46,9 +46,7 @@ export async function handleAuthRoutes(req, res) {
       const pwOk = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
       if (!pwOk) {
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          error: "Password must be ≥8 chars, include one uppercase and one special character."
-        }));
+        res.end(JSON.stringify({ error: "Password must be ≥8 chars, include one uppercase and one special character." }));
         return;
       }
 
@@ -75,10 +73,9 @@ export async function handleAuthRoutes(req, res) {
       );
 
       res.writeHead(201, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, message: "User registered successfully" }));
+      res.end(JSON.stringify({ success: true, message: "User registered successfully", accountId }));
       return;
     } catch (err) {
-      console.error("Error registering user:", err);
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "User registration failed" }));
       return;
