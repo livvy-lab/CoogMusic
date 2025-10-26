@@ -1,0 +1,207 @@
+/* main container for the music player bar */
+.music-player-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 1080px;
+    height: 75px;
+    background: #AD7D9B;
+    border: 4.5px solid #895674;
+    border-radius: 18px;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    
+    /* ensure music player bar sits above .pagemain (z-index: 1) */
+    z-index: 10; 
+}
+
+/* sections for layout */
+.player-controls-left, .progress-section, .player-controls-right {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* left side: main controls */
+.player-controls-left {
+    background: #FFFFFF;
+    border-right: 4.5px solid #895674;
+    border-radius: 13.5px 0 0 13.5px;
+    width: 184px;
+    justify-content: center;
+    gap: 20px;
+    flex-shrink: 0;
+}
+
+/* center: progress section */
+.progress-section {
+    flex-grow: 1;
+    justify-content: center;
+    gap: 15px;
+    padding: 0 20px;
+}
+
+/* right side: album art */
+.player-controls-right {
+    padding-right: 15px;
+    flex-shrink: 0;
+}
+
+/*generic styling for controls*/
+.control-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.control-btn img {
+    filter: brightness(1);
+    transition: filter 0.2s ease-in-out;
+}
+
+.play-pause-btn {
+    height: 38px;
+    width: 38px;
+}
+.play-pause-btn img {
+    height: 38px;
+}
+
+.small-btn img {
+    height: 28px;
+    width: 28px;
+    filter: brightness(150%) saturate(0%); 
+    transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+/* hover effects for icons */
+.control-btn:hover img {
+    filter: brightness(0.8);
+}
+.small-btn:hover img {
+    filter: brightness(100%) saturate(100%);
+}
+
+.small-btn.is-active img {
+    filter: 
+        invert(25%) 
+        sepia(25%) 
+        saturate(650%)
+        hue-rotate(280deg) 
+        brightness(120%)
+        contrast(100%)
+        !important;
+    border-radius: 4px; 
+}
+
+.time-stamp {
+    color: #FFE8F5;
+    font-weight: 700;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.album-art {
+    width: 59px;
+    height: 59px;
+    border-radius: 6px;
+    border: 1.5px solid #895674;
+}
+
+/* progress bar slider styling*/
+input[type="range"].progress-bar {
+    -webkit-appearance: none; appearance: none;
+    background: transparent;
+    cursor: pointer;
+    width: 100%;
+}
+
+input[type="range"].progress-bar::-webkit-slider-runnable-track {
+    height: 9px;
+    border-radius: 5px;
+}
+
+input[type="range"].progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    margin-top: -6.5px;
+    /* set the desired color here for webkit browsers (chrome, safari, edge) */
+    background-color: #FFE8F5; 
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+}
+
+input[type="range"].progress-bar::-moz-range-thumb {
+    background-color: #AD7D9B; 
+    height: 22px;
+    width: 22px;
+    border-radius: 50%;
+    border: none;
+}
+
+/* the main container for the icon and the pop-up */
+.volume-control {
+    position: relative; /* this is crucial for positioning the pop-up */
+    display: flex;
+    align-items: center;
+}
+
+/* the pop-up container for the vertical slider */
+.volume-slider-container {
+    /* positioning */
+    position: absolute;
+    bottom: 75px; /* position it above the music bar */
+    left: 50%;
+    transform: translateX(-50%); /* center it above the icon */
+    
+    /* initial state (hidden) */
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none; /* prevents it from blocking clicks underneath when hidden */
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+    
+    /* styling from your figma design */
+    box-sizing: border-box;
+    background: #AD7D9B;
+    border: 4.5px solid rgb(138, 86, 117);
+    border-radius: 18px;
+    width: 48px; 
+    height: 188px;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100; /* high z-index to ensure it sits above everything */
+}
+
+/* state when clicked (visible) */
+.volume-slider-container.is-visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto; /* allows interaction when visible */
+}
+
+/* the vertical track for the react-range slider */
+.volume-track {
+    height: 140px;
+    width: 4.5px;
+    border-radius: 5px;
+}
+
+/* the dragging circle */
+.volume-thumb {
+    box-sizing: border-box;
+    height: 22px;
+    width: 22px;
+    background-color: #FFE8F5;
+    border: 3px solid #895674;
+    border-radius: 50%;
+    cursor: grab;
+}
