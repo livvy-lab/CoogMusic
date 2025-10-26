@@ -8,6 +8,7 @@ export default function SongGrid() {
   const [genreName, setGenreName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [streams, setStreams] = useState({});
 
   useEffect(() => {
     async function fetchSongs() {
@@ -20,19 +21,30 @@ export default function SongGrid() {
           return;
         }
         if (!res.ok) throw new Error(`Failed to fetch songs for genre ${genreId}`);
-
         const data = await res.json();
         setSongs(Array.isArray(data.songs) ? data.songs : []);
         setGenreName(data.genre?.GenreName || "Unknown Genre");
-      } catch (err) {
+      } catch {
         setError("Failed to load songs");
       } finally {
         setLoading(false);
       }
     }
-
     if (genreId) fetchSongs();
   }, [genreId]);
+
+  async function handlePlay(songId) {
+    try {
+      const res = await fetch("http://localhost:3001/plays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId }),
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      setStreams((prev) => ({ ...prev, [songId]: Number(data.streams) || 0 }));
+    } catch {}
+  }
 
   if (loading)
     return (
@@ -63,20 +75,19 @@ export default function SongGrid() {
       <h2 className="songGrid__title">{genreName}</h2>
       <div className="songGrid__container">
         {songs.map((s) => (
-          <div className="songCard" key={s.SongID}>
+          <div className="songCard" key={s.SongID} onClick={() => handlePlay(s.SongID)}>
             <div className="songCard__frame">
               <img
-                src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(
-                  s.Title
-                )}`}
+                src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
                 alt={s.Title}
                 className="songCard__art"
               />
             </div>
             <div className="songCard__meta">
               <div className="songCard__title">{s.Title}</div>
-              <div className="songCard__artist">
-                {s.ArtistName || "Unknown Artist"}
+              <div className="songCard__artist">{s.ArtistName || "Unknown Artist"}</div>
+              <div className="songCard__streams">
+                {streams[s.SongID] !== undefined ? `${streams[s.SongID]} streams` : "Click to play"}
               </div>
             </div>
           </div>
