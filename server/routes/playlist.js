@@ -179,7 +179,7 @@ export async function handlePlaylistRoutes(req, res) {
     // --------------------------------------------------------
     // PUT /playlists/:id
     // --------------------------------------------------------
-    if (pathname.startsWith("/playlists/") && method === "PUT")) {
+    if (pathname.startsWith("/playlists/") && method === "PUT") {
       const id = pathname.split("/")[2];
 
       let body = "";
