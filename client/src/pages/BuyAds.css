@@ -1,0 +1,138 @@
+.buyads-container {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.buyads-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  background: white;
+  padding: 2rem;
+  border-radius: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.buyads-header h1 {
+  color: #8b1858;
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-weight: 600;
+}
+
+.buyads-header p {
+  color: #666;
+  font-size: 1.2rem;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.buyads-form-container {
+  background: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #8b1858;
+}
+
+.form-group textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.upload-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.upload-button label {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  background-color: #c5a0b6;
+  color: white;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.upload-button label:hover {
+  background-color: #8b1858;
+}
+
+.file-name {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: #8b1858;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.submit-button:hover {
+  transform: scale(1.02);
+}
+
+.decoration {
+  position: relative;
+  margin-top: 2rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2rem;
+}
+
+.cat-icon {
+  font-size: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .buyads-container {
+    padding: 1rem;
+  }
+
+  .buyads-header,
+  .buyads-form-container {
+    padding: 1.5rem;
+  }
+
+  .upload-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
