@@ -3,8 +3,15 @@ import NewReleases from "../components/ListenerHome/NewReleases";
 import Genres from "../components/ListenerHome/Genres";
 import PageLayout from "../components/PageLayout/PageLayout";
 import "./ListenerHome.css";
+import { useLocation, useNavigate } from "react-router-dom";
+import React, {useState, useRef, useEffect} from 'react';
 
 export default function ListenerHome() {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { username } = location.state || {};
+
   const demoReleases = [
     { id: 1, image: "https://placehold.co/600x600/6e4760/fff?text=A" },
     { id: 2, image: "https://placehold.co/600x600/AF578A/fff?text=B" },

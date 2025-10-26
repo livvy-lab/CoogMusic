@@ -3,8 +3,7 @@ import db from "../db.js";
 export async function handleGenreRoutes(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
-
-
+  
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
