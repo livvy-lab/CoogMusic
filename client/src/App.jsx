@@ -10,7 +10,11 @@ import LikedSong from "./pages/LikedPage";
 import Playlist from "./pages/Playlist";
 import Subscription from "./pages/Subscription";
 import FollowsPage from "./pages/FollowsPage";
+<<<<<<< HEAD
 import BuyAds from "./pages/BuyAds";
+=======
+import EditProfile from "./pages/EditProfile";
+>>>>>>> b526f5ac23043101d68fa6a2fcb481ac5cd09c23
 
 export default function App() {
   return (
@@ -28,7 +32,11 @@ export default function App() {
         <Route path="/playlist" element={<Playlist/>}/>
         <Route path="/subscription" element={<Subscription/>}/>
         <Route path="/follows" element={<FollowsPage/>}/>
+<<<<<<< HEAD
         <Route path="/buy-ads" element={<BuyAds/>}/>
+=======
+        <Route path="/edit-profile" element={<EditProfile/>}/>
+>>>>>>> b526f5ac23043101d68fa6a2fcb481ac5cd09c23
       </Routes>
     </BrowserRouter>
   );
