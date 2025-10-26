@@ -1,4 +1,3 @@
-// routes/listen_history.js
 import db from "../db.js";
 import { parse } from "url";
 
