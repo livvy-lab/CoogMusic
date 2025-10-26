@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 
 const listener = {
-  FirstName: "Olivia",
+  FirstName: "Sylvia",
   LastName: "Smith",
   Bio: "Music lover 🎵",
   PFP: "/default-pfp.jpg",

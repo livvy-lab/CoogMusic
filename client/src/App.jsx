@@ -11,6 +11,7 @@ import Playlist from "./pages/Playlist";
 import Subscription from "./pages/Subscription";
 import FollowsPage from "./pages/FollowsPage";
 import EditProfile from "./pages/EditProfile";
+import AccountType from "./pages/Auth/AccountType";
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="/subscription" element={<Subscription/>}/>
         <Route path="/follows" element={<FollowsPage/>}/>
         <Route path="/edit-profile" element={<EditProfile/>}/>
+        <Route path="/register/select" element={<AccountType />} />
       </Routes>
     </BrowserRouter>
   );

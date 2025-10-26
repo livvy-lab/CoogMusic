@@ -71,7 +71,7 @@ export default function Login() {
 
         <p className="authMeta">
           Don’t have an account?{" "}
-          <Link to="/register" className="authLinkInline">
+          <Link to="/register/select" className="authLinkInline">
             Register here
           </Link>
         </p>
