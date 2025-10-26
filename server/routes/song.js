@@ -3,10 +3,9 @@ import db from "../db.js";
 import { parse } from "url";
 
 export async function handleSongRoutes(req, res) {
-  const { pathname } = parse(req.url, true);
+  const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -18,9 +17,28 @@ export async function handleSongRoutes(req, res) {
   }
 
   try {
-    // --------------------------------------------------------
-    // GET /songs   (all not-deleted)
-    // --------------------------------------------------------
+    if (pathname === "/songs/latest" && method === "GET") {
+      const limit =
+        Number.isInteger(Number(query?.limit)) && Number(query.limit) > 0
+          ? Math.min(Number(query.limit), 50)
+          : 10;
+
+      const [rows] = await db.query(
+        `SELECT SongID, Title, DurationSeconds, ReleaseDate
+           FROM Song
+          WHERE IsDeleted = 0
+          ORDER BY (ReleaseDate IS NULL) ASC,
+                   ReleaseDate DESC,
+                   SongID DESC
+          LIMIT ?`,
+        [limit]
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows));
+      return;
+    }
+
     if (pathname === "/songs" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Song WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -28,9 +46,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
-    // GET /songs/:id
-    // --------------------------------------------------------
     if (pathname.startsWith("/songs/") && method === "GET") {
       const id = pathname.split("/")[2];
       const [rows] = await db.query(
@@ -49,11 +64,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
-    // POST /songs
-    // Body: { Title, DurationSeconds, ReleaseDate? }
-    // Required: Title, DurationSeconds
-    // --------------------------------------------------------
     if (pathname === "/songs" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -103,11 +113,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
-    // PUT /songs/:id
-    // Body: { Title?, DurationSeconds?, ReleaseDate? }
-    // Partial updates allowed; only provided fields are changed
-    // --------------------------------------------------------
     if (pathname.startsWith("/songs/") && method === "PUT") {
       const id = pathname.split("/")[2];
 
@@ -135,7 +140,7 @@ export async function handleSongRoutes(req, res) {
               params.push(d);
             } else {
               updates.push(`${key} = ?`);
-              params.push(value ?? null); // allow null to clear optional ReleaseDate
+              params.push(value ?? null);
             }
           }
 
@@ -169,9 +174,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
-    // DELETE /songs/:id   (soft delete -> IsDeleted = 1)
-    // --------------------------------------------------------
     if (pathname.startsWith("/songs/") && method === "DELETE") {
       const id = pathname.split("/")[2];
 
@@ -191,9 +193,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // --------------------------------------------------------
-    // Fallback
-    // --------------------------------------------------------
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
   } catch (err) {
