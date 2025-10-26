@@ -3,6 +3,19 @@ import PageLayout from "../components/PageLayout/PageLayout";
 import './EditProfile.css';
 
 const EditProfile = () => {
+  const handleRemoveAccount = () => {
+    const confirmation = window.confirm(
+      "Are you sure you want to permanently remove your account? This action cannot be undone."
+    );
+    if (confirmation) {
+      // Here you would call your backend API to delete the account.
+      console.log("Account has been deleted.");
+      alert("Your account has been removed. Redirecting to Home Page...");
+      // Example: Redirect user to homepage after removal
+      window.location.href = "/";
+    }
+  };
+
   return (
     <PageLayout>
       <div className="edit-profile-container">
@@ -40,8 +53,12 @@ const EditProfile = () => {
 
           <div className="edit-profile-buttons">
             <button type="button" className="cancel-btn">Cancel</button>
-            <button type="submit" className="save-changes-btn">
-              Save Changes
+            <button type="submit" className="save-changes-btn">Save Changes</button>
+          </div>
+
+          <div className="remove-account-container">
+            <button type="button" className="remove-account-btn" onClick={handleRemoveAccount}>
+              Remove Account
             </button>
           </div>
         </form>
