@@ -14,6 +14,8 @@ import BuyAds from "./pages/BuyAds";
 import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
+import AdminArtistManagement from "./pages/AdminArtistManagement";
+import AdminListenerManagement from "./pages/AdminListenerManagement";
 
 export default function App() {
   return (
@@ -37,6 +39,8 @@ export default function App() {
         <Route path="/buy-ads" element={<BuyAds/>}/>
         <Route path="/edit-profile" element={<EditProfile/>}/>
         <Route path="/register/select" element={<AccountType />} />
+        <Route path="/artist-management" element={<AdminArtistManagement />} />
+        <Route path="/listener-management" element={<AdminListenerManagement />} />
       </Routes>
     </BrowserRouter>
   );
