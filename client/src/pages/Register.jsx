@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
 import Loading from "../components/LoadingLayout/Loading";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+
 export default function Register() {
   const navigate = useNavigate();
 
@@ -12,35 +14,69 @@ export default function Register() {
   const [minor, setMinor] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [image, setImage] = useState("");
-    
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  const onFileChange = (e) => {
+    const f = e.target.files?.[0] || null;
+    setFile(f);
+    setPreviewUrl(f ? URL.createObjectURL(f) : "");
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
 
     try {
-      const response = await fetch("http://localhost:3001/auth/register", {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ first, last, major, minor, username, password})
+      // 1) Register first (no image yet)
+      const regRes = await fetch(`${API_BASE}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ first, last, major, minor, username, password }),
       });
 
-      const data = await response.json();
+      const regData = await regRes.json().catch(() => ({}));
+      if (!regRes.ok || !regData?.success) {
+        alert(`Sign up failed: ${regData?.message || regData?.error || "Unknown error"}`);
+        setSubmitting(false);
+        return;
+      }
 
-      if (data.success){
-        alert(
-          'You are signed up!'
-        );
-        navigate('/login');
+      const listenerId = regData.listenerId;
+
+      // 2) If a file was chosen, upload avatar with the new listenerId
+      if (file && listenerId) {
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const upRes = await fetch(`${API_BASE}/listeners/${listenerId}/avatar`, {
+          method: "POST",
+          body: fd,
+        });
+
+        const upData = await upRes.json().catch(() => ({}));
+        if (upRes.ok && upData?.url) {
+          const cached = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem(
+            "user",
+            JSON.stringify({ ...cached, listenerId, username, pfpUrl: upData.url })
+          );
+        } else {
+          console.warn("Avatar upload failed:", upData);
+        }
       }
-      else{
-        alert(`Sign up failed: ${data.message}`);
-      }
-    }
-    catch (err){
-      console.error('Error occured while trying to sign up: ', err);
-      alert('Sign up failed. Please try again.');
+
+      alert("You are signed up!");
+      navigate("/login");
+    } catch (err) {
+      console.error("Error during sign-up:", err);
+      // If you see "TypeError: Failed to fetch", your API is unreachable or blocked by CORS.
+      alert("Sign up failed. Please ensure the API is running and try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -51,23 +87,29 @@ export default function Register() {
       <div className="authCard authCardLarge">
         <div className="authChip">LISTENER REGISTRATION</div>
 
+        {/* Optional preview */}
+        {previewUrl && <img className="pfpThumb" src={previewUrl} alt="profile preview" />}
+
         <form className="regGrid" onSubmit={handleSubmit}>
           <label className="regField">
             <span>First name:</span>
             <input
               className="authInput"
-              type="first"
+              type="text"
               value={first}
               onChange={(e) => setFirstName(e.target.value)}
+              required
             />
           </label>
+
           <label className="regField">
             <span>Last name:</span>
             <input
               className="authInput"
-              type="last"
+              type="text"
               value={last}
               onChange={(e) => setLastName(e.target.value)}
+              required
             />
           </label>
 
@@ -75,16 +117,18 @@ export default function Register() {
             <span>Major:</span>
             <input
               className="authInput"
-              type="major"
+              type="text"
               value={major}
               onChange={(e) => setMajor(e.target.value)}
+              required
             />
           </label>
+
           <label className="regField">
             <span>Minor (optional):</span>
             <input
               className="authInput"
-              type="minor"
+              type="text"
               value={minor}
               onChange={(e) => setMinor(e.target.value)}
             />
@@ -94,11 +138,13 @@ export default function Register() {
             <span>User:</span>
             <input
               className="authInput"
-              type="username"
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              required
             />
           </label>
+
           <label className="regField">
             <span>Password:</span>
             <input
@@ -106,6 +152,7 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              required
             />
           </label>
 
@@ -114,14 +161,25 @@ export default function Register() {
               type="button"
               className="authBtn authBtnGhost"
               onClick={onCancel}
+              disabled={submitting}
             >
               Cancel
             </button>
-            <button type="button" className="authBtn authBtnChip">
+
+            {/* Hidden file input + styled label that looks like your chip */}
+            <input
+              id="pfpInput"
+              className="fileInputHidden"
+              type="file"
+              accept="image/*"
+              onChange={onFileChange}
+            />
+            <label htmlFor="pfpInput" className="authBtn authBtnChip fileBtn">
               profile pic
-            </button>
-            <button type="submit" className="authBtn authBtnPrimary">
-              Sign Up
+            </label>
+
+            <button type="submit" className="authBtn authBtnPrimary" disabled={submitting}>
+              {submitting ? "Signing Up…" : "Sign Up"}
             </button>
           </div>
         </form>
