@@ -10,7 +10,7 @@ export default function Genres() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    (async () => {
+    const fetchGenres = async () => {
       try {
         const res = await fetch("http://localhost:3001/genres");
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -21,15 +21,15 @@ export default function Genres() {
       } finally {
         setLoading(false);
       }
-    })();
+    };
+    fetchGenres();
   }, []);
 
   const filtered = (Array.isArray(genres) ? genres : []).filter(
     g => g?.Name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) return <div>Loading genres...</div>;
-  if (error) return <div>{error}</div>;
+  const placeholders = Array(Math.max(0, 8 - genres.length)).fill(null);
 
   return (
     <section className="genres">

@@ -205,3 +205,46 @@
     top:   calc(var(--E-Y) * var(--s));
   }
   
+  .fileInputHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    border: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  
+  .fileBtn {
+    cursor: pointer;
+    user-select: none;
+    text-align: center;
+    min-width: 140px;
+    padding: 10px 22px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+    transition: transform 0.02s ease, box-shadow 0.2s ease;
+  }
+  .fileBtn:hover,
+  .fileBtn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(198, 200, 247, 0.35);
+  }
+  .fileBtn:active {
+    transform: translateY(1px);
+  }
+  
+  .pfpThumb {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--card-border);
+    background: var(--white);
+    display: block;
+    margin: 10px auto 0 auto;
+  }
+  

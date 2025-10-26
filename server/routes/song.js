@@ -1,4 +1,3 @@
-// routes/song.js
 import db from "../db.js";
 import { parse } from "url";
 
@@ -24,13 +23,12 @@ export async function handleSongRoutes(req, res) {
           : 10;
 
       const [rows] = await db.query(
-        `SELECT SongID, Title, DurationSeconds, ReleaseDate
-           FROM Song
-          WHERE IsDeleted = 0
-          ORDER BY (ReleaseDate IS NULL) ASC,
-                   ReleaseDate DESC,
-                   SongID DESC
-          LIMIT ?`,
+        `SELECT s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.GenreID, g.Name AS GenreName
+         FROM Song s
+         LEFT JOIN Genre g ON s.GenreID = g.GenreID
+         WHERE s.IsDeleted = 0
+         ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
+         LIMIT ?`,
         [limit]
       );
 
@@ -40,16 +38,38 @@ export async function handleSongRoutes(req, res) {
     }
 
     if (pathname === "/songs" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Song WHERE IsDeleted = 0");
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(rows));
-      return;
+      const genreId = query?.genreId ? Number(query.genreId) : null;
+      if (genreId) {
+        const [rows] = await db.query(
+          `SELECT s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.GenreID, g.Name AS GenreName
+           FROM Song s
+           JOIN Genre g ON s.GenreID = g.GenreID
+           WHERE s.IsDeleted = 0 AND s.GenreID = ?`,
+          [genreId]
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows));
+        return;
+      } else {
+        const [rows] = await db.query(
+          `SELECT s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.GenreID, g.Name AS GenreName
+           FROM Song s
+           LEFT JOIN Genre g ON s.GenreID = g.GenreID
+           WHERE s.IsDeleted = 0`
+        );
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows));
+        return;
+      }
     }
 
     if (pathname.startsWith("/songs/") && method === "GET") {
       const id = pathname.split("/")[2];
       const [rows] = await db.query(
-        "SELECT * FROM Song WHERE SongID = ? AND IsDeleted = 0",
+        `SELECT s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.GenreID, g.Name AS GenreName
+         FROM Song s
+         LEFT JOIN Genre g ON s.GenreID = g.GenreID
+         WHERE s.SongID = ? AND s.IsDeleted = 0`,
         [id]
       );
 
@@ -69,11 +89,12 @@ export async function handleSongRoutes(req, res) {
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
         try {
-          const { Title, DurationSeconds, ReleaseDate } = JSON.parse(body || "{}");
+          const { Title, DurationSeconds, ReleaseDate, GenreID } = JSON.parse(body || "{}");
 
           const missing = [];
           if (!Title) missing.push("Title");
           if (DurationSeconds === undefined || DurationSeconds === null) missing.push("DurationSeconds");
+          if (GenreID === undefined) missing.push("GenreID");
 
           if (missing.length) {
             res.writeHead(400, { "Content-Type": "application/json" });
@@ -88,10 +109,24 @@ export async function handleSongRoutes(req, res) {
             return;
           }
 
+          const genreId = Number(GenreID);
+          if (!Number.isInteger(genreId) || genreId <= 0) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
+            return;
+          }
+
+          const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [genreId]);
+          if (g.length === 0) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "GenreID does not exist" }));
+            return;
+          }
+
           const [result] = await db.query(
-            `INSERT INTO Song (Title, DurationSeconds, ReleaseDate, IsDeleted)
-             VALUES (?, ?, ?, 0)`,
-            [Title, duration, ReleaseDate || null]
+            `INSERT INTO Song (Title, DurationSeconds, ReleaseDate, GenreID, IsDeleted)
+             VALUES (?, ?, ?, ?, 0)`,
+            [Title, duration, ReleaseDate || null, genreId]
           );
 
           res.writeHead(201, { "Content-Type": "application/json" });
@@ -101,11 +136,11 @@ export async function handleSongRoutes(req, res) {
               Title,
               DurationSeconds: duration,
               ReleaseDate: ReleaseDate || null,
+              GenreID: genreId,
               IsDeleted: 0
             })
           );
         } catch (err) {
-          console.error("Error parsing request body for POST /songs:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
@@ -121,7 +156,7 @@ export async function handleSongRoutes(req, res) {
       req.on("end", async () => {
         try {
           const fields = JSON.parse(body || "{}");
-          const validCols = ["Title", "DurationSeconds", "ReleaseDate"];
+          const validCols = ["Title", "DurationSeconds", "ReleaseDate", "GenreID"];
 
           const updates = [];
           const params = [];
@@ -138,6 +173,21 @@ export async function handleSongRoutes(req, res) {
               }
               updates.push(`${key} = ?`);
               params.push(d);
+            } else if (key === "GenreID") {
+              const gid = Number(value);
+              if (!Number.isInteger(gid) || gid <= 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
+                return;
+              }
+              const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [gid]);
+              if (g.length === 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID does not exist" }));
+                return;
+              }
+              updates.push(`GenreID = ?`);
+              params.push(gid);
             } else {
               updates.push(`${key} = ?`);
               params.push(value ?? null);
@@ -165,8 +215,7 @@ export async function handleSongRoutes(req, res) {
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ SongID: id, message: "Song updated successfully" }));
-        } catch (err) {
-          console.error("Error parsing PUT /songs/:id body:", err);
+        } catch {
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }

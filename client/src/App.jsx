@@ -4,10 +4,10 @@ import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
-import ArtistView from "./pages/ArtistView"; 
+import ArtistView from "./pages/ArtistView";
 import Song from "./pages/Songs";
 import LikedSong from "./pages/LikedPage";
-import Playlist from "./pages/Playlist";
+import MyPlaylistsPage from "./pages/PersonalPlaylist";
 import Subscription from "./pages/Subscription";
 import FollowsPage from "./pages/FollowsPage";
 
@@ -15,6 +15,7 @@ import BuyAds from "./pages/BuyAds";
 import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
+import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 
 export default function App() {
   return (
@@ -28,8 +29,11 @@ export default function App() {
         <Route path="/user-report" element={<UserReport/>} />
         <Route path="/artist" element={<ArtistView/>} />
         <Route path="/song" element={<Song/>} />
+        <Route path="/genres/:genreId" element={<Song/>} />
+        <Route path="/genre/:genreId" element={<Song/>} />
         <Route path="/likedsongs" element={<LikedSong/>}/>
-        <Route path="/playlist" element={<Playlist/>}/>
+        <Route path="/me/playlists" element={<MyPlaylistsPage />} />
+        <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
         <Route path="/subscription" element={<Subscription/>}/>
         <Route path="/follows" element={<FollowsPage/>}/>
         <Route path="/buy-ads" element={<BuyAds/>}/>

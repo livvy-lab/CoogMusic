@@ -17,7 +17,9 @@ export default function RecommendedSongs() {
     }
     const fetchSongs = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/listen_history/latest?listenerId=${encodeURIComponent(id)}`);
+        const res = await fetch(
+          `http://localhost:3001/listen_history/latest?listenerId=${encodeURIComponent(id)}`
+        );
         if (!res.ok) {
           setSongs([]);
           return;
@@ -33,6 +35,17 @@ export default function RecommendedSongs() {
     fetchSongs();
   }, []);
 
+  async function handlePlay(songId) {
+    try {
+      if (!songId) return;
+      await fetch("http://localhost:3001/plays", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId }),
+      });
+    } catch {}
+  }
+
   const totalSlots = 3;
   const filledSlots = Array.isArray(songs) ? songs.length : 0;
   const emptySlots = Math.max(0, totalSlots - filledSlots);
@@ -40,15 +53,19 @@ export default function RecommendedSongs() {
   const cardsToShow = [
     ...(Array.isArray(songs) ? songs : []).map((s, i) => ({
       key: s.SongID ?? `${s.Title ?? "Untitled"}-${s.Artist ?? "Unknown"}-${i}`,
+      songId: s.SongID ?? null,
       image: s.CoverURL || "https://placehold.co/300x300/895674/ffffff?text=Song",
       title: s.Title ?? "Untitled",
       artist: s.Artist ?? "Unknown",
+      placeholder: false,
     })),
     ...Array.from({ length: emptySlots }, (_, i) => ({
       key: `placeholder-${i}`,
+      songId: null,
       image: "https://placehold.co/300x300/FFE8F5/895674?text=Coming+Soon",
       title: "No song yet",
       artist: "—",
+      placeholder: true,
     })),
   ];
 
@@ -63,7 +80,20 @@ export default function RecommendedSongs() {
             <p>Log in to see recommendations.</p>
           ) : (
             cardsToShow.map((s) => (
-              <SongCard key={s.key} image={s.image} title={s.title} artist={s.artist} />
+              <div
+                key={s.key}
+                onClick={() => s.songId && handlePlay(s.songId)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if ((e.key === "Enter" || e.key === " ") && s.songId) {
+                    handlePlay(s.songId);
+                  }
+                }}
+                className="rs__item"
+              >
+                <SongCard image={s.image} title={s.title} artist={s.artist} />
+              </div>
             ))
           )}
         </div>
