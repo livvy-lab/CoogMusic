@@ -24,7 +24,7 @@ export default function Login() {
       if (data.success) {
         const user = {
           username: data.username,
-          listenerId: data.listenerId,  // must be non-null to load profile
+          listenerId: data.listenerId, 
           accountId: data.accountId,
           accountType: data.accountType,
           name: data.name
@@ -71,7 +71,7 @@ export default function Login() {
 
         <p className="authMeta">
           Don’t have an account?{" "}
-          <Link to="/register" className="authLinkInline">
+          <Link to="/register/select" className="authLinkInline">
             Register here
           </Link>
         </p>

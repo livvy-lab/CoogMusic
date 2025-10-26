@@ -12,6 +12,7 @@ import Subscription from "./pages/Subscription";
 import FollowsPage from "./pages/FollowsPage";
 import BuyAds from "./pages/BuyAds";
 import EditProfile from "./pages/EditProfile";
+import AccountType from "./pages/Auth/AccountType";
 
 export default function App() {
   return (
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/follows" element={<FollowsPage/>}/>
         <Route path="/buy-ads" element={<BuyAds/>}/>
         <Route path="/edit-profile" element={<EditProfile/>}/>
+        <Route path="/register/select" element={<AccountType />} />
       </Routes>
     </BrowserRouter>
   );
