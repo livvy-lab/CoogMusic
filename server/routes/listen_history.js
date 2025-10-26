@@ -3,10 +3,9 @@ import db from "../db.js";
 import { parse } from "url";
 
 export async function handleListenHistoryRoutes(req, res) {
-  const { pathname } = parse(req.url, true);
+  const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -18,6 +17,30 @@ export async function handleListenHistoryRoutes(req, res) {
   }
 
   try {
+    // NEW: last 3 songs for a listener
+    if (pathname === "/listen_history/latest" && method === "GET") {
+      const listenerId = query.listenerId;
+      if (!listenerId) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "listenerId is required" }));
+        return;
+      }
+
+      const [rows] = await db.query(
+        `SELECT s.SongID, s.Title, s.Artist
+         FROM Listen_History lh
+         JOIN Song s ON s.SongID = lh.SongID
+         WHERE lh.ListenerID = ? AND lh.IsDeleted = 0
+         ORDER BY lh.ListenedDate DESC, lh.EventID DESC
+         LIMIT 3`,
+        [listenerId]
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows));
+      return;
+    }
+
     // GET all listen history (not deleted)
     if (pathname === "/listen_history" && method === "GET") {
       const [rows] = await db.query("SELECT * FROM Listen_History WHERE IsDeleted = 0");
@@ -111,7 +134,7 @@ export async function handleListenHistoryRoutes(req, res) {
       return;
     }
 
-    // DELETE (soft delete) listen history event
+    // DELETE (soft delete)
     if (pathname.startsWith("/listen_history/") && method === "DELETE") {
       const eventId = pathname.split("/")[2];
       const [result] = await db.query(
@@ -130,7 +153,6 @@ export async function handleListenHistoryRoutes(req, res) {
       return;
     }
 
-    // 404 Not found
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
   } catch (err) {
