@@ -9,70 +9,61 @@ export default function RecommendedSongs() {
 
   useEffect(() => {
     const user = getUser();
-    if (!user || !user.ListenerID) {
-      console.error("No listener ID found in user storage");
+    const id = user?.listenerId ?? user?.ListenerID;
+    if (!id) {
+      setSongs([]);
       setLoading(false);
       return;
     }
-
     const fetchSongs = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:3001/listen_history/latest?listenerId=${user.ListenerID}`
-        );
+        const res = await fetch(`http://localhost:3001/listen_history/latest?listenerId=${encodeURIComponent(id)}`);
+        if (!res.ok) {
+          setSongs([]);
+          return;
+        }
         const data = await res.json();
-        setSongs(data);
-      } catch (err) {
-        console.error("Error fetching songs:", err);
+        setSongs(Array.isArray(data) ? data : []);
+      } catch {
+        setSongs([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchSongs();
   }, []);
 
-  // Determine how many cards to show
   const totalSlots = 3;
-  const filledSlots = songs.length;
-  const emptySlots = totalSlots - filledSlots;
+  const filledSlots = Array.isArray(songs) ? songs.length : 0;
+  const emptySlots = Math.max(0, totalSlots - filledSlots);
 
-  // Build array that includes both real songs and placeholders
   const cardsToShow = [
-    ...songs.map((s) => ({
-      key: s.SongID,
+    ...(Array.isArray(songs) ? songs : []).map((s, i) => ({
+      key: s.SongID ?? `${s.Title ?? "Untitled"}-${s.Artist ?? "Unknown"}-${i}`,
       image: s.CoverURL || "https://placehold.co/300x300/895674/ffffff?text=Song",
-      title: s.Title,
-      artist: s.Artist,
-      placeholder: false,
+      title: s.Title ?? "Untitled",
+      artist: s.Artist ?? "Unknown",
     })),
-    ...Array(emptySlots)
-      .fill(null)
-      .map((_, i) => ({
-        key: `placeholder-${i}`,
-        image: "https://placehold.co/300x300/FFE8F5/895674?text=Coming+Soon",
-        title: "No song yet",
-        artist: "—",
-        placeholder: true,
-      })),
+    ...Array.from({ length: emptySlots }, (_, i) => ({
+      key: `placeholder-${i}`,
+      image: "https://placehold.co/300x300/FFE8F5/895674?text=Coming+Soon",
+      title: "No song yet",
+      artist: "—",
+    })),
   ];
 
   return (
     <div className="rsWrapper">
       <h2 className="rs__title">Songs for you</h2>
-
       <section className="rs">
         <div className="rs__tray">
           {loading ? (
             <p>Loading...</p>
+          ) : cardsToShow.length === 0 ? (
+            <p>Log in to see recommendations.</p>
           ) : (
             cardsToShow.map((s) => (
-              <SongCard
-                key={s.key}
-                image={s.image}
-                title={s.title}
-                artist={s.artist}
-              />
+              <SongCard key={s.key} image={s.image} title={s.title} artist={s.artist} />
             ))
           )}
         </div>
