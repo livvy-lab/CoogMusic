@@ -15,6 +15,11 @@ import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload";
+import ArtistUpload from "./pages/ArtistUpload"; 
+import PlaylistPage from "./pages/PlaylistPage";
+import PlaylistView from "./pages/PlaylistView";
+import Playlists from "./pages/Playlists";
+
 
 import { PlayerProvider } from "./context/PlayerContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";

@@ -121,3 +121,76 @@
   background: transparent;
   border: 1px solid #a94486;
 }
+
+/* 🎵 Add-to-playlist button */
+.addToPlaylistBtn {
+  background: #fff;
+  border: 2px solid #782355;
+  border-radius: 8px;
+  color: #782355;
+  font-size: 14px;
+  font-weight: bold;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 0 #782355;
+}
+
+.addToPlaylistBtn:hover {
+  background: #ffebf4;
+  transform: scale(1.05);
+  box-shadow: 0 3px 0 #a94486;
+}
+
+.addToPlaylistBtn:active {
+  transform: scale(0.95);
+  box-shadow: none;
+}
+
+/* Make rows more breathable */
+.playlistRow, .likedRow {
+  display: grid;
+  grid-template-columns: 40px 2fr 1fr 1fr 100px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: rgba(255, 240, 248, 0.6);
+  border: 2px solid #b57a9b;
+  box-shadow: 0 4px 0 #925c7e;
+  transition: all 0.3s ease;
+}
+
+.playlistRow:hover, .likedRow:hover {
+  background: rgba(255, 240, 248, 0.8);
+  transform: translateY(-2px);
+}
+
+.playlistMenu {
+  background: #fff6fa;
+  border: 2px solid #b77a99;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(120, 35, 85, 0.15);
+  overflow: hidden;
+}
+
+.playlistMenu button {
+  background: none;
+  color: #782355;
+  font-size: 13px;
+  padding: 8px 10px;
+  width: 100%;
+  text-align: left;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.playlistMenu button:hover {
+  background: #ffe0ef;
+}
+
+
