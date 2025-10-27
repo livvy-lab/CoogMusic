@@ -11,34 +11,35 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       const response = await fetch("http://localhost:3001/login", {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ username, password})
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ username, password })
       });
-
       const data = await response.json();
 
       if (data.success) {
         const user = {
           username: data.username,
-          listenerId: data.listenerId, 
           accountId: data.accountId,
           accountType: data.accountType,
+          listenerId: data.listenerId,
+          artistId: data.artistId,
           name: data.name
         };
-        setUser(user);                 // <-- persist
-        navigate("/home");             // no state needed anymore
-      }      
-      else{
+        setUser(user);
+        if (data.accountType === "artist") {
+          navigate("/upload");
+        } else {
+          navigate("/home");
+        }
+      } else {
         alert(`Log in failed: ${data.message}`);
       }
-    }
-    catch (err){
-      console.error('Error occured while trying to log in: ', err);
-      alert('Log in failed. Please try again.');
+    } catch (err) {
+      console.error("Error occured while trying to log in: ", err);
+      alert("Log in failed. Please try again.");
     }
   };
 
@@ -68,7 +69,6 @@ export default function Login() {
             <span className="playIcon" />
           </button>
         </form>
-
         <p className="authMeta">
           Don’t have an account?{" "}
           <Link to="/register/select" className="authLinkInline">
