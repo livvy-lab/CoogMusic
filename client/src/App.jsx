@@ -17,6 +17,8 @@ import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload"; 
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
+import Playlists from "./pages/Playlists";
+
 
 
 export default function App() {
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="/follows" element={<FollowsPage />} />
         <Route path="/buy-ads" element={<BuyAds />} />
         <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/playlists" element={<Playlists />} />
+
 
         {/* Artist routes */}
         <Route path="/artist" element={<ArtistView />} />
