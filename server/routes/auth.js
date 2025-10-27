@@ -1,3 +1,4 @@
+// server/routes/auth.js
 import "dotenv/config";
 import db from "../db.js";
 import bcrypt from "bcrypt";
@@ -18,10 +19,11 @@ export async function handleAuthRoutes(req, res) {
   }
 
   /* =========================================================
-     🎧 1. LISTENER REGISTRATION
+     🎧 1) LISTENER REGISTRATION
   ========================================================= */
   if (pathname === "/auth/register" && method === "POST") {
     try {
+      // read JSON body
       let body = "";
       for await (const chunk of req) body += chunk;
 
@@ -48,19 +50,19 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
-      const pwOk =
-        /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
+      // password policy
+      const pwOk = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
       if (!pwOk) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
-            error:
-              "Password must be ≥8 chars, include one uppercase and one special character.",
+            error: "Password must be ≥8 chars, include one uppercase and one special character.",
           })
         );
         return;
       }
 
+      // username must be unique
       const [existing] = await db.execute(
         "SELECT 1 FROM AccountInfo WHERE Username = ? LIMIT 1",
         [username]
@@ -71,6 +73,7 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
+      // create AccountInfo (Listener)
       const hash = await bcrypt.hash(password, 10);
       const [accIns] = await db.execute(
         "INSERT INTO AccountInfo (Username, PasswordHash, AccountType, DateCreated, IsDeleted) VALUES (?, ?, 'Listener', NOW(), 0)",
@@ -78,21 +81,22 @@ export async function handleAuthRoutes(req, res) {
       );
       const accountId = accIns.insertId;
 
+      // create Listener row
       const [lisIns] = await db.execute(
         `INSERT INTO Listener
            (AccountID, FirstName, LastName, Major, Minor, DateCreated, IsDeleted, image_media_id)
-         VALUES
-           (?, ?, ?, ?, ?, NOW(), 0, ?)`,
+         VALUES (?, ?, ?, ?, ?, NOW(), 0, ?)`,
         [accountId, first, last, major, minor, image_media_id]
       );
-
       const listenerId = lisIns.insertId;
+
       res.writeHead(201, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({
           success: true,
           message: "Listener registered successfully",
           listenerId,
+          accountType: "listener",
         })
       );
       return;
@@ -105,10 +109,11 @@ export async function handleAuthRoutes(req, res) {
   }
 
   /* =========================================================
-     🎨 2. ARTIST REGISTRATION
+     🎨 2) ARTIST REGISTRATION
   ========================================================= */
   if (pathname === "/auth/register/artist" && method === "POST") {
     try {
+      // read JSON body
       let body = "";
       for await (const chunk of req) body += chunk;
 
@@ -121,7 +126,7 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
-      const first = parsed.first?.trim();
+      const first = parsed.first?.trim();            // ArtistName
       const bio = parsed.bio?.trim() || null;
       const username = (parsed.username ?? parsed.user)?.trim();
       const password = parsed.password ?? "";
@@ -133,19 +138,19 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
-      const pwOk =
-        /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
+      // password policy
+      const pwOk = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
       if (!pwOk) {
         res.writeHead(400, { "Content-Type": "application/json" });
         res.end(
           JSON.stringify({
-            error:
-              "Password must be ≥8 chars, include one uppercase and one special character.",
+            error: "Password must be ≥8 chars, include one uppercase and one special character.",
           })
         );
         return;
       }
 
+      // username unique
       const [existing] = await db.execute(
         "SELECT 1 FROM AccountInfo WHERE Username = ? LIMIT 1",
         [username]
@@ -156,6 +161,7 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
+      // create AccountInfo (Artist)
       const hash = await bcrypt.hash(password, 10);
       const [accIns] = await db.execute(
         "INSERT INTO AccountInfo (Username, PasswordHash, AccountType, DateCreated, IsDeleted) VALUES (?, ?, 'Artist', NOW(), 0)",
@@ -163,21 +169,23 @@ export async function handleAuthRoutes(req, res) {
       );
       const accountId = accIns.insertId;
 
+      // create Artist row
       const [artIns] = await db.execute(
         `INSERT INTO Artist
            (AccountID, ArtistName, Bio, DateCreated, IsDeleted, image_media_id)
-         VALUES
-           (?, ?, ?, NOW(), 0, ?)`,
+         VALUES (?, ?, ?, NOW(), 0, ?)`,
         [accountId, first, bio, image_media_id]
       );
-
       const artistId = artIns.insertId;
+
       res.writeHead(201, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({
           success: true,
           message: "Artist registered successfully",
-          artistId,
+          ArtistID: artistId,   // keep capitalized for compatibility with your login handling
+          artistId,             // also include lowercase if you want
+          accountType: "artist",
         })
       );
       return;
@@ -188,6 +196,8 @@ export async function handleAuthRoutes(req, res) {
       return;
     }
   }
+
+  // Fallback
   res.writeHead(404, { "Content-Type": "application/json" });
   res.end(JSON.stringify({ error: "Auth route not found" }));
 }
