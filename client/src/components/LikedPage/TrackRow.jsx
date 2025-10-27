@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Heart } from "lucide-react";
 import blankCover from "../../assets/blank-cover.jpg";
+import { HeartIcon as SolidHeart } from "@heroicons/react/24/solid";
+import { HeartIcon as OutlineHeart } from "@heroicons/react/24/outline";
 import "./TrackRow.css";
 
 export default function TrackRow({ index, track }) {
@@ -15,26 +16,23 @@ export default function TrackRow({ index, track }) {
       <div className="trackIndex">{index}</div>
 
       {/* Heart toggle */}
-<button
-  className={`heartBtn ${liked ? "" : "unliked"}`}
-  aria-label={liked ? "Unlike" : "Like"}
-  onClick={toggleLike}
->
-<Heart
-  size={22}
-  stroke="currentColor"
-  fill={liked ? "currentColor" : "transparent"} // <-- key change
-  strokeWidth={1.8}
-  className={`trackHeart ${liked ? "filled" : ""}`}
-  style={{
-    color: "#782355", // sets the color for both stroke + fill
-    transition: "all 0.25s ease",
-    transform: liked ? "scale(1.1)" : "scale(1.0)",
-  }}
-/>
-
-</button>
-
+      <button
+        className={`heartBtn ${liked ? "liked" : ""}`}
+        aria-label={liked ? "Unlike" : "Like"}
+        onClick={toggleLike}
+      >
+        {liked ? (
+          <SolidHeart
+            className="trackHeart"
+            style={{ color: "#782355", width: 22, height: 22 }}
+          />
+        ) : (
+          <OutlineHeart
+            className="trackHeart"
+            style={{ color: "#782355", width: 22, height: 22 }}
+          />
+        )}
+      </button>
 
       {/* Album cover */}
       <div className="trackCover">
