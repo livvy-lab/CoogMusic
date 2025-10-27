@@ -2,67 +2,87 @@ import "dotenv/config";
 import db from "../db.js";
 import bcrypt from "bcrypt";
 
-export async function handleLogin(req, res) {
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+function send(res, code, obj) {
+  res.writeHead(code, {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Accept",
+  });
+  res.end(JSON.stringify(obj));
+}
 
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
+async function readBody(req) {
+  const chunks = [];
+  for await (const c of req) chunks.push(typeof c === "string" ? Buffer.from(c) : c);
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  const ct = (req.headers["content-type"] || "").toLowerCase();
+  if (!raw) return {};
+  if (ct.startsWith("application/json")) { try { return JSON.parse(raw); } catch { return {}; } }
+  if (ct.startsWith("application/x-www-form-urlencoded")) {
+    const params = new URLSearchParams(raw);
+    return Object.fromEntries(params.entries());
   }
+  try { return JSON.parse(raw); } catch { return {}; }
+}
+
+export async function handleLogin(req, res) {
+  if (req.method === "OPTIONS") { send(res, 204, {}); return; }
+  if (req.method !== "POST") { send(res, 405, { success: false, message: "Method not allowed" }); return; }
 
   try {
-    let body = "";
-    for await (const chunk of req) body += chunk;
-    let parsed = {};
-    try { parsed = JSON.parse(body || "{}"); } catch {}
-    const username = (parsed.username ?? parsed.user)?.trim();
-    const password = parsed.password ?? "";
+    const body = await readBody(req);
+    const username = (body.username ?? body.user ?? "").toString().trim();
+    const password = (body.password ?? "").toString();
+
     if (!username || !password) {
-      res.writeHead(400, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: false, message: "Missing username or password" }));
+      send(res, 400, { success: false, message: "Missing username or password" });
       return;
     }
 
-    const [rows] = await db.execute(
+    const [acctRows] = await db.execute(
       "SELECT AccountID, Username, PasswordHash, IsDeleted FROM AccountInfo WHERE Username = ? LIMIT 1",
       [username]
     );
-    if (rows.length === 0 || rows[0].IsDeleted) {
-      res.writeHead(401, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: false, message: "Invalid credentials" }));
+    if (acctRows.length === 0 || acctRows[0].IsDeleted) {
+      send(res, 401, { success: false, message: "Invalid credentials" });
       return;
     }
 
-    const ok = await bcrypt.compare(password, rows[0].PasswordHash);
-    if (!ok) {
-      res.writeHead(401, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: false, message: "Invalid credentials" }));
-      return;
-    }
+    const ok = await bcrypt.compare(password, acctRows[0].PasswordHash);
+    if (!ok) { send(res, 401, { success: false, message: "Invalid credentials" }); return; }
 
-    const accountId = rows[0].AccountID;
+    const accountId = acctRows[0].AccountID;
+
     const [listenerRows] = await db.execute(
       "SELECT ListenerID, FirstName, LastName FROM Listener WHERE AccountID = ? AND IsDeleted = 0 LIMIT 1",
       [accountId]
     );
 
+    // Only fetch ArtistID; do NOT assume a StageName column exists
+    const [artistRows] = await db.execute(
+      "SELECT ArtistID FROM Artist WHERE AccountID = ? AND IsDeleted = 0 LIMIT 1",
+      [accountId]
+    );
+
+    const isArtist = artistRows.length > 0;
+    const isListener = listenerRows.length > 0;
+    const accountType = isArtist ? "artist" : (isListener ? "listener" : "unknown");
+
     const payload = {
       success: true,
       accountId,
-      username: rows[0].Username,
-      accountType: listenerRows.length ? "listener" : "unknown",
-      listenerId: listenerRows.length ? listenerRows[0].ListenerID : null,
-      name: listenerRows.length ? `${listenerRows[0].FirstName} ${listenerRows[0].LastName}`.trim() : null
+      username: acctRows[0].Username,
+      accountType,
+      listenerId: isListener ? listenerRows[0].ListenerID : null,
+      artistId: isArtist ? artistRows[0].ArtistID : null,
+      // name available only for listeners here; artist display name can be fetched separately if needed
+      name: isListener ? `${listenerRows[0].FirstName} ${listenerRows[0].LastName}`.trim() : null,
     };
 
-    res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(payload));
+    send(res, 200, payload);
   } catch (err) {
     console.error("Error during login:", err);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ success: false, message: "Login failed" }));
+    send(res, 500, { success: false, message: "Login failed" });
   }
 }

@@ -9,10 +9,10 @@ export default function Register() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // get account type from URL query (?role=artist or ?role=listener)
+  // ?role=artist or ?role=listener
   const params = new URLSearchParams(location.search);
   const roleParam = (params.get("role") || "").toLowerCase();
-  const accountType = roleParam === "artist" ? "Artist" : "Listener";
+  const selectedAccountType = roleParam === "artist" ? "Artist" : "Listener";
 
   const [first, setFirstName] = useState("");
   const [last, setLastName] = useState("");
@@ -38,15 +38,13 @@ export default function Register() {
     setSubmitting(true);
 
     try {
-      // pick the right endpoint
       const endpoint =
-        accountType === "Artist"
+        selectedAccountType === "Artist"
           ? `${API_BASE}/auth/register/artist`
           : `${API_BASE}/auth/register`;
 
-      // build the request body
       const body =
-        accountType === "Artist"
+        selectedAccountType === "Artist"
           ? { first, bio, username, password }
           : { first, last, major, minor, username, password };
 
@@ -56,52 +54,58 @@ export default function Register() {
         body: JSON.stringify(body),
       });
 
-      const regData = await regRes.json().catch(() => ({}));
+      const raw = await regRes.text();
+      let regData = {};
+      try { regData = JSON.parse(raw); } catch {}
+
       if (!regRes.ok || !regData?.success) {
-        alert(
-          `Sign up failed: ${regData?.message || regData?.error || "Unknown error"}`
-        );
+        const msg = regData?.message || regData?.error || `HTTP ${regRes.status}`;
+        console.warn("[register] server error:", { status: regRes.status, raw, parsed: regData });
+        alert(`Sign up failed: ${msg}`);
         setSubmitting(false);
         return;
       }
 
-      // extract correct ID depending on role
-      const entityId =
-        accountType === "Artist" ? regData.artistId : regData.listenerId;
+      // derive account type & ids
+      const accountTypeLower = String(regData.accountType || selectedAccountType).toLowerCase();
+      const artistId = regData.ArtistID ?? regData.artistId ?? null;
+      const listenerId = regData.listenerId ?? null;
 
-      // upload avatar (works for both artist & listener)
+      // stash a minimal user snapshot for subsequent pages
+      const snapshot = {
+        username,
+        accountType: accountTypeLower,   // "artist" | "listener"
+        artistId: accountTypeLower === "artist" ? Number(artistId) || null : null,
+        listenerId: accountTypeLower === "listener" ? Number(listenerId) || null : null,
+      };
+      localStorage.setItem("user", JSON.stringify(snapshot));
+
+      // optional avatar upload
+      const entityId = accountTypeLower === "artist" ? artistId : listenerId;
       if (file && entityId) {
         const fd = new FormData();
         fd.append("file", file);
-
         const upRes = await fetch(
-          `${API_BASE}/${accountType.toLowerCase()}s/${entityId}/avatar`,
-          {
-            method: "POST",
-            body: fd,
-          }
+          `${API_BASE}/${accountTypeLower === "artist" ? "artists" : "listeners"}/${entityId}/avatar`,
+          { method: "POST", body: fd }
         );
-
-        const upData = await upRes.json().catch(() => ({}));
+        const upRaw = await upRes.text();
+        let upData = {};
+        try { upData = JSON.parse(upRaw); } catch {}
         if (upRes.ok && upData?.url) {
-          const cached = JSON.parse(localStorage.getItem("user") || "{}");
-          localStorage.setItem(
-            "user",
-            JSON.stringify({
-              ...cached,
-              entityId,
-              username,
-              pfpUrl: upData.url,
-              accountType,
-            })
-          );
+          const curr = JSON.parse(localStorage.getItem("user") || "{}");
+          localStorage.setItem("user", JSON.stringify({ ...curr, pfpUrl: upData.url }));
         } else {
-          console.warn("Avatar upload failed:", upData);
+          console.warn("[register] avatar upload failed:", { status: upRes.status, upRaw });
         }
       }
 
-      alert("You are signed up!");
-      navigate("/login");
+      // ✅ Route based on account type
+      if (accountTypeLower === "artist") {
+        navigate("/upload", { replace: true });
+      } else {
+        navigate("/login", { replace: true }); // or "/home" if you prefer
+      }
     } catch (err) {
       console.error("Error during sign-up:", err);
       alert("Sign up failed. Please ensure the API is running and try again.");
@@ -115,139 +119,68 @@ export default function Register() {
   return (
     <Loading>
       <div className="authCard authCardLarge">
-        <div className="authChip">{accountType.toUpperCase()} REGISTRATION</div>
+        <div className="authChip">{selectedAccountType.toUpperCase()} REGISTRATION</div>
 
-        {previewUrl && (
-          <img className="pfpThumb" src={previewUrl} alt="profile preview" />
-        )}
+        {previewUrl && <img className="pfpThumb" src={previewUrl} alt="profile preview" />}
 
         <form className="regGrid" onSubmit={handleSubmit}>
-          {/* first name or artist name */}
           <label className="regField">
-            <span>
-              {accountType === "Artist" ? "Artist name:" : "First name:"}
-            </span>
-            <input
-              className="authInput"
-              type="text"
-              value={first}
-              onChange={(e) => setFirstName(e.target.value)}
-              required
-            />
+            <span>{selectedAccountType === "Artist" ? "Artist name:" : "First name:"}</span>
+            <input className="authInput" type="text" value={first} onChange={(e) => setFirstName(e.target.value)} required />
           </label>
 
-          {/* only show last name for listeners */}
-          {accountType === "Listener" && (
+          {selectedAccountType === "Listener" && (
             <label className="regField">
               <span>Last name:</span>
-              <input
-                className="authInput"
-                type="text"
-                value={last}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-              />
+              <input className="authInput" type="text" value={last} onChange={(e) => setLastName(e.target.value)} required />
             </label>
           )}
 
-          {/* Artist bio */}
-          {accountType === "Artist" && (
+          {selectedAccountType === "Artist" && (
             <label className="regField">
               <span>Bio (optional):</span>
-              <textarea
-                className="authInput"
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                rows={3}
-              />
+              <textarea className="authInput" value={bio} onChange={(e) => setBio(e.target.value)} rows={3} />
             </label>
           )}
 
-          {/* Listener academic info */}
-          {accountType === "Listener" && (
+          {selectedAccountType === "Listener" && (
             <>
               <label className="regField">
                 <span>Major:</span>
-                <input
-                  className="authInput"
-                  type="text"
-                  value={major}
-                  onChange={(e) => setMajor(e.target.value)}
-                  required
-                />
+                <input className="authInput" type="text" value={major} onChange={(e) => setMajor(e.target.value)} required />
               </label>
-
               <label className="regField">
                 <span>Minor (optional):</span>
-                <input
-                  className="authInput"
-                  type="text"
-                  value={minor}
-                  onChange={(e) => setMinor(e.target.value)}
-                />
+                <input className="authInput" type="text" value={minor} onChange={(e) => setMinor(e.target.value)} />
               </label>
             </>
           )}
 
           <label className="regField">
             <span>Username:</span>
-            <input
-              className="authInput"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
+            <input className="authInput" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
           </label>
 
           <label className="regField">
             <span>Password:</span>
-            <input
-              className="authInput"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <input className="authInput" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <small className="text-xs text-gray-600">Must be ≥8 chars, include one uppercase and one special character.</small>
           </label>
 
           <div className="regActions">
-            <button
-              type="button"
-              className="authBtn authBtnGhost"
-              onClick={onCancel}
-              disabled={submitting}
-            >
-              Cancel
-            </button>
+            <button type="button" className="authBtn authBtnGhost" onClick={onCancel} disabled={submitting}>Cancel</button>
 
-            {/* Hidden file input */}
-            <input
-              id="pfpInput"
-              className="fileInputHidden"
-              type="file"
-              accept="image/*"
-              onChange={onFileChange}
-            />
-            <label htmlFor="pfpInput" className="authBtn authBtnChip fileBtn">
-              profile pic
-            </label>
+            <input id="pfpInput" className="fileInputHidden" type="file" accept="image/*" onChange={onFileChange} />
+            <label htmlFor="pfpInput" className="authBtn authBtnChip fileBtn">profile pic</label>
 
-            <button
-              type="submit"
-              className="authBtn authBtnPrimary"
-              disabled={submitting}
-            >
+            <button type="submit" className="authBtn authBtnPrimary" disabled={submitting}>
               {submitting ? "Signing Up…" : "Sign Up"}
             </button>
           </div>
         </form>
 
         <p className="authMeta">
-          Already have an account?{" "}
-          <Link to="/login" className="authLinkInline">
-            Login here
-          </Link>
+          Already have an account? <Link to="/login" className="authLinkInline">Login here</Link>
         </p>
       </div>
     </Loading>

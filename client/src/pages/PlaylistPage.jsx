@@ -3,6 +3,8 @@ import { useParams } from "react-router-dom";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
+import AddToPlaylistMenu from "../components/Playlist/AddToPlaylistMenu";
+
 
 
 
@@ -104,7 +106,11 @@ export default function PlaylistPage() {
                 </div>
                 <div className="col-album">{t.album}</div>
                 <div className="col-date">{t.date}</div>
-                <div className="col-duration">{t.duration}</div>
+                <div className="col-duration flex items-center gap-2">
+  {t.duration}
+  <AddToPlaylistMenu songId={t.SongID} />
+</div>
+
               </div>
             ))}
           </div>

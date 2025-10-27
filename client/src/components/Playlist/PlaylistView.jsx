@@ -4,7 +4,8 @@ import PageLayout from "../components/PageLayout/PageLayout";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import "./LikedPage.css";
 
-export default function PlaylistView({ isLikedSongs = false }) {
+export default function PlaylistView({ isLikedSongs = false, variant = "default" }) {
+
   const { id } = useParams(); // used for /playlist/:id
   const [tracks, setTracks] = useState([]);
   const [playlistName, setPlaylistName] = useState("");
@@ -92,8 +93,10 @@ export default function PlaylistView({ isLikedSongs = false }) {
   }
 
   // 🎧 Render playlist or liked songs
-  return (
-    <PageLayout>
+return (
+  <PageLayout>
+    {/* 🎵 wrapper for scoping styles */}
+    <div className={`playlistView ${variant}`}>
       <div className="albumPage">
         {/* 🎵 Header Section */}
         <section className="albumCard headerCard">
@@ -185,7 +188,8 @@ export default function PlaylistView({ isLikedSongs = false }) {
             )}
           </div>
         </section>
-      </div>
-    </PageLayout>
-  );
+      </div> {/* end albumPage */}
+    </div> {/* end playlistView */}
+  </PageLayout>
+);
 }
