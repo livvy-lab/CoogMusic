@@ -1,7 +1,10 @@
+// server/routes/song.js
 import db from "../db.js";
 import { parse } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+const STREAM_MS_THRESHOLD = 0; // set to 30000 when you send real msPlayed
 
 // Configure S3 client
 const s3 = new S3Client({
@@ -22,7 +25,7 @@ export async function handleSongRoutes(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-  // Helper: common SELECT list with ArtistName
+  // Common SELECT (without Streams)
   const SELECT_CORE = `
     s.SongID,
     s.Title,
@@ -36,8 +39,14 @@ export async function handleSongRoutes(req, res) {
     ) AS ArtistName
   `;
 
+  // SELECT that also includes Streams from Play
+  const SELECT_WITH_STREAMS = `
+    ${SELECT_CORE},
+    COALESCE(COUNT(p.PlayID), 0) AS Streams
+  `;
+
   try {
-    // GET /songs/latest?limit=10
+    // GET /songs/latest?limit=10  (now includes Streams)
     if (pathname === "/songs/latest" && method === "GET") {
       const limit =
         Number.isInteger(Number(query?.limit)) && Number(query.limit) > 0
@@ -46,17 +55,21 @@ export async function handleSongRoutes(req, res) {
 
       const [rows] = await db.query(
         `
-        SELECT ${SELECT_CORE}
+        SELECT ${SELECT_WITH_STREAMS}
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
         LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
         LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
+        LEFT JOIN Play p
+          ON p.SongID = s.SongID
+         AND p.IsDeleted = 0
+         AND p.MsPlayed >= ?
         WHERE s.IsDeleted = 0
         GROUP BY s.SongID
         ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
         LIMIT ?
         `,
-        [limit]
+        [STREAM_MS_THRESHOLD, limit]
       );
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -64,23 +77,27 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // GET /songs or /songs?genreId=10
+    // GET /songs or /songs?genreId=10 (now includes Streams)
     if (pathname === "/songs" && method === "GET") {
       const genreId = query?.genreId ? Number(query.genreId) : null;
 
       if (genreId) {
         const [rows] = await db.query(
           `
-          SELECT ${SELECT_CORE}
+          SELECT ${SELECT_WITH_STREAMS}
           FROM Song s
           JOIN Genre g ON g.GenreID = s.GenreID
           LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
           LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
+          LEFT JOIN Play p
+            ON p.SongID = s.SongID
+           AND p.IsDeleted = 0
+           AND p.MsPlayed >= ?
           WHERE s.IsDeleted = 0 AND s.GenreID = ?
           GROUP BY s.SongID
           ORDER BY s.ReleaseDate DESC, s.SongID DESC
           `,
-          [genreId]
+          [STREAM_MS_THRESHOLD, genreId]
         );
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows));
@@ -88,15 +105,20 @@ export async function handleSongRoutes(req, res) {
       } else {
         const [rows] = await db.query(
           `
-          SELECT ${SELECT_CORE}
+          SELECT ${SELECT_WITH_STREAMS}
           FROM Song s
           LEFT JOIN Genre g ON g.GenreID = s.GenreID
           LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
           LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
+          LEFT JOIN Play p
+            ON p.SongID = s.SongID
+           AND p.IsDeleted = 0
+           AND p.MsPlayed >= ?
           WHERE s.IsDeleted = 0
           GROUP BY s.SongID
           ORDER BY s.ReleaseDate DESC, s.SongID DESC
-          `
+          `,
+          [STREAM_MS_THRESHOLD]
         );
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(rows));
@@ -104,7 +126,31 @@ export async function handleSongRoutes(req, res) {
       }
     }
 
-    // GET /songs/:id (details)
+    // GET /songs/with_streams (all songs w/ Streams, genre-agnostic)
+    if (pathname === "/songs/with_streams" && method === "GET") {
+      const [rows] = await db.query(
+        `
+        SELECT ${SELECT_WITH_STREAMS}
+        FROM Song s
+        LEFT JOIN Genre g ON g.GenreID = s.GenreID
+        LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+        LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
+        LEFT JOIN Play p
+          ON p.SongID = s.SongID
+         AND p.IsDeleted = 0
+         AND p.MsPlayed >= ?
+        WHERE s.IsDeleted = 0
+        GROUP BY s.SongID
+        ORDER BY s.SongID DESC
+        `,
+        [STREAM_MS_THRESHOLD]
+      );
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows));
+      return;
+    }
+
+    // GET /songs/:id (details)  (unchanged, no Streams needed here)
     if (/^\/songs\/\d+$/.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
       const [rows] = await db.query(
@@ -132,7 +178,7 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // GET /songs/:id/stream
+    // GET /songs/:id/stream  (unchanged)
     if (/^\/songs\/\d+\/stream\/?$/.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
 
@@ -160,7 +206,7 @@ export async function handleSongRoutes(req, res) {
 
       const row = rows[0];
       const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
-      const url = await getSignedUrl(s3, cmd, { expiresIn: 900 }); // 15 min signed URL
+      const url = await getSignedUrl(s3, cmd, { expiresIn: 900 });
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
@@ -174,7 +220,7 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // POST /songs
+    // POST /songs (unchanged)
     if (pathname === "/songs" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -233,7 +279,7 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // PUT /songs/:id
+    // PUT /songs/:id (unchanged)
     if (pathname.startsWith("/songs/") && method === "PUT") {
       const id = pathname.split("/")[2];
       let body = "";
@@ -306,7 +352,7 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // DELETE /songs/:id
+    // DELETE /songs/:id (unchanged)
     if (pathname.startsWith("/songs/") && method === "DELETE") {
       const id = pathname.split("/")[2];
       const [result] = await db.query(`UPDATE Song SET IsDeleted = 1 WHERE SongID = ?`, [id]);

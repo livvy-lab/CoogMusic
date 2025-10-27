@@ -1,6 +1,8 @@
 // server/routes/genre.js
 import db from "../db.js";
 
+const STREAM_MS_THRESHOLD = 0; // set to 30000 when you send real msPlayed
+
 export async function handleGenreRoutes(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
@@ -12,45 +14,30 @@ export async function handleGenreRoutes(req, res) {
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
   try {
-    // GET /genres -> list all genres
+    // GET /genres
     if (method === "GET" && pathname === "/genres") {
-      const [rows] = await db.query(
-        "SELECT GenreID, Name AS GenreName FROM Genre"
-      );
+      const [rows] = await db.query("SELECT * FROM Genre");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
-    // GET /genres/:idOrName/songs
-    const mSongs = pathname.match(/^\/genres\/([^/]+)\/songs\/?$/);
-    if (method === "GET" && mSongs) {
-      const raw = decodeURIComponent(mSongs[1]);
-      const maybeId = Number(raw);
+    // GET /genres/:id/songs
+    if (method === "GET" && /^\/genres\/\d+\/songs\/?$/.test(pathname)) {
+      const genreId = Number(pathname.split("/")[2]);
 
-      // Resolve genre by ID or by Name (case-insensitive)
-      let genre = null;
-      if (Number.isFinite(maybeId) && maybeId > 0) {
-        const [[g]] = await db.query(
-          "SELECT GenreID, Name AS GenreName FROM Genre WHERE GenreID = ?",
-          [maybeId]
-        );
-        genre = g || null;
-      } else {
-        const [[g]] = await db.query(
-          "SELECT GenreID, Name AS GenreName FROM Genre WHERE LOWER(Name) = LOWER(?)",
-          [raw]
-        );
-        genre = g || null;
-      }
-
+      // genre meta
+      const [[genre]] = await db.query(
+        "SELECT GenreID, Name AS GenreName FROM Genre WHERE GenreID = ?",
+        [genreId]
+      );
       if (!genre) {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "Genre not found" }));
         return;
       }
 
-      // Songs + Artists + Stream totals
+      // songs in this genre (using Song.GenreID), plus artist + Streams from Play
       const [songs] = await db.query(
         `
         SELECT
@@ -58,29 +45,26 @@ export async function handleGenreRoutes(req, res) {
           s.Title,
           s.DurationSeconds,
           s.ReleaseDate,
-          s.GenreID,
           COALESCE(
             GROUP_CONCAT(DISTINCT a.ArtistName ORDER BY a.ArtistName SEPARATOR ', '),
             'Unknown Artist'
           ) AS ArtistName,
-          COALESCE(lh.Streams, 0) AS Streams
+          COALESCE(COUNT(p.PlayID), 0) AS Streams
         FROM Song s
         LEFT JOIN Song_Artist sa
           ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
         LEFT JOIN Artist a
           ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
-        LEFT JOIN (
-          SELECT SongID, COUNT(*) AS Streams
-          FROM Listen_History
-          WHERE COALESCE(IsDeleted,0)=0
-          GROUP BY SongID
-        ) lh ON lh.SongID = s.SongID
-        WHERE COALESCE(s.IsDeleted,0)=0
+        LEFT JOIN Play p
+          ON p.SongID = s.SongID
+         AND p.IsDeleted = 0
+         AND p.MsPlayed >= ?
+        WHERE s.IsDeleted = 0
           AND s.GenreID = ?
         GROUP BY s.SongID
-        ORDER BY s.ReleaseDate DESC, s.SongID DESC
+        ORDER BY s.SongID DESC
         `,
-        [genre.GenreID]
+        [STREAM_MS_THRESHOLD, genreId]
       );
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -88,10 +72,14 @@ export async function handleGenreRoutes(req, res) {
       return;
     }
 
-    // 404 fallback
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Genre endpoint not found" }));
   } catch (err) {
+    if (err?.code === "ER_DUP_ENTRY") {
+      res.writeHead(409, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "A genre with this name already exists." }));
+      return;
+    }
     console.error("Genre route error:", err?.sqlMessage || err?.message || err);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Internal server error" }));
