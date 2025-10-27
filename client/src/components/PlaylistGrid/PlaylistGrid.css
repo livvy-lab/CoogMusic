@@ -147,3 +147,32 @@
     height: auto;
   }
 }
+.pl {
+  position: relative;
+}
+
+.pl__pinBtn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  opacity: 0.8;
+}
+.pl__pinBtn:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+.pl__pinBtn.active {
+  color: #d63384;
+  opacity: 1;
+}
+
+.pl--pinned {
+  outline: 2px solid #d63384;
+  border-radius: 10px;
+}

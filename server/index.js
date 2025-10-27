@@ -31,6 +31,8 @@ import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
 import { handleUploadRoutes } from "./routes/upload.js";
+import { handlePfpRoutes } from "./routes/pfp.js";
+import { handleSetListenerAvatar } from "./routes/avatar.js";
 
 const PORT = 3001;
 
@@ -40,7 +42,7 @@ const server = http.createServer(async (req, res) => {
   const method = req.method;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   if (req.method === "OPTIONS") {
@@ -50,6 +52,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    // Static files under /uploads (legacy local uploads)
     if (pathname.startsWith("/uploads/")) {
       const filePath = path.join(path.resolve("."), "server", pathname.replace("/uploads/", "uploads/"));
       if (fs.existsSync(filePath)) {
@@ -63,9 +66,42 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // Upload endpoints (/upload/album, /upload/song) — keep early
     await handleUploadRoutes(req, res);
     if (res.writableEnded) return;
 
+    // ✅ NEW: Avatar upload endpoints (place BEFORE the generic listeners/artists routers)
+    // POST /listeners/:id/avatar
+    if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
+      const id = pathname.split("/")[2];
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_listener_id" }));
+        return;
+      }
+      await handleSetListenerAvatar(req, res, Number(id));
+      return;
+    }
+
+    // POST /artists/:id/avatar
+    if (pathname.startsWith("/artists/") && pathname.endsWith("/avatar")) {
+      const id = pathname.split("/")[2];
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_artist_id" }));
+        return;
+      }
+      await handleSetArtistAvatar(req, res, Number(id));
+      return;
+    }
+
+    // ✅ NEW: PFP routes for presigned URLs
+    if (pathname.startsWith("/pfp")) {
+      await handlePfpRoutes(req, res);
+      return;
+    }
+
+    // Existing specific routes
     if (/^\/listeners\/\d+\/profile$/.test(pathname)) {
       await handleListenerProfile(req, res);
       return;
@@ -91,125 +127,30 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (pathname.startsWith("/administrators")) {
-      await handleAdminRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/advertisements")) {
-      await handleAdRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/albums")) {
-      await handleAlbumRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/ad_views")) {
-      await handleAdViewRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/companies")) {
-      await handleCompanyRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/company_buys")) {
-      await handleCompanyBuyRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/follows")) {
-      await handleFollowsRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/genres")) {
-      await handleGenreRoutes(req, res);
-      return;
-    }
-
-    if (pathname.includes("/liked_songs")) {
-      await handleLikedSongRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/listen_history")) {
-      await handleListenHistoryRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/playlists")) {
-      await handlePlaylistRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/playlist_tracks")) {
-      await handlePlaylistTrackRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/songs")) {
-      await handleSongRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/auth")) {
-      await handleAuthRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/album_artists")) {
-      await handleAlbumArtistRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/album_genres")) {
-      await handleAlbumGenreRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/album_tracks")) {
-      await handleAlbumTrackRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/artists")) {
-      await handleArtistRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/song_artists")) {
-      await handleSongArtistRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/song_genres")) {
-      await handleSongGenreRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/subscriptions")) {
-      await handleSubscriptionRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/user_reports")) {
-      await handleUserReportsRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/artist_buys")) {
-      await handleArtistBuyRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/listeners")) {
-      await handleListenerRoutes(req, res);
-      return;
-    }
+    if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
+    if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
+    if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
+    if (pathname.startsWith("/ad_views")) { await handleAdViewRoutes(req, res); return; }
+    if (pathname.startsWith("/companies")) { await handleCompanyRoutes(req, res); return; }
+    if (pathname.startsWith("/company_buys")) { await handleCompanyBuyRoutes(req, res); return; }
+    if (pathname.startsWith("/follows")) { await handleFollowsRoutes(req, res); return; }
+    if (pathname.startsWith("/genres")) { await handleGenreRoutes(req, res); return; }
+    if (pathname.includes("/liked_songs")) { await handleLikedSongRoutes(req, res); return; }
+    if (pathname.startsWith("/listen_history")) { await handleListenHistoryRoutes(req, res); return; }
+    if (pathname.startsWith("/playlists")) { await handlePlaylistRoutes(req, res); return; }
+    if (pathname.startsWith("/playlist_tracks")) { await handlePlaylistTrackRoutes(req, res); return; }
+    if (pathname.startsWith("/songs")) { await handleSongRoutes(req, res); return; }
+    if (pathname.startsWith("/auth")) { await handleAuthRoutes(req, res); return; }
+    if (pathname.startsWith("/album_artists")) { await handleAlbumArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/album_genres")) { await handleAlbumGenreRoutes(req, res); return; }
+    if (pathname.startsWith("/album_tracks")) { await handleAlbumTrackRoutes(req, res); return; }
+    if (pathname.startsWith("/artists")) { await handleArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/song_artists")) { await handleSongArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/song_genres")) { await handleSongGenreRoutes(req, res); return; }
+    if (pathname.startsWith("/subscriptions")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/user_reports")) { await handleUserReportsRoutes(req, res); return; }
+    if (pathname.startsWith("/artist_buys")) { await handleArtistBuyRoutes(req, res); return; }
+    if (pathname.startsWith("/listeners")) { await handleListenerRoutes(req, res); return; }
 
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
