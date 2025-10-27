@@ -12,8 +12,10 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",
     "@aws-sdk/s3-request-presigner": "^3.917.0",
+    "busboy": "^1.6.0",
     "dotenv": "^17.2.3",
     "formidable": "^3.5.4",
+    "get-audio-duration": "^4.0.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
