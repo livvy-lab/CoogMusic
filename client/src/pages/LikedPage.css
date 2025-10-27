@@ -127,11 +127,11 @@
 }
 
 /* 🎯 move each one manually — adjust these left: values as needed */
-.likedTableHeader .th-num   { left: 60px; }     /* # */
-.likedTableHeader .th-heart { left: 120px; }    /* ♥ */
+.likedTableHeader .th-num   { left: 55px; }     /* # */
+.likedTableHeader .th-heart { left: 90px; }    /* ♥ */
 .likedTableHeader .th-title { left: 210px; }    /* Title */
-.likedTableHeader .th-album { left: 630px; }    /* Album */
-.likedTableHeader .th-date  { left: 925px; }    /* Date Added */
+.likedTableHeader .th-album { left: 637px; }    /* Album */
+.likedTableHeader .th-date  { left: 895px; }    /* Date Added */
 .likedTableHeader .th-dur   { left: 1180px; }   /* Clock icon */
 
 /* optional tweak for the clock */
@@ -253,3 +253,31 @@
   margin: 0 auto !important;
 }
 
+
+.likedTableHeader,
+.tableBody .likedRow {
+  display: grid;
+  grid-template-columns: 40px 40px 2fr 1fr 1fr 60px;
+  align-items: center;
+  text-align: left;
+}
+
+/* Title column */
+.col-title {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-left: 94px;      /* adjust: 30–50px usually looks good */
+  text-align: left;
+}
+
+.songTitle {
+  font-weight: 600;
+  color: #4a0033;
+}
+
+.songArtist {
+  font-size: 0.85rem;
+  color: #a06a90;
+  margin-top: 2px;
+}

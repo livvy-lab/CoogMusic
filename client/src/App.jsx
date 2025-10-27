@@ -16,36 +16,48 @@ import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
-import Genres from "./components/ListenerHome/Genres";
-import ArtistUpload from "./pages/ArtistUpload";
+import ArtistUpload from "./pages/ArtistUpload"; 
+import PlaylistPage from "./pages/PlaylistPage";
+import PlaylistView from "./pages/PlaylistView";
+
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Default redirect */}
+        {/* Redirect root to login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login/>} />
-        <Route path="/register" element={<Register/>} />
-        <Route path="/profile" element={<ListenerProfile/>} />
-        <Route path="/home" element={<ListenerHome/>} />
-        <Route path="/user-report" element={<UserReport/>} />
-        <Route path="/artist" element={<ArtistView/>} />
-        <Route path="/song" element={<Song/>} />
-        <Route path="/genres/:genreId" element={<Song/>} />
-        <Route path="/genre/:genreId" element={<Song/>} />
-        <Route path="/likedsongs" element={<LikedSong/>}/>
-        <Route path="/me/playlists" element={<MyPlaylistsPage />} />
-        <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
-        <Route path="/subscription" element={<Subscription/>}/>
-        <Route path="/follows" element={<FollowsPage/>}/>
-        <Route path="/buy-ads" element={<BuyAds/>}/>
-        <Route path="/edit-profile" element={<EditProfile/>}/>
+
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/register/select" element={<AccountType />} />
         <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
-        <Route path="/upload" element={<ArtistUpload />} />
-        <Route path="/genres" element={<Genres />} />
-        <Route path="*" element={<div>404</div>} />
+
+        {/* Listener routes */}
+        <Route path="/profile" element={<ListenerProfile />} />
+        <Route path="/home" element={<ListenerHome />} />
+        <Route path="/user-report" element={<UserReport />} />
+        <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
+        <Route path="/me/playlists" element={<MyPlaylistsPage />} />
+        <Route path="/playlist/:id" element={<PlaylistPage />} />
+        <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/follows" element={<FollowsPage />} />
+        <Route path="/buy-ads" element={<BuyAds />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+
+        {/* Artist routes */}
+        <Route path="/artist" element={<ArtistView />} />
+        <Route path="/upload" element={<ArtistUpload />} /> 
+
+        {/* Song routes */}
+        <Route path="/song" element={<Song />} />
+        <Route path="/genres/:genreId" element={<Song />} />
+        <Route path="/genre/:genreId" element={<Song />} />
+
+        {/* Catch-all (optional) */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </BrowserRouter>
   );

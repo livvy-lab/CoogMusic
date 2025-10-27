@@ -1,25 +1,74 @@
-import PageLayout from "../components/PageLayout/PageLayout.jsx";
-import { useMemo } from "react";
+import { useEffect, useState } from "react";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
-import "./LikedPage.css"; // make sure your CSS filename matches this
+import PageLayout from "../components/PageLayout/PageLayout.jsx";
+import "./LikedPage.css";
 
-export default function LikedSong() {
-  // build tracks + sort newest first
-  const tracks = useMemo(() => {
-    const data = Array.from({ length: 40 }).map((_, i) => ({
-      title: "Kill Bill",
-      artist: "SZA",
-      album: "SOS",
-      added: new Date(2025, 9, 10 + (i % 7)), // October 10–16, 2025
-      duration: "2:33",
-    }));
-    return data.sort((a, b) => b.added - a.added);
+export default function LikedPage() {
+  const [tracks, setTracks] = useState([]);
+  const listenerId = 6; // temporary static (replace later with logged-in user)
+
+  // --- Fetch liked songs
+  async function fetchLikedSongs() {
+    try {
+      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
+      if (!res.ok) throw new Error("Failed to fetch liked songs");
+      const data = await res.json();
+      console.log("✅ Liked songs:", data);
+
+const formatted = data.map((row) => ({
+  SongID: row.SongID,
+  title: row.Title,
+  artist: row.ArtistName || "Unknown Artist",
+  album: row.Album || "Unknown Album",
+  duration: row.DurationSeconds
+    ? `${Math.floor(row.DurationSeconds / 60)}:${String(
+        row.DurationSeconds % 60
+      ).padStart(2, "0")}`
+    : "0:00",
+  date: new Date(row.ReleaseDate).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }),
+}));
+
+
+      setTracks(formatted);
+    } catch (err) {
+      console.error("❌ Error fetching liked songs:", err);
+    }
+  }
+
+  // --- Un-like song (optional)
+  async function unlikeSong(songId) {
+    try {
+      const res = await fetch(
+        `http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ songId }),
+        }
+      );
+
+      if (!res.ok) throw new Error("Toggle failed");
+      const data = await res.json();
+      if (!data.liked) {
+        setTracks((prev) => prev.filter((t) => t.SongID !== songId));
+      }
+    } catch (err) {
+      console.error("Error unliking song:", err);
+    }
+  }
+
+  useEffect(() => {
+    fetchLikedSongs();
   }, []);
 
   return (
     <PageLayout>
       <div className="albumPage">
-        {/* 🎵 Header Section */}
+        {/* Header */}
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
             <div className="likedCoverCircle">
@@ -29,7 +78,9 @@ export default function LikedSong() {
             <div className="likedHeaderText">
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">Liked Songs</h1>
-              <p className="likedUser">coolgirl • {tracks.length} songs</p>
+              <p className="likedUser">
+                {tracks.length ? `${tracks.length} song${tracks.length > 1 ? "s" : ""}` : "No songs"}
+              </p>
             </div>
           </div>
 
@@ -43,58 +94,53 @@ export default function LikedSong() {
           </div>
         </section>
 
-        {/* 💿 Track List Section */}
+        {/* Table */}
         <section className="albumCard listCard">
-          {/* Table Header */}
           <div className="likedTableHeader">
             <div className="th th-num">#</div>
-            <div className="th th-heart">
-              <Heart size={18} fill="#782355" color="#782355" />
-            </div>
             <div className="th th-title">Title</div>
             <div className="th th-album">Album</div>
-            <div className="th th-date">Date added</div>
+            <div className="th th-date">Date Liked</div>
             <div className="th th-dur">
               <Clock3 size={16} color="#782355" />
             </div>
           </div>
 
-          {/* Track Rows */}
           <div className="tableBody">
-            {tracks.map((t, i) => (
-              <div key={i} className="likedRow">
-                <div className="col-num">{i + 1}</div>
+            {tracks.length === 0 ? (
+              <p style={{ padding: "1rem", color: "#aaa" }}>No liked songs found.</p>
+            ) : (
+              tracks.map((t, i) => (
+                <div key={i} className="likedRow">
+                  <div className="col-num">{i + 1}</div>
+<div className="col-title">
+  <div className="songInfo">
+    <span className="songTitle">{t.title}</span>
+    <span className="songArtist">{t.artist}</span>
+  </div>
+</div>
 
-                <div className="col-heart">
-                  <button className="heartBtn" aria-label="Like">
-                    <Heart
-                      size={18}
-                      color="#782355"
-                      strokeWidth={2}
-                      fill="none"
-                    />
-                  </button>
-                </div>
 
-                <div className="col-title">
-                  <div className="songCoverPlaceholder" />
-                  <div className="songInfo">
-                    <span className="songTitle">{t.title}</span>
-                    <span className="songArtist">{t.artist}</span>
+                  <div className="col-album">{t.album}</div>
+                  <div className="col-date">{t.date}</div>
+                  <div className="col-duration">
+                    {t.duration}
+                    <button
+                      onClick={() => unlikeSong(t.SongID)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        marginLeft: "10px",
+                        cursor: "pointer",
+                      }}
+                      aria-label="Unlike song"
+                    >
+                      <Heart size={18} fill="#a94486" color="#a94486" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="col-album">{t.album}</div>
-                <div className="col-date">
-                  {t.added.toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-                <div className="col-duration">{t.duration}</div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </section>
       </div>
