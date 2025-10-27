@@ -92,3 +92,25 @@
   padding: 18px 53px;
   cursor: pointer;
 }
+
+.remove-account-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}
+
+.remove-account-btn {
+  background: #f8b4b4;
+  color: #852929;
+  font-size: 22px;
+  font-weight: 700;
+  border: 5px solid #c76262;
+  border-radius: 20px;
+  padding: 18px 50px;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.remove-account-btn:hover {
+  background: #ff9999;
+}
