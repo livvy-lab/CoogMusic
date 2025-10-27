@@ -2,7 +2,7 @@ import db from "../db.js";
 import { parse } from "url";
 
 export async function handleArtistRoutes(req, res) {
-  const { pathname } = parse(req.url, true);
+  const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
   // CORS headers

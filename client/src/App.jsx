@@ -16,11 +16,14 @@ import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
+import Genres from "./components/ListenerHome/Genres";
+import ArtistUpload from "./pages/ArtistUpload";
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Default redirect */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login/>} />
         <Route path="/register" element={<Register/>} />
@@ -40,6 +43,9 @@ export default function App() {
         <Route path="/edit-profile" element={<EditProfile/>}/>
         <Route path="/register/select" element={<AccountType />} />
         <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
+        <Route path="/upload" element={<ArtistUpload />} />
+        <Route path="/genres" element={<Genres />} />
+        <Route path="*" element={<div>404</div>} />
       </Routes>
     </BrowserRouter>
   );

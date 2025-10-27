@@ -49,17 +49,17 @@ export async function handleSubscriptionRoutes(req, res) {
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
         try {
-          const { ListenerID, PlanID, StartDate, EndDate, IsActive } = JSON.parse(body);
+          const { ListenerID, SubscriptionID, DateStarted, DateEnded, Active } = JSON.parse(body);
 
-          if (!ListenerID || !PlanID || !StartDate) {
+          if (!ListenerID || !SubscriptionID || !DateStarted) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required fields: ListenerID, PlanID, StartDate" }));
+            res.end(JSON.stringify({ error: "Missing required fields: ListenerID, SubscriptionID, StartDate" }));
             return;
           }
 
           const [result] = await db.query(
-            "INSERT INTO Subscription (ListenerID, PlanID, StartDate, EndDate, IsActive) VALUES (?, ?, ?, ?, ?)",
-            [ListenerID, PlanID, StartDate, EndDate || null, IsActive !== undefined ? IsActive : 1]
+            "INSERT INTO Subscription (ListenerID, PlanID, DateStarted, DateEnded, Active) VALUES (?, ?, ?, ?, ?)",
+            [ListenerID, SubscriptionID, DateStarted, DateEnded || null, Active !== undefined ? Active : 1]
           );
 
           res.writeHead(201, { "Content-Type": "application/json" });
@@ -67,10 +67,9 @@ export async function handleSubscriptionRoutes(req, res) {
             JSON.stringify({
               SubscriptionID: result.insertId,
               ListenerID,
-              PlanID,
-              StartDate,
-              EndDate: EndDate || null,
-              IsActive: IsActive !== undefined ? IsActive : 1,
+              DateStarted,
+              DateEnded: DateEnded || null,
+              Active: Active !== undefined ? Active : 1,
             })
           );
         } catch (err) {
@@ -89,17 +88,17 @@ export async function handleSubscriptionRoutes(req, res) {
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
         try {
-          const { ListenerID, PlanID, StartDate, EndDate, IsActive } = JSON.parse(body);
+          const { ListenerID, SubscriptionID, DateStarted, DateEnded, Active } = JSON.parse(body);
 
           // build dynamic update to allow partial updates
           const fields = [];
           const params = [];
 
           if (ListenerID !== undefined) { fields.push("ListenerID = ?"); params.push(ListenerID); }
-          if (PlanID !== undefined) { fields.push("PlanID = ?"); params.push(PlanID); }
-          if (StartDate !== undefined) { fields.push("StartDate = ?"); params.push(StartDate); }
-          if (EndDate !== undefined) { fields.push("EndDate = ?"); params.push(EndDate); }
-          if (IsActive !== undefined) { fields.push("IsActive = ?"); params.push(IsActive); }
+          if (SubscriptionID !== undefined) { fields.push("SubscriptionID = ?"); params.push(PlanID); }
+          if (DateStarted !== undefined) { fields.push("DateStarted = ?"); params.push(StartDate); }
+          if (DateEnded !== undefined) { fields.push("DateEnded = ?"); params.push(EndDate); }
+          if (Active !== undefined) { fields.push("Active = ?"); params.push(IsActive); }
 
           if (fields.length === 0) {
             res.writeHead(400, { "Content-Type": "application/json" });

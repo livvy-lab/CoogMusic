@@ -9,7 +9,7 @@ export async function handleAuthRoutes(req, res) {
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 
   if (method === "OPTIONS") {
     res.writeHead(204);
