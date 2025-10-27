@@ -16,7 +16,7 @@ export default function Genres() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setGenres(Array.isArray(data) ? data : []);
-      } catch (e) {
+      } catch {
         setError("Failed to fetch genres");
       } finally {
         setLoading(false);
@@ -25,8 +25,8 @@ export default function Genres() {
     fetchGenres();
   }, []);
 
-  const filtered = (Array.isArray(genres) ? genres : []).filter(
-    g => g?.Name?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = (Array.isArray(genres) ? genres : []).filter((g) =>
+    g?.Name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const placeholders = Array(Math.max(0, 8 - genres.length)).fill(null);
@@ -35,12 +35,23 @@ export default function Genres() {
     <section className="genres">
       <h2 className="genres__title">Genres</h2>
 
+      <div className="genres__controls">
+        <input
+          className="genres__search"
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search genres"
+        />
+      </div>
+
       <div className="genres__grid">
-        {filtered.map(g => (
+        {filtered.map((g) => (
           <button
             className="genres__card"
             key={g.GenreID}
             onClick={() => navigate(`/genre/${g.GenreID}`)}
+            type="button"
           >
             <span className="genres__icon">🎸</span>
             <span className="genres__text">{g.Name}</span>

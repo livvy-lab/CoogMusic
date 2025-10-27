@@ -10,9 +10,11 @@ import LikedSong from "./pages/LikedPage";
 import MyPlaylistsPage from "./pages/PersonalPlaylist";
 import Subscription from "./pages/Subscription";
 import FollowsPage from "./pages/FollowsPage";
+
 import BuyAds from "./pages/BuyAds";
 import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
+import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload";
 import ArtistUpload from "./pages/ArtistUpload"; 
@@ -32,10 +34,11 @@ export default function App() {
           {/* Redirect root to login */}
           <Route path="/" element={<Navigate to="/login" replace />} />
 
-          {/* Auth */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/register/select" element={<AccountType />} />
+        {/* Auth */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/register/select" element={<AccountType />} />
+        <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
 
           {/* Listener routes */}
           <Route path="/profile" element={<ListenerProfile />} />
