@@ -36,61 +36,77 @@ const Subscription = () => {
   }, []);
 
   const handleSubscriptionToggle = async () => {
-    const user = getUser();
-    if (!user?.listenerId) {
-      setError('Please log in first');
-      return;
-    }
+  const user = getUser();
+  if (!user?.listenerId) {
+    setError('Please log in first');
+    return;
+  }
 
-    setLoading(true);
-    setError(null);
+  setLoading(true);
+  setError(null);
 
-    try {
-      if (!isSubscribed) {
-        const res = await fetch('http://localhost:3001/subscriptions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            ListenerID: user.listenerId,
-            PlanID: 1,
-            StartDate: new Date().toISOString().slice(0, 19).replace('T', ' '),
-            IsActive: 1
-          })
-        });
+  try {
+    if (!isSubscribed) {
+      // SUBSCRIBE
+      const res = await fetch('http://localhost:3001/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ListenerID: user.listenerId,
+           // replace with valid subscription/plan ID if needed
+          DateStarted: new Date().toISOString().slice(0, 19).replace('T', ' '),
+          DateEnded: null,
+          IsActive: 1
+        })
+      });
 
-        if (!res.ok) throw new Error('Failed to subscribe');
-        setIsSubscribed(true);
-      } else {
-        const checkRes = await fetch(`http://localhost:3001/subscriptions/${user.listenerId}`);
-        if (!checkRes.ok) throw new Error('Failed to find subscription');
-        const subData = await checkRes.json();
-        const subscription = subData.subscription || subData || null;
-        const subscriptionId = subscription?.SubscriptionID || subscription?.SubscriptionId || subscription?.id || subscription?.SubscriptionID;
-
-        if (subscriptionId) {
-          const res = await fetch(`http://localhost:3001/subscriptions/${subscriptionId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              IsActive: 0,
-              EndDate: new Date().toISOString().slice(0, 19).replace('T', ' ')
-            })
-          });
-
-          if (!res.ok) throw new Error('Failed to unsubscribe');
-        } else {
-          console.warn('No subscription id returned; marking unsubscribed locally');
-        }
-
-        setIsSubscribed(false);
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('Subscription failed:', errText);
+        throw new Error('Failed to subscribe');
       }
-    } catch (err) {
-      console.error('Error toggling subscription:', err);
-      setError(isSubscribed ? 'Failed to unsubscribe' : 'Failed to subscribe');
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      const data = await res.json();
+      console.log('✅ Subscription success:', data);
+      setIsSubscribed(true);
+
+} else {
+  // Unsubscribe logic
+  const checkRes = await fetch(`http://localhost:3001/subscriptions/listener/${user.listenerId}`);
+  if (!checkRes.ok) throw new Error('Failed to find subscription');
+  const subData = await checkRes.json();
+
+  // Handle cases where backend returns a single object or inside a `subscription` key
+  const subscription = subData.subscription || subData;
+  const subscriptionId = subscription?.SubscriptionID;
+
+  if (!subscriptionId) {
+    console.error('❌ Could not find SubscriptionID for user', user.listenerId);
+    throw new Error('No active subscription found');
+  }
+
+  // Update the subscription to mark it inactive
+  const res = await fetch(`http://localhost:3001/subscriptions/${subscriptionId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      IsActive: 0,
+      DateEnded: new Date().toISOString().slice(0, 19).replace('T', ' ')
+    })
+  });
+
+  if (!res.ok) throw new Error('Failed to unsubscribe');
+
+  setIsSubscribed(false);
+}
+
+  } catch (err) {
+    console.error('Error toggling subscription:', err);
+    setError(isSubscribed ? 'Failed to unsubscribe' : 'Failed to subscribe');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <PageLayout>
