@@ -5,13 +5,11 @@ export async function handlePlayRoutes(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-  // POST /plays  { songId, listenerId? }
   if (method === "POST" && pathname === "/plays") {
     try {
       const chunks = [];
@@ -26,22 +24,19 @@ export async function handlePlayRoutes(req, res) {
       }
 
       const songId = Number(body.songId);
-      const listenerId = body.listenerId === undefined || body.listenerId === null
-        ? null
-        : Number(body.listenerId);
+      const listenerId = Number(body.listenerId);
+      const msPlayed = Number(body.msPlayed ?? 0);
 
-      if (!Number.isFinite(songId)) {
+      if (!Number.isFinite(songId) || !Number.isFinite(listenerId)) {
         res.writeHead(400, {"Content-Type":"application/json"});
-        res.end(JSON.stringify({ error: "songId required" }));
+        res.end(JSON.stringify({ error: "songId and listenerId are required" }));
         return;
       }
 
-      // If your column is DATE, keep CURRENT_DATE().
-      // If you later migrate to DATETIME (recommended), use NOW() instead.
       await db.query(
         `INSERT INTO Listen_History (ListenerID, SongID, ListenedDate, Duration, IsDeleted)
-         VALUES (?, ?, CURRENT_DATE(), 0, 0)`,
-        [Number.isFinite(listenerId) ? listenerId : null, songId]
+         VALUES (?, ?, CURRENT_DATE(), ?, 0)`,
+        [listenerId, songId, msPlayed]
       );
 
       const [[row]] = await db.query(
@@ -55,14 +50,14 @@ export async function handlePlayRoutes(req, res) {
       res.end(JSON.stringify({ songId, streams: Number(row.Streams) }));
       return;
     } catch (e) {
-      console.error("plays route error:", e);
+      // show the SQL error in server logs so you can see the exact cause
+      console.error("plays route error:", e?.sqlMessage || e?.message || e);
       res.writeHead(500, {"Content-Type":"application/json"});
       res.end(JSON.stringify({ error: "Server error" }));
       return;
     }
   }
 
-  // GET /plays/streams/:songId  --> current stream count (useful for debugging/UI)
   const mGet = pathname.match(/^\/plays\/streams\/(\d+)$/);
   if (method === "GET" && mGet) {
     try {
@@ -77,7 +72,7 @@ export async function handlePlayRoutes(req, res) {
       res.end(JSON.stringify({ songId, streams: Number(row.Streams) }));
       return;
     } catch (e) {
-      console.error("plays get error:", e);
+      console.error("plays get error:", e?.sqlMessage || e?.message || e);
       res.writeHead(500, {"Content-Type":"application/json"});
       res.end(JSON.stringify({ error: "Server error" }));
       return;

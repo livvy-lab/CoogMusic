@@ -58,7 +58,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
 
-      {/* 🎧 Global Music Bar */}
       <MusicPlayBar />
     </PlayerProvider>
   );

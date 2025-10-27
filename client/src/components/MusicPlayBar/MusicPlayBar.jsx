@@ -1,7 +1,9 @@
+// client/src/components/MusicPlayBar/MusicPlayBar.jsx
 import React, { useMemo, useRef, useState } from "react";
 import { Range, getTrackBackground } from "react-range";
 import { usePlayer } from "../../context/PlayerContext.jsx";
 import "./MusicPlayBar.css";
+
 import skipBackIcon from "../../assets/skip-back-icon.svg";
 import playIcon from "../../assets/play-icon.svg";
 import pauseIcon from "../../assets/pause-icon.svg";
@@ -15,31 +17,31 @@ import muteVolumeIcon from "../../assets/mute-volume-icon.svg";
 
 export default function MusicPlayBar() {
   const {
-    current,        // { SongID, Title, ArtistName, url, mime }
-    playing,        // boolean
-    duration,       // seconds (number)
-    currentTime,    // seconds (number)
-    volume,         // 0..1
-    toggle,         // play/pause
-    seek,           // (seconds) => void
-    setVolumePercent, // (0..1) => void
+    current,            // { SongID, Title, ArtistName, url, mime }
+    playing,            // boolean
+    duration,           // seconds
+    currentTime,        // seconds
+    volume,             // 0..1
+    toggle,             // play/pause
+    seek,               // (seconds) => void
+    setVolumePercent,   // (0..1) => void
   } = usePlayer();
 
-  // Hide the bar until a song is selected
-  if (!current) return null;
-
+  // keep hooks order stable (don’t early return)
   const [isSeeking, setIsSeeking] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [volOpen, setVolOpen] = useState(false);
   const volumeRef = useRef(null);
 
-  function fmt(t) {
+  const hidden = !current;
+
+  const fmt = (t) => {
     if (!t || Number.isNaN(t)) return "0:00";
     const m = Math.floor(t / 60);
     const s = Math.floor(t % 60);
     return `${m}:${s < 10 ? "0" : ""}${s}`;
-  }
+  };
 
   const volPct = Math.round((volume ?? 0) * 100);
   const volIcon = volPct === 0 ? muteVolumeIcon : volPct <= 50 ? lowVolumeIcon : volumeIcon;
@@ -50,25 +52,42 @@ export default function MusicPlayBar() {
   }, [currentTime, duration]);
 
   return (
-    <div className="music-player-bar">
+    <div
+      className="music-player-bar"
+      style={{ display: hidden ? "none" : "flex" }}
+      aria-hidden={hidden ? "true" : "false"}
+    >
       <div className="player-controls-left">
-        <button className="control-btn"><img src={skipBackIcon} alt="Back" /></button>
-        <button className="control-btn play-pause-btn" onClick={toggle}>
-          <img src={playing ? pauseIcon : playIcon} alt="Play/Pause" />
+        <button className="control-btn" aria-label="Previous">
+          <img src={skipBackIcon} alt="" />
         </button>
-        <button className="control-btn"><img src={skipFwdIcon} alt="Fwd" /></button>
+
+        {/* Your original mapping: show PLAY icon while playing, PAUSE icon when paused */}
+        <button
+          className="control-btn play-pause-btn"
+          onClick={toggle}
+          aria-label={playing ? "Play" : "Pause"}
+        >
+          <img src={playing ? playIcon : pauseIcon} alt="" />
+        </button>
+
+        <button className="control-btn" aria-label="Next">
+          <img src={skipFwdIcon} alt="" />
+        </button>
       </div>
 
       <div className="progress-section">
-        <button className="control-btn small-btn">
-          <img src={shuffleIcon} alt="Shuffle" />
+        <button className="control-btn small-btn" aria-label="Shuffle">
+          <img src={shuffleIcon} alt="" />
         </button>
 
         <button
           className={`control-btn small-btn ${isRepeating ? "is-active" : ""}`}
-          onClick={() => setIsRepeating(!isRepeating)}
+          onClick={() => setIsRepeating((v) => !v)}
+          aria-pressed={isRepeating}
+          aria-label="Repeat"
         >
-          <img src={repeatIcon} alt="Repeat" />
+          <img src={repeatIcon} alt="" />
         </button>
 
         <span className="time-stamp">{fmt(currentTime)}</span>
@@ -85,13 +104,19 @@ export default function MusicPlayBar() {
           onTouchStart={() => setIsSeeking(true)}
           onTouchEnd={() => setIsSeeking(false)}
           style={progressStyle}
+          aria-label="Seek"
         />
 
         <span className="time-stamp">{fmt(duration)}</span>
 
         <div className="volume-control" ref={volumeRef}>
-          <button className="control-btn small-btn" onClick={() => setVolOpen((v) => !v)}>
-            <img src={volIcon} alt="Volume" />
+          <button
+            className="control-btn small-btn"
+            onClick={() => setVolOpen((v) => !v)}
+            aria-expanded={volOpen}
+            aria-label="Volume"
+          >
+            <img src={volIcon} alt="" />
           </button>
 
           <div className={`volume-slider-container ${volOpen ? "is-visible" : ""}`}>
@@ -102,25 +127,33 @@ export default function MusicPlayBar() {
               min={0}
               max={100}
               onChange={(vals) => setVolumePercent((vals[0] || 0) / 100)}
-              renderTrack={({ props, children }) => (
-                <div
-                  {...props}
-                  className="volume-track"
-                  style={{
-                    ...props.style,
-                    background: getTrackBackground({
-                      values: [volPct],
-                      colors: ["#FFE8F5", "#895674"],
-                      min: 0,
-                      max: 100,
-                      direction: "to top",
-                    }),
-                  }}
-                >
-                  {children}
-                </div>
-              )}
-              renderThumb={({ props }) => <div {...props} className="volume-thumb" />}
+              renderTrack={({ props, children }) => {
+                // pull key out so React doesn’t warn about spreading it
+                const { key, ...trackProps } = props;
+                return (
+                  <div
+                    key={key}
+                    {...trackProps}
+                    className="volume-track"
+                    style={{
+                      ...trackProps.style,
+                      background: getTrackBackground({
+                        values: [volPct],
+                        colors: ["#FFE8F5", "#895674"],
+                        min: 0,
+                        max: 100,
+                        direction: "to top",
+                      }),
+                    }}
+                  >
+                    {children}
+                  </div>
+                );
+              }}
+              renderThumb={({ props }) => {
+                const { key, ...thumbProps } = props;
+                return <div key={key} {...thumbProps} className="volume-thumb" />;
+              }}
             />
           </div>
         </div>
@@ -128,17 +161,18 @@ export default function MusicPlayBar() {
         <button
           className={`control-btn small-btn ${isLiked ? "is-active" : ""}`}
           onClick={() => setIsLiked((v) => !v)}
+          aria-pressed={isLiked}
+          aria-label="Like"
         >
-          <img src={heartIcon} alt="Like" />
+          <img src={heartIcon} alt="" />
         </button>
       </div>
 
       <div className="player-controls-right">
-        {/* You can wire album art later from your DB/Media table */}
         <div className="album-art" />
         <div className="meta">
-          <div className="title">{current.Title}</div>
-          <div className="artist">{current.ArtistName}</div>
+          <div className="title">{current?.Title || "Untitled"}</div>
+          <div className="artist">{current?.ArtistName || "Unknown Artist"}</div>
         </div>
       </div>
     </div>
