@@ -19,7 +19,6 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // read user info from localStorage
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
@@ -33,7 +32,6 @@ export default function EditProfile() {
     }
   }, []);
 
-  // fetch existing profile data
   useEffect(() => {
     if (!listenerId) return;
     (async () => {
@@ -61,13 +59,11 @@ export default function EditProfile() {
     })();
   }, [listenerId]);
 
-  // handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  // handle image change
   const handleImageChange = (e) => {
     const f = e.target.files?.[0];
     if (f) {
@@ -76,14 +72,12 @@ export default function EditProfile() {
     }
   };
 
-  // save changes (update DB + upload new pfp if chosen)
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!listenerId) return;
     setSaving(true);
 
     try {
-      // Step 1: Update text fields
       const res = await fetch(`${API_BASE}/listeners/${listenerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -98,7 +92,6 @@ export default function EditProfile() {
 
       if (!res.ok) throw new Error(`Update failed: ${res.statusText}`);
 
-      // Step 2: Upload new PFP if selected
       if (file) {
         const fd = new FormData();
         fd.append("file", file);
@@ -150,12 +143,9 @@ export default function EditProfile() {
         <h1 className="edit-profile-title">Edit Profile</h1>
 
         <form className="edit-profile-form" onSubmit={handleSubmit}>
-          {/* Profile picture */}
           <div className="profile-pic-section">
-            {pfpUrl ? (
+            {pfpUrl && (
               <img src={pfpUrl} alt="Profile" className="profile-pic-preview" />
-            ) : (
-              <div className="profile-pic-placeholder">No Image</div>
             )}
             <input
               type="file"
@@ -165,11 +155,10 @@ export default function EditProfile() {
               className="fileInputHidden"
             />
             <label htmlFor="pfpUpload" className="update-image-btn">
-              Update Image
+              {pfpUrl ? "Change Image" : "Upload Image"}
             </label>
           </div>
 
-          {/* Name row */}
           <div className="input-row">
             <div className="input-group">
               <label>First name:</label>
@@ -193,7 +182,6 @@ export default function EditProfile() {
             </div>
           </div>
 
-          {/* Major/minor row */}
           <div className="input-row">
             <div className="input-group">
               <label>Major:</label>
@@ -215,7 +203,6 @@ export default function EditProfile() {
             </div>
           </div>
 
-          {/* Bio */}
           <div className="input-group bio-group">
             <label>Bio:</label>
             <textarea
@@ -235,11 +222,7 @@ export default function EditProfile() {
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className="save-changes-btn"
-              disabled={saving}
-            >
+            <button type="submit" className="save-changes-btn" disabled={saving}>
               {saving ? "Saving…" : "Save Changes"}
             </button>
           </div>

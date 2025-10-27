@@ -180,7 +180,8 @@ export async function handleListenerRoutes(req, res) {
     if (
       pathname.startsWith("/listeners/") &&
       method === "PATCH" &&
-      !pathname.endsWith("/favorite-artists")
+      !pathname.endsWith("/favorite-artists") &&
+      !pathname.endsWith("/pinned-playlist")
     ) {
       const id = pathname.split("/")[2];
       let body = "";
@@ -228,6 +229,35 @@ export async function handleListenerRoutes(req, res) {
       res.end(
         JSON.stringify({ ListenerID: id, message: "Profile updated successfully" })
       );
+      return;
+    }
+
+    // ✅ PATCH /listeners/:id/pinned-playlist → pin playlist to profile
+    if (pathname.match(/^\/listeners\/(\d+)\/pinned-playlist$/) && method === "PATCH") {
+      const id = pathname.split("/")[2];
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      const { playlistId } = JSON.parse(body || "{}");
+
+      if (!playlistId) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Missing playlistId" }));
+        return;
+      }
+
+      const [result] = await db.query(
+        `UPDATE Listener SET PinnedPlaylistID = ? WHERE ListenerID = ? AND IsDeleted = 0`,
+        [playlistId, id]
+      );
+
+      if (result.affectedRows === 0) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Listener not found" }));
+        return;
+      }
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ success: true, pinned: playlistId }));
       return;
     }
 
