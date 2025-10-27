@@ -15,6 +15,9 @@ import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload"; 
+import PlaylistPage from "./pages/PlaylistPage";
+import PlaylistView from "./pages/PlaylistView";
+
 
 export default function App() {
   return (
@@ -32,8 +35,9 @@ export default function App() {
         <Route path="/profile" element={<ListenerProfile />} />
         <Route path="/home" element={<ListenerHome />} />
         <Route path="/user-report" element={<UserReport />} />
-        <Route path="/likedsongs" element={<LikedSong />} />
+        <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
         <Route path="/me/playlists" element={<MyPlaylistsPage />} />
+        <Route path="/playlist/:id" element={<PlaylistPage />} />
         <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
         <Route path="/subscription" element={<Subscription />} />
         <Route path="/follows" element={<FollowsPage />} />

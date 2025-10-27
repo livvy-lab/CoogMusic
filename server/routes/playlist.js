@@ -5,7 +5,7 @@ export async function handlePlaylistRoutes(req, res) {
   const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
-  // CORS
+  // ✅ CORS setup
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -18,7 +18,7 @@ export async function handlePlaylistRoutes(req, res) {
 
   try {
     // --------------------------------------------------------
-    // GET /listeners/:id/playlists  (alias for convenience)
+    // ✅ GET /listeners/:id/playlists  (all playlists for a listener)
     // --------------------------------------------------------
     if (method === "GET" && /^\/listeners\/\d+\/playlists$/.test(pathname)) {
       const listenerId = Number(pathname.split("/")[2]);
@@ -36,12 +36,11 @@ export async function handlePlaylistRoutes(req, res) {
           COALESCE(COUNT(pt.SongID), 0) AS TrackCount,
           MAX(pt.DateSongAdded) AS LastAdded
         FROM Playlist p
-        LEFT JOIN Playlist_Track pt
-          ON pt.PlaylistID = p.PlaylistID
-        WHERE p.IsDeleted = 0
-          AND p.ListenerID = ?
+        LEFT JOIN Playlist_Track pt ON pt.PlaylistID = p.PlaylistID
+        WHERE p.IsDeleted = 0 AND p.ListenerID = ?
         GROUP BY
-          p.PlaylistID, p.ListenerID, p.ArtistID, p.Name, p.Description, p.IsPublic, p.IsDeleted
+          p.PlaylistID, p.ListenerID, p.ArtistID, p.Name,
+          p.Description, p.IsPublic, p.IsDeleted
         ORDER BY p.PlaylistID DESC
         `,
         [listenerId]
@@ -53,9 +52,37 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // GET /playlists
-    //   - all not-deleted (default)
-    //   - OR filtered by listener via ?listenerId=123
+    // ✅ GET /playlists/:id/tracks → return all songs in a playlist
+    // --------------------------------------------------------
+    if (/^\/playlists\/\d+\/tracks$/.test(pathname) && method === "GET") {
+      const playlistId = Number(pathname.split("/")[2]);
+      console.log("✅ [ROUTE HIT] /playlists/:id/tracks", playlistId);
+
+      const [rows] = await db.query(
+        `
+        SELECT
+          s.SongID,
+          s.Title,
+          s.DurationSeconds,
+          s.ReleaseDate,
+          al.Title AS Album
+        FROM Playlist_Track pt
+        JOIN Song s ON pt.SongID = s.SongID
+        LEFT JOIN Album_Track at ON s.SongID = at.SongID
+        LEFT JOIN Album al ON at.AlbumID = al.AlbumID
+        WHERE pt.PlaylistID = ?
+        ORDER BY pt.TrackNumber ASC, pt.DateSongAdded DESC
+        `,
+        [playlistId]
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(rows));
+      return;
+    }
+
+    // --------------------------------------------------------
+    // ✅ GET /playlists (optionally filter by ?listenerId)
     // --------------------------------------------------------
     if (pathname === "/playlists" && method === "GET") {
       const listenerId = query.listenerId ? Number(query.listenerId) : null;
@@ -74,12 +101,11 @@ export async function handlePlaylistRoutes(req, res) {
             COALESCE(COUNT(pt.SongID), 0) AS TrackCount,
             MAX(pt.DateSongAdded) AS LastAdded
           FROM Playlist p
-          LEFT JOIN Playlist_Track pt
-            ON pt.PlaylistID = p.PlaylistID
-          WHERE p.IsDeleted = 0
-            AND p.ListenerID = ?
+          LEFT JOIN Playlist_Track pt ON pt.PlaylistID = p.PlaylistID
+          WHERE p.IsDeleted = 0 AND p.ListenerID = ?
           GROUP BY
-            p.PlaylistID, p.ListenerID, p.ArtistID, p.Name, p.Description, p.IsPublic, p.IsDeleted
+            p.PlaylistID, p.ListenerID, p.ArtistID, p.Name,
+            p.Description, p.IsPublic, p.IsDeleted
           ORDER BY p.PlaylistID DESC
           `,
           [listenerId]
@@ -90,7 +116,6 @@ export async function handlePlaylistRoutes(req, res) {
         return;
       }
 
-      // fallback: all not-deleted playlists (existing behavior)
       const [rows] = await db.query(
         "SELECT * FROM Playlist WHERE IsDeleted = 0"
       );
@@ -100,7 +125,7 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // GET /playlists/:id
+    // ✅ GET /playlists/:id → single playlist info
     // --------------------------------------------------------
     if (pathname.startsWith("/playlists/") && method === "GET") {
       const id = pathname.split("/")[2];
@@ -121,8 +146,7 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // POST /playlists
-    // Body: { ListenerID?, ArtistID?, Name, Description?, IsPublic }
+    // ✅ POST /playlists → create playlist
     // --------------------------------------------------------
     if (pathname === "/playlists" && method === "POST") {
       let body = "";
@@ -168,7 +192,7 @@ export async function handlePlaylistRoutes(req, res) {
             })
           );
         } catch (err) {
-          console.error("Error parsing request body for POST /playlists:", err);
+          console.error("Error parsing POST /playlists:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
@@ -177,7 +201,7 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // PUT /playlists/:id
+    // ✅ PUT /playlists/:id → update playlist
     // --------------------------------------------------------
     if (pathname.startsWith("/playlists/") && method === "PUT") {
       const id = pathname.split("/")[2];
@@ -194,13 +218,8 @@ export async function handlePlaylistRoutes(req, res) {
 
           for (const [key, value] of Object.entries(fields)) {
             if (validCols.includes(key)) {
-              if (key === "IsPublic") {
-                updates.push(`${key} = ?`);
-                params.push(Number(value) ? 1 : 0);
-              } else {
-                updates.push(`${key} = ?`);
-                params.push(value ?? null);
-              }
+              updates.push(`${key} = ?`);
+              params.push(value ?? null);
             }
           }
 
@@ -226,7 +245,7 @@ export async function handlePlaylistRoutes(req, res) {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ PlaylistID: id, message: "Playlist updated successfully" }));
         } catch (err) {
-          console.error("Error parsing PUT /playlists/:id body:", err);
+          console.error("Error parsing PUT /playlists/:id:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
@@ -235,7 +254,7 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // DELETE /playlists/:id   (soft delete -> IsDeleted = 1)
+    // ✅ DELETE /playlists/:id → soft delete
     // --------------------------------------------------------
     if (pathname.startsWith("/playlists/") && method === "DELETE") {
       const id = pathname.split("/")[2];
@@ -257,10 +276,11 @@ export async function handlePlaylistRoutes(req, res) {
     }
 
     // --------------------------------------------------------
-    // Fallback
+    // ❌ Fallback
     // --------------------------------------------------------
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
+
   } catch (err) {
     console.error("Error handling playlist routes:", err);
     res.writeHead(500, { "Content-Type": "application/json" });
