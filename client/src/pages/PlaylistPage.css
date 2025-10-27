@@ -1,0 +1,123 @@
+/* 🎵 PlaylistPage.css */
+
+/* Page structure */
+.albumPage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: #782355;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Header section */
+.headerCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 20px;
+  background: linear-gradient(145deg, #ffeff7, #ffffff);
+  border-radius: 12px;
+}
+
+.likedHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.likedHeaderText h1 {
+  font-size: 2rem;
+  color: #782355;
+  margin: 0;
+}
+
+.likedUser {
+  color: #a36c8b;
+  font-size: 14px;
+}
+
+/* Table styling */
+.listCard {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 20px;
+}
+
+.likedTableHeader {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr 80px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #782355;
+  border-bottom: 1px solid #e2c5d7;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.likedRow {
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr 80px;
+  align-items: center;
+  padding: 8px 0;
+  color: #782355;
+}
+
+/* Align specific columns */
+.col-album {
+  text-align: left;
+  margin-left: 200px;
+}
+
+.col-date {
+  text-align: left;
+  margin-left: 40px;
+}
+
+.col-duration {
+  text-align: right;
+  margin-right: 15px;
+}
+
+/* Song info formatting */
+.songInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.songTitle {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.songArtist {
+  font-size: 13px;
+  color: #a36c8b;
+}
+
+/* Buttons */
+.heart-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 5px;
+  color: #a94486;
+}
+
+.playButton,
+.shuffleButton {
+  background: #a94486;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.shuffleButton {
+  background: transparent;
+  border: 1px solid #a94486;
+}
