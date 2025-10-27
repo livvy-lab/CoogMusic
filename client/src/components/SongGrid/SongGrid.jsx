@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { usePlayer } from "../../context/PlayerContext";
 import "./SongGrid.css";
 
 export default function SongGrid() {
   const { genreId } = useParams();
+  const { playSong } = usePlayer();
   const [songs, setSongs] = useState([]);
   const [genreName, setGenreName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
@@ -33,49 +35,47 @@ export default function SongGrid() {
     if (genreId) fetchSongs();
   }, [genreId]);
 
-  async function handlePlay(songId) {
+  async function handlePlay(song) {
+    await playSong(song);
     try {
       const res = await fetch("http://localhost:3001/plays", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ songId }),
+        body: JSON.stringify({ songId: song.SongID }),
       });
       if (!res.ok) return;
       const data = await res.json();
-      setStreams((prev) => ({ ...prev, [songId]: Number(data.streams) || 0 }));
+      setStreams((prev) => ({ ...prev, [song.SongID]: Number(data.streams) || 0 }));
     } catch {}
   }
 
-  if (loading)
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container">Loading songs...</div>
-      </section>
-    );
+  if (loading) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container">Loading songs...</div>
+    </section>
+  );
 
-  if (error)
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container error">{error}</div>
-      </section>
-    );
+  if (error) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container error">{error}</div>
+    </section>
+  );
 
-  if (!songs.length)
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container comingSoon">🎶 Coming Soon 🎶</div>
-      </section>
-    );
+  if (!songs.length) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container comingSoon">🎶 Coming Soon 🎶</div>
+    </section>
+  );
 
   return (
     <section className="songGrid">
       <h2 className="songGrid__title">{genreName}</h2>
       <div className="songGrid__container">
         {songs.map((s) => (
-          <div className="songCard" key={s.SongID} onClick={() => handlePlay(s.SongID)}>
+          <div className="songCard" key={s.SongID} onClick={() => handlePlay(s)}>
             <div className="songCard__frame">
               <img
                 src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
