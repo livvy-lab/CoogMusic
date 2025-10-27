@@ -1,9 +1,12 @@
+// client/src/components/SongGrid/SongGrid.jsx
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { usePlayer } from "../../context/PlayerContext";
 import "./SongGrid.css";
 
 export default function SongGrid() {
   const { genreId } = useParams();
+  const { playSong } = usePlayer();
   const [songs, setSongs] = useState([]);
   const [genreName, setGenreName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
@@ -14,16 +17,21 @@ export default function SongGrid() {
     async function fetchSongs() {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/genres/${genreId}/songs`);
+        setError("");
+        const res = await fetch(`http://localhost:3001/genres/${encodeURIComponent(genreId)}/songs`);
         if (res.status === 404) {
           setSongs([]);
           setGenreName("Unknown Genre");
           return;
         }
-        if (!res.ok) throw new Error(`Failed to fetch songs for genre ${genreId}`);
+        if (!res.ok) throw new Error();
         const data = await res.json();
-        setSongs(Array.isArray(data.songs) ? data.songs : []);
+        const list = Array.isArray(data.songs) ? data.songs : [];
+        setSongs(list);
         setGenreName(data.genre?.GenreName || "Unknown Genre");
+        const initial = {};
+        for (const s of list) initial[s.SongID] = Number(s.Streams || 0);
+        setStreams(initial);
       } catch {
         setError("Failed to load songs");
       } finally {
@@ -33,49 +41,62 @@ export default function SongGrid() {
     if (genreId) fetchSongs();
   }, [genreId]);
 
-  async function handlePlay(songId) {
+  async function handlePlay(song) {
+    await playSong(song);
+
+    const u = JSON.parse(localStorage.getItem("user") || "null");
+    const listenerId = Number(u?.listenerId ?? u?.ListenerID ?? u?.listenerID ?? NaN);
+
+    setStreams(prev => ({ ...prev, [song.SongID]: (prev[song.SongID] ?? 0) + 1 }));
+
+    if (!Number.isFinite(listenerId)) return;
+
     try {
       const res = await fetch("http://localhost:3001/plays", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ songId }),
+        body: JSON.stringify({ songId: song.SongID, listenerId, msPlayed: 0 }),
       });
-      if (!res.ok) return;
-      const data = await res.json();
-      setStreams((prev) => ({ ...prev, [songId]: Number(data.streams) || 0 }));
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && typeof data.streams === "number") {
+        setStreams(prev => ({ ...prev, [song.SongID]: data.streams }));
+      }
     } catch {}
   }
 
-  if (loading)
+  if (loading) {
     return (
       <section className="songGrid">
         <h2 className="songGrid__title">{genreName}</h2>
         <div className="songGrid__container">Loading songs...</div>
       </section>
     );
+  }
 
-  if (error)
+  if (error) {
     return (
       <section className="songGrid">
         <h2 className="songGrid__title">{genreName}</h2>
         <div className="songGrid__container error">{error}</div>
       </section>
     );
+  }
 
-  if (!songs.length)
+  if (!songs.length) {
     return (
       <section className="songGrid">
         <h2 className="songGrid__title">{genreName}</h2>
         <div className="songGrid__container comingSoon">🎶 Coming Soon 🎶</div>
       </section>
     );
+  }
 
   return (
     <section className="songGrid">
       <h2 className="songGrid__title">{genreName}</h2>
       <div className="songGrid__container">
         {songs.map((s) => (
-          <div className="songCard" key={s.SongID} onClick={() => handlePlay(s.SongID)}>
+          <button className="songCard" key={s.SongID} onClick={() => handlePlay(s)}>
             <div className="songCard__frame">
               <img
                 src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
@@ -90,7 +111,7 @@ export default function SongGrid() {
                 {streams[s.SongID] !== undefined ? `${streams[s.SongID]} streams` : "Click to play"}
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </section>
