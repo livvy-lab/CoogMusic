@@ -1,24 +1,23 @@
 import { useEffect, useState } from "react";
 import { useFavPins } from "../../context/FavoritesPinsContext";
+import { usePlayer } from "../../context/PlayerContext";
 import { API_BASE_URL } from "../../config/api";
 import "./JamCard.css";
-import { usePlayer } from "../../context/PlayerContext"; // adjust path if needed
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
-const FALLBACK_COVER =
-  "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
+const FALLBACK_COVER = "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
 
 export default function JamCard({ listenerId }) {
   const [song, setSong] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError]   = useState(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Listen for pin changes so the Current Jam updates immediately
   const favCtx = useFavPins?.() || {};
   const pinnedSongId = favCtx.pinnedSongId ?? null;
 
-  const fallbackCover = "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
+  const { current, playing, playSong, toggle } = usePlayer();
+  const isCurrentSong = current?.SongID === song?.SongID;
+  const isShowingPause = isCurrentSong && playing;
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("user") || "null");
@@ -29,8 +28,6 @@ export default function JamCard({ listenerId }) {
       return;
     }
 
-    // Fetch profile (includes favorites.pinnedSong). We re-run when listenerId
-    // or the global pinnedSongId changes so the UI stays in sync after pin ops.
     (async () => {
       try {
         setLoading(true);
@@ -38,10 +35,7 @@ export default function JamCard({ listenerId }) {
   const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-
-        // Expecting favorites.pinnedSong to include at least { SongID, Title, Artists, CoverURL }
-        const pinned = data?.favorites?.pinnedSong || null;
-        setSong(pinned);
+        setSong(data?.favorites?.pinnedSong || null);
       } catch (e) {
         setError(e.message);
         setSong(null);
@@ -67,18 +61,15 @@ export default function JamCard({ listenerId }) {
         <h3 className="jam__title">{title}</h3>
       </div>
 
-      {/* Album art */}
       <div className="jam__artWrap">
         <img src={cover} alt={`${track} cover`} className="jam__cover" />
       </div>
 
-      {/* Song details */}
       <div className="jam__meta">
         <div className="jam__song">{track}</div>
         <div className="jam__artist">{artist}</div>
       </div>
 
-      {/* Player controls */}
       <div className="jam__controls">
         <button
           className="jam__control jam__play"
