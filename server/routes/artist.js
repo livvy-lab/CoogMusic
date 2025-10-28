@@ -166,16 +166,9 @@ export async function handleArtistRoutes(req, res) {
         [STREAM_MS_THRESHOLD, artistId]
       );
 
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ albums, singles }));
-      return;
+      return json(res, 200, { albums, singles });
     }
 
-    // ------------------------------------------------------------
-    // POST /artists  (create)
-    // Body: { AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id }
-    // PFP is optional legacy; image_media_id preferred
-    // ------------------------------------------------------------
     if (method === "POST" && pathname === "/artists") {
       let body = "";
       req.on("data", c => body += c);
