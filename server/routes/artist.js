@@ -6,7 +6,10 @@ function json(res, status, body) {
 }
 
 export async function handleArtistRoutes(req, res) {
-  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname, searchParams } = new URL(
+    req.url,
+    `http://${req.headers.host}`
+  );
   const method = req.method;
 
   try {
@@ -22,7 +25,11 @@ export async function handleArtistRoutes(req, res) {
         ORDER BY a.ArtistID ASC
         `
       );
-      return json(res, 200, rows.map((r) => ({ ...r, PFP: r.pfpUrl || null })));
+      return json(
+        res,
+        200,
+        rows.map((r) => ({ ...r, PFP: r.pfpUrl || null }))
+      );
     }
 
     const mAlbums = pathname.match(/^\/artists\/(\d+)\/albums\/?$/);
@@ -204,7 +211,6 @@ export async function handleArtistRoutes(req, res) {
 
     // fallback if no other route in this file matches
     return json(res, 404, { error: "Route not found in artist.js" });
-    
   } catch (err) {
     console.error(
       "artist route error:",
