@@ -128,7 +128,7 @@ export default function SongForm() {
                   ) : (
                     <div className="upload-placeholder">
                       <i className="fas fa-image fa-2x"></i>
-                      <span>Click to browse</span>
+                      <span>Add Cover Image</span>
                     </div>
                   )}
                 </div>
@@ -163,7 +163,7 @@ export default function SongForm() {
                 >
                   <div className="upload-placeholder">
                     <i className="fas fa-music fa-2x"></i>
-                    <span>Click to browse</span>
+                    <span>Add Song File</span>
                   </div>
                 </div>
                 <input
