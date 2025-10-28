@@ -39,7 +39,7 @@ export default function NavigationBar() {
           <div className="navTitle">Social</div>
           <Link className="navLink" to="/profile" onClick={() => setOpen(false)}>👤 My Profile</Link>
           <Link className="navLink" to="/edit-profile" onClick={() => setOpen(false)}>✏️ Edit Profile</Link>
-          <Link className="navLink" to="/friends" onClick={() => setOpen(false)}>👥 Friends</Link>
+          <Link className="navLink" to="/follows" onClick={() => setOpen(false)}>👥 Connections</Link>
         </nav>
 
         <nav className="navSection">

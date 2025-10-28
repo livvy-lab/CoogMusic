@@ -155,8 +155,20 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         <p className="pc__bio">{listener.Bio || "No bio available."}</p>
 
         <div className="pc__stats">
-          <button>{counts.followers} followers</button>
-          <button>{counts.following} following</button>
+          <button
+            onClick={() => navigate("/follows?tab=followers")}
+            aria-label="View followers"
+            title="View followers"
+          >
+            {counts.followers} followers
+          </button>
+          <button
+            onClick={() => navigate("/follows?tab=following")}
+            aria-label="View following"
+            title="View following"
+          >
+            {counts.following} following
+          </button>
           <button
             onClick={() => navigate(`/listeners/${listenerId}/playlists`)}
             aria-label="View public playlists"

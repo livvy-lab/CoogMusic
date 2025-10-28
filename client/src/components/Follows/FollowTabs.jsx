@@ -1,19 +1,24 @@
 import React, { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import UserRow from "./UserRow";
 import "./Follows.css";
 import { getUser } from "../../lib/userStorage";
 
 export default function FollowTabs() {
+  // Read active tab from URL query
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") || "followers";
+
   const user = getUser();
   const CURRENT_USER_ID = user.listenerId || user.artistId || user.accountId;
   const CURRENT_USER_TYPE = user.accountType === "listener" ? "Listener" : "Artist";
 
-  const [activeTab, setActiveTab] = useState("followers");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [search, setSearch] = useState("");
 
-  // refetch both lists to keep the UI in sync
+  // Refetch both lists to keep the UI in sync
   const refetchData = async () => {
     const followersRes = await fetch(`http://localhost:3001/follows?userId=${CURRENT_USER_ID}&userType=${CURRENT_USER_TYPE}&tab=followers`);
     setFollowers(await followersRes.json());
@@ -24,6 +29,10 @@ export default function FollowTabs() {
   useEffect(() => {
     refetchData();
   }, [CURRENT_USER_ID, CURRENT_USER_TYPE]);
+
+  useEffect(() => {
+    setActiveTab(initialTab); // Update tab if URL changes
+  }, [initialTab]);
 
   const handleFollow = async (targetUser) => {
     await fetch("http://localhost:3001/follows", {
@@ -36,7 +45,7 @@ export default function FollowTabs() {
         FollowingType: targetUser.type,
       }),
     });
-    await refetchData(); // Refetch data to update the lists
+    await refetchData();
   };
 
   const handleUnfollow = async (targetUser) => {
@@ -50,7 +59,7 @@ export default function FollowTabs() {
         FollowingType: targetUser.type,
       }),
     });
-    await refetchData(); // refetch data to update the lists
+    await refetchData();
   };
 
   const listToDisplay = activeTab === "followers" ? followers : following;
@@ -58,8 +67,18 @@ export default function FollowTabs() {
   return (
     <div className="follow-container">
       <div className="tabs">
-        <button className={activeTab === "followers" ? "active" : ""} onClick={() => setActiveTab("followers")}>Followers</button>
-        <button className={activeTab === "following" ? "active" : ""} onClick={() => setActiveTab("following")}>Following</button>
+        <button
+          className={activeTab === "followers" ? "active" : ""}
+          onClick={() => setActiveTab("followers")}
+        >
+          Followers
+        </button>
+        <button
+          className={activeTab === "following" ? "active" : ""}
+          onClick={() => setActiveTab("following")}
+        >
+          Following
+        </button>
       </div>
       <div className="search-bar-container">
         <input
@@ -81,7 +100,7 @@ export default function FollowTabs() {
             <UserRow
               key={`${user.type}-${user.id}`}
               user={user}
-              isFollowing={following.some(f => f.id === user.id && f.type === user.type)} // Added type check for accuracy
+              isFollowing={following.some(f => f.id === user.id && f.type === user.type)}
               onFollow={() => handleFollow(user)}
               onUnfollow={() => handleUnfollow(user)}
             />
