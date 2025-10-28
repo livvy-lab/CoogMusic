@@ -4,7 +4,7 @@ import "./ProfileCard.css";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:3001";
 
-export default function ProfileCard() {
+export default function ProfileCard({ listenerId: propListenerId = null, publicView = false }) {
   const navigate = useNavigate();
 
   const [listenerId, setListenerId] = useState(null);
@@ -17,6 +17,19 @@ export default function ProfileCard() {
 
   // read listenerId (+ cached pfp if present)
   useEffect(() => {
+    // If a prop listener id was provided (public view), prefer that.
+    if (propListenerId != null) {
+      setListenerId(propListenerId);
+      // try to reuse cached pfp if it belongs to the same id
+      try {
+        const stored = JSON.parse(localStorage.getItem("user") || "null");
+        if (stored?.listenerId && stored.listenerId === propListenerId && stored?.pfpUrl) {
+          setPfpUrl(stored.pfpUrl);
+        }
+      } catch {}
+      return;
+    }
+
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
       if (stored?.listenerId) {
@@ -33,7 +46,7 @@ export default function ProfileCard() {
       setLoading(false);
       setCountLoading(false);
     }
-  }, []);
+  }, [propListenerId]);
 
   // fetch profile (names, counts, legacy PFP)
   useEffect(() => {

@@ -1,4 +1,3 @@
-// server/index.js
 import http from "http";
 import fs from "fs";
 import path from "path";
@@ -32,11 +31,16 @@ import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.
 import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
+//import { handlePfpRoutes } from "./routes/pfp.js";
+//import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleSetArtistAvatar } from "./routes/avatar_artist.js";
 import { handleLikesPinRoutes } from "./routes/likes_pins.js";
+
+import { handleMediaRoutes } from "./routes/media.js";
+import { handleSearchRoutes } from "./routes/search.js";
 
 const PORT = process.env.PORT || 3001;
 
@@ -69,6 +73,17 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
     if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
+    // 2) Media routes (/media, /songs/:id/cover, /albums/:id/cover)
+    if (pathname === "/media" || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
+      await handleMediaRoutes(req, res);
+      return;
+    }
+
+    // 3) Upload endpoints (/upload/album, /upload/song) — handle ONLY /upload/*
+    if (pathname.startsWith("/upload/")) {
+      await handleUploadRoutes(req, res);
+      return;
+    }
 
     if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
       const id = pathname.split("/")[2];
@@ -94,6 +109,12 @@ const server = http.createServer(async (req, res) => {
       await handleLikesPinRoutes(req, res); return;
     }
 
+    // 5.5) Search (place before generic resource routers)
+    if (pathname.startsWith("/search")) {
+      await handleSearchRoutes(req, res); return;
+    }
+
+    // 6) Resource routers (prefix checks)
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
     if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }

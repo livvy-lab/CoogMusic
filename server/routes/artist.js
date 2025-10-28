@@ -6,6 +6,8 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
+const STREAM_MS_THRESHOLD = 0; // Use 30000 (30s) for real production streaming thresholds
+
 export async function handleArtistRoutes(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
@@ -65,6 +67,120 @@ export async function handleArtistRoutes(req, res) {
         `,
         [artistId]
       );
+      if (!artist) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Artist not found" }));
+        return;
+      }
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ Bio: artist.Bio || "" }));
+      return;
+    }
+
+    // ─────────────────────────────────────────────
+    // GET /artists/:id/top-tracks?limit=10 → most streamed songs
+    // ─────────────────────────────────────────────
+    if (/^\/artists\/\d+\/top-tracks$/.test(pathname) && method === "GET") {
+      const artistId = Number(pathname.split("/")[2]);
+      const url = new URL(req.url, `http://${req.headers.host}`);
+      const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 10, 1), 50);
+
+      const [tracks] = await db.query(
+        `
+        SELECT
+          s.SongID,
+          s.Title,
+          s.DurationSeconds,
+          s.ReleaseDate,
+          COALESCE(COUNT(p.PlayID),0) AS Streams
+        FROM Song s
+        JOIN Song_Artist sa
+          ON sa.SongID = s.SongID
+         AND COALESCE(sa.IsDeleted,0)=0
+         AND sa.ArtistID = ?
+        LEFT JOIN Play p
+          ON p.SongID = s.SongID
+         AND p.IsDeleted = 0
+         AND p.MsPlayed >= ?
+        WHERE COALESCE(s.IsDeleted,0)=0
+        GROUP BY s.SongID
+        ORDER BY Streams DESC, s.SongID DESC
+        LIMIT ?
+        `,
+        [artistId, STREAM_MS_THRESHOLD, limit]
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ tracks }));
+      return;
+    }
+
+    // ─────────────────────────────────────────────
+    // GET /artists/:id/discography → albums + singles
+    // ─────────────────────────────────────────────
+    if (/^\/artists\/\d+\/discography$/.test(pathname) && method === "GET") {
+      const artistId = Number(pathname.split("/")[2]);
+
+      // Albums
+      const [albums] = await db.query(
+        `
+        SELECT
+          al.AlbumID,
+          al.Title AS AlbumTitle,
+          al.ReleaseDate,
+          COUNT(DISTINCT at.SongID) AS TrackCount
+        FROM Album al
+        LEFT JOIN Album_Artist aa
+          ON aa.AlbumID = al.AlbumID AND COALESCE(aa.IsDeleted,0)=0
+        LEFT JOIN Album_Track at
+          ON at.AlbumID = al.AlbumID
+        WHERE COALESCE(al.IsDeleted,0)=0
+          AND (
+            aa.ArtistID = ?
+            OR EXISTS (
+              SELECT 1
+                FROM Album_Track at2
+                JOIN Song_Artist sa2
+                  ON sa2.SongID = at2.SongID AND COALESCE(sa2.IsDeleted,0)=0
+               WHERE at2.AlbumID = al.AlbumID
+                 AND sa2.ArtistID = ?
+            )
+          )
+        GROUP BY al.AlbumID
+        ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
+        `,
+        [artistId, artistId]
+      );
+
+      // Singles
+      const [singles] = await db.query(
+        `
+        SELECT
+          s.SongID,
+          s.Title,
+          s.ReleaseDate,
+          COALESCE(COUNT(p.PlayID),0) AS Streams
+        FROM Song s
+        JOIN Song_Artist sa
+          ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+        LEFT JOIN Album_Track at ON at.SongID = s.SongID
+        LEFT JOIN Play p
+          ON p.SongID = s.SongID
+         AND p.IsDeleted = 0
+         AND p.MsPlayed >= ?
+        WHERE COALESCE(s.IsDeleted,0)=0
+          AND sa.ArtistID = ?
+          AND at.SongID IS NULL
+        GROUP BY s.SongID
+        ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
+        `,
+        [STREAM_MS_THRESHOLD, artistId]
+      );
+
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ albums, singles }));
+      return;
+    }
 
       if (!row) return json(res, 404, { error: "Artist not found" });
       return json(res, 200, { ...row, PFP: row.pfpUrl || null });

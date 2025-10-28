@@ -18,7 +18,7 @@ export default function AboutBox({ artistId }) {
     let mounted = true;
     const ctrl = new AbortController();
 
-    (async () => {
+    const fetchBio = async () => {
       try {
         setLoading(true);
         const res = await fetch(`http://localhost:3001/artists/${id}/about`, {
@@ -27,7 +27,6 @@ export default function AboutBox({ artistId }) {
         if (!res.ok) {
           if (!mounted) return;
           setBio(FALLBACK_TEXT);
-          setLoading(false);
           return;
         }
         const data = await res.json();
@@ -41,8 +40,9 @@ export default function AboutBox({ artistId }) {
       } finally {
         if (mounted) setLoading(false);
       }
-    })();
+    };
 
+    fetchBio();
     return () => {
       mounted = false;
       ctrl.abort();

@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import ProfileCard from "../components/ListenerProfile/ProfileCard";
 import FavoriteArtists from "../components/ListenerProfile/FavoriteArtists";
@@ -5,19 +6,35 @@ import JamCard from "../components/ListenerProfile/JamCard";
 import FavPlaylist from "../components/ListenerProfile/FavPlaylist";
 import "./ListenerProfile.css";
 
-export default function ListenerProfile() {
+export default function ListenerProfile({ profileId = null, publicView = false }) {
+  const [listenerId, setListenerId] = useState(profileId);
+
+  useEffect(() => {
+    if (profileId != null) {
+      setListenerId(profileId);
+      return;
+    }
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      const id = stored?.listenerId ?? stored?.ListenerID ?? null;
+      setListenerId(id);
+    } catch {
+      setListenerId(null);
+    }
+  }, [profileId]);
+
   return (
     <PageLayout>
       <div className="lp">
         <div className="lp__profileSection">
-          <ProfileCard />
+          <ProfileCard listenerId={listenerId} publicView={publicView} />
         </div>
         <div className="lp__bottom">
           <div className="lp__left">
-            <FavoriteArtists />
-            <FavPlaylist />
+            <FavoriteArtists listenerId={listenerId} publicView={publicView} />
+            <FavPlaylist listenerId={listenerId} publicView={publicView} />
           </div>
-          <JamCard />
+          <JamCard listenerId={listenerId} publicView={publicView} />
         </div>
       </div>
     </PageLayout>

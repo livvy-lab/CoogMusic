@@ -98,8 +98,18 @@
   color: white;
 }
 
+.current-inactive {
+  background-color: #8b1858;
+  color: white;
+}
+
 .subscribe {
   background-color: #8b1858;
+  color: white;
+}
+
+.subscribed {
+  background-color: #c5a0b6;
   color: white;
 }
 
