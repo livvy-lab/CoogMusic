@@ -8,11 +8,14 @@ export default function AlbumForm() {
     title: "",
     artistId: "",
     releaseDate: "",
-    description: ""
+    description: "",
+    genres: [] // Array of selected genre IDs
   });
   const [cover, setCover] = useState(null);
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [availableGenres, setAvailableGenres] = useState([]);
+  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
 
   useEffect(() => {
     try {
@@ -20,6 +23,21 @@ export default function AlbumForm() {
       const id = stored?.artistId ?? stored?.ArtistID ?? null;
       if (id) setFormData(data => ({ ...data, artistId: String(id) }));
     } catch {}
+  }, []);
+
+  // Fetch available genres
+  useEffect(() => {
+    const fetchGenres = async () => {
+      try {
+        const res = await fetch("http://localhost:3001/genres");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setAvailableGenres(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch genres:", err);
+      }
+    };
+    fetchGenres();
   }, []);
 
   // Handle cover image selection
@@ -35,6 +53,24 @@ export default function AlbumForm() {
     const url = URL.createObjectURL(selectedFile);
     setPreviewUrl(url);
     setCover(selectedFile);
+  };
+
+  // Toggle genre selection
+  const toggleGenre = (genreId) => {
+    setFormData(prev => ({
+      ...prev,
+      genres: prev.genres.includes(genreId)
+        ? prev.genres.filter(id => id !== genreId)
+        : [...prev.genres, genreId]
+    }));
+  };
+
+  // Remove genre tag
+  const removeGenre = (genreId) => {
+    setFormData(prev => ({
+      ...prev,
+      genres: prev.genres.filter(id => id !== genreId)
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -172,12 +208,50 @@ export default function AlbumForm() {
             </div>
 
             <div className="form-field">
-              <label htmlFor="genre">Genre/Tags</label>
-              <input
-                type="text"
-                id="genre"
-                placeholder="Enter genres or tags"
-              />
+              <label>Genre/Tags</label>
+              <div className="genre-selector">
+                {/* Selected Genres as Tags */}
+                <div className="selected-genres">
+                  {formData.genres.map(genreId => {
+                    const genre = availableGenres.find(g => g.GenreID === genreId);
+                    return genre ? (
+                      <span key={genreId} className="genre-tag">
+                        {genre.Name}
+                        <button
+                          type="button"
+                          onClick={() => removeGenre(genreId)}
+                          className="genre-tag-remove"
+                        >
+                          ×
+                        </button>
+                      </span>
+                    ) : null;
+                  })}
+                  <button
+                    type="button"
+                    className="add-genre-btn"
+                    onClick={() => setShowGenreDropdown(!showGenreDropdown)}
+                  >
+                    + Add Genre
+                  </button>
+                </div>
+
+                {/* Genre Dropdown */}
+                {showGenreDropdown && (
+                  <div className="genre-dropdown">
+                    {availableGenres.map(genre => (
+                      <label key={genre.GenreID} className="genre-option">
+                        <input
+                          type="checkbox"
+                          checked={formData.genres.includes(genre.GenreID)}
+                          onChange={() => toggleGenre(genre.GenreID)}
+                        />
+                        <span>{genre.Name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="form-field">
