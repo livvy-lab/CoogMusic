@@ -12,7 +12,52 @@ export default function PlaylistGrid({
   const [loading, setLoading] = useState(true);
   const [pinnedId, setPinnedId] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
 
+  // 🗑️ Delete playlist
+  async function handleDelete(id) {
+    if (!window.confirm("Are you sure you want to delete this playlist?")) return;
+    try {
+      const res = await fetch(`http://localhost:3001/playlists/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete playlist");
+      setPlaylists((prev) => prev.filter((p) => p.PlaylistID !== id));
+      setOpenMenuId(null);
+      console.log("✅ Playlist deleted:", id);
+    } catch (err) {
+      console.error("❌ Error deleting playlist:", err);
+    }
+  }
+
+  // ✏️ Edit playlist
+  function handleEdit(id) {
+    const playlist = playlists.find((p) => p.PlaylistID === id);
+    const newName = prompt(
+      `Rename playlist "${playlist?.Name || "Untitled"}":`,
+      playlist?.Name || ""
+    );
+    if (!newName || newName === playlist?.Name) return;
+
+    fetch(`http://localhost:3001/playlists/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ Name: newName }),
+    })
+      .then((res) => res.json())
+      .then(() => {
+        setPlaylists((prev) =>
+          prev.map((p) =>
+            p.PlaylistID === id ? { ...p, Name: newName } : p
+          )
+        );
+        setOpenMenuId(null);
+        console.log("✏️ Playlist renamed:", newName);
+      })
+      .catch((err) => console.error("❌ Rename failed:", err));
+  }
+
+  // 📦 Fetch playlists
   useEffect(() => {
     let aborted = false;
 
@@ -25,14 +70,11 @@ export default function PlaylistGrid({
 
       try {
         setLoading(true);
-
-        // Fetch playlists
         const res = await fetch(
           `http://localhost:3001/playlists?listenerId=${encodeURIComponent(listenerId)}`
         );
         const data = res.ok ? await res.json() : [];
 
-        // Fetch pinned playlist for this listener
         const resPinned = await fetch(
           `http://localhost:3001/listeners/${encodeURIComponent(listenerId)}`
         );
@@ -42,7 +84,9 @@ export default function PlaylistGrid({
         }
 
         const visible = (Array.isArray(data) ? data : []).filter(
-          (p) => Number(p.IsDeleted) === 0 && (showPrivate || Number(p.IsPublic) === 1)
+          (p) =>
+            Number(p.IsDeleted) === 0 &&
+            (showPrivate || Number(p.IsPublic) === 1)
         );
         if (!aborted) setPlaylists(visible);
       } catch {
@@ -51,7 +95,6 @@ export default function PlaylistGrid({
         setLoading(false);
       }
 
-      // Liked fallback
       if (!showLikedFallback) return;
 
       try {
@@ -99,7 +142,6 @@ export default function PlaylistGrid({
           body: JSON.stringify({ playlistId }),
         }
       );
-
       const data = await res.json();
       if (res.ok && data.success) {
         setPinnedId(playlistId);
@@ -132,77 +174,122 @@ export default function PlaylistGrid({
                 <div className="pl__cover pl__cover--skeleton" />
               </div>
               <h3 className="pl__title">Loading…</h3>
-              <div className="pl__by">by <span className="pl__author">—</span></div>
+              <div className="pl__by">
+                by <span className="pl__author">—</span>
+              </div>
               <div className="pl__tracks">—</div>
             </div>
           ))
-        ) : hasPlaylists ? (
-          playlists.map((p) => {
-            const tracks = Number(p.TrackCount) || 0;
-            const title = p.Name ?? "Untitled Playlist";
-            const coverUrl =
-              p.CoverURL ||
-              "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
-            const isPinned = pinnedId === p.PlaylistID;
-
-            return (
-              <div
-                className={`pl ${isPinned ? "pl--pinned" : ""}`}
-                key={p.PlaylistID}
-              >
-                <button
-                  className={`pl__pinBtn ${isPinned ? "active" : ""}`}
-                  title={isPinned ? "Pinned to profile" : "Pin to profile"}
-                  disabled={pinLoading}
-                  onClick={() => handlePin(p.PlaylistID)}
-                >
-                  📌
-                </button>
-
+        ) : (
+          <>
+            {/* 💜 Always show Liked Songs */}
+            {showLikedFallback && (
+              <div className="pl pl--liked">
                 <div className="pl__pill">
-                  <span className="pl__pillIcon">♪</span>
-                  <span>{tracks} {tracks === 1 ? "track" : "tracks"}</span>
+                  <span className="pl__pillIcon">♥</span>
+                  <span>
+                    {likedCount == null ? "—" : likedCount}{" "}
+                    {likedCount === 1 ? "song" : "songs"}
+                  </span>
                 </div>
                 <div className="pl__coverWrap">
-                  <img className="pl__cover" src={coverUrl} alt={title} />
+                  <div
+                    className="pl__cover pl__cover--liked"
+                    role="img"
+                    aria-label="Liked Songs cover"
+                  />
                 </div>
-                <h3 className="pl__title">{title}</h3>
+                <h3 className="pl__title">Liked Songs</h3>
                 <div className="pl__by">
                   by <span className="pl__author">{authorName}</span>
                 </div>
                 <div className="pl__tracks">
-                  {tracks} {tracks === 1 ? "track" : "tracks"}
+                  {likedCount == null ? "—" : likedCount}{" "}
+                  {likedCount === 1 ? "song" : "songs"}
                 </div>
               </div>
-            );
-          })
-        ) : showLikedFallback ? (
-          <div className="pl pl--liked">
-            <div className="pl__pill">
-              <span className="pl__pillIcon">♥</span>
-              <span>
-                {likedCount == null ? "—" : likedCount}{" "}
-                {likedCount === 1 ? "song" : "songs"}
-              </span>
-            </div>
-            <div className="pl__coverWrap">
-              <div
-                className="pl__cover pl__cover--liked"
-                role="img"
-                aria-label="Liked Songs cover"
-              />
-            </div>
-            <h3 className="pl__title">Liked Songs</h3>
-            <div className="pl__by">
-              by <span className="pl__author">{authorName}</span>
-            </div>
-            <div className="pl__tracks">
-              {likedCount == null ? "—" : likedCount}{" "}
-              {likedCount === 1 ? "song" : "songs"}
-            </div>
-          </div>
-        ) : (
-          <div className="pl pl--empty">No public playlists yet.</div>
+            )}
+
+            {/* 🎵 Show all playlists */}
+            {hasPlaylists ? (
+              playlists.map((p) => {
+                const tracks = Number(p.TrackCount) || 0;
+                const title = p.Name ?? "Untitled Playlist";
+                const coverUrl =
+                  p.CoverURL ||
+                  "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
+                const isPinned = pinnedId === p.PlaylistID;
+
+                return (
+                  <div
+                    className={`pl ${isPinned ? "pl--pinned" : ""}`}
+                    key={p.PlaylistID}
+                  >
+                    {/* 📌 Pin */}
+                    <button
+                      className={`pl__pinBtn ${isPinned ? "active" : ""}`}
+                      title={isPinned ? "Pinned to profile" : "Pin to profile"}
+                      disabled={pinLoading}
+                      onClick={() => handlePin(p.PlaylistID)}
+                    >
+                      📌
+                    </button>
+
+                    {/* ⋯ Dropdown */}
+                    <div className="playlistOptions">
+                      <button
+                        className="playlistOptionsBtn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId(
+                            openMenuId === p.PlaylistID ? null : p.PlaylistID
+                          );
+                        }}
+                      >
+                        ⋯
+                      </button>
+
+                      {openMenuId === p.PlaylistID && (
+                        <div className="playlistDropdown">
+                          <button
+                            className="dropdownItem"
+                            onClick={() => handleEdit(p.PlaylistID)}
+                          >
+                            ✏️ Edit
+                          </button>
+                          <button
+                            className="dropdownItem delete"
+                            onClick={() => handleDelete(p.PlaylistID)}
+                          >
+                            🗑️ Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="pl__pill">
+                      <span className="pl__pillIcon">♪</span>
+                      <span>
+                        {tracks} {tracks === 1 ? "track" : "tracks"}
+                      </span>
+                    </div>
+                    <div className="pl__coverWrap">
+                      <img className="pl__cover" src={coverUrl} alt={title} />
+                    </div>
+                    <h3 className="pl__title">{title}</h3>
+                    <div className="pl__by">
+                      by <span className="pl__author">{authorName}</span>
+                    </div>
+                    <div className="pl__tracks">
+                      {tracks} {tracks === 1 ? "track" : "tracks"}
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="pl pl--empty">No public playlists yet.</div>
+            )}
+          </>
         )}
       </div>
     </section>
