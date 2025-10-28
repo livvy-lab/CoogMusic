@@ -36,6 +36,7 @@ import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleSetArtistAvatar } from "./routes/avatar_artist.js";
+import { handleLikesPinRoutes } from "./routes/likes_pins.js";
 
 const PORT = process.env.PORT || 3001;
 
@@ -88,6 +89,10 @@ const server = http.createServer(async (req, res) => {
     if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
     if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
+
+    if (pathname.startsWith("/songs/status") || pathname.startsWith("/likes") || pathname.startsWith("/pin")) {
+      await handleLikesPinRoutes(req, res); return;
+    }
 
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }

@@ -154,3 +154,10 @@
     grid-auto-columns: calc((100% - (var(--cols-mobile) - 1) * var(--gap)) / var(--cols-mobile));
   }
 }
+
+/* NewReleases.css additions */
+.newRel__actions {
+  display: flex;
+  justify-content: center;
+  padding: 0px 0 12px;
+}

@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import "./NewReleases.css";
 import { usePlayer } from "../../context/PlayerContext.jsx";
+import { useFavPins } from "../../context/FavoritesPinsContext";
+import SongActions from "../Songs/SongActions";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
@@ -10,6 +12,8 @@ export default function NewReleases({ title = "New releases" }) {
   const [loading, setLoading] = useState(true);
   const railRef = useRef(null);
   const { playSong } = usePlayer();
+  const favCtx = useFavPins() || {};
+  const setVisibleIds = favCtx.setVisibleIds ?? (() => {});
 
   const scrollByPage = (dir) => {
     const rail = railRef.current;
@@ -31,6 +35,11 @@ export default function NewReleases({ title = "New releases" }) {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    const ids = (songs || []).map(s => s.SongID).filter(Boolean);
+    setVisibleIds(ids);
+  }, [songs]);
 
   async function resolveUrl(song) {
     if (song?.url) return song.url;
@@ -111,11 +120,9 @@ export default function NewReleases({ title = "New releases" }) {
             <div
               className={`newRel__card ${c.placeholder ? "placeholder" : ""}`}
               key={c.key}
-              // ⬇ no onClick here – so links inside can navigate freely
               role={c.placeholder ? undefined : "group"}
               tabIndex={c.placeholder ? -1 : 0}
             >
-              {/* Clicking image plays */}
               <img
                 className="newRel__img"
                 src={c.img}
@@ -131,7 +138,6 @@ export default function NewReleases({ title = "New releases" }) {
               />
 
               <div className="newRel__meta">
-                {/* (Optional) make the title click-to-play as well */}
                 <div
                   className="newRel__song"
                   onClick={() => c.song && handlePlay(c.song)}
@@ -145,7 +151,6 @@ export default function NewReleases({ title = "New releases" }) {
                   {c.title}
                 </div>
 
-                {/* Artist name links to profile */}
                 {c.artistId ? (
                   <Link
                     to={`/artist/${c.artistId}`}
@@ -157,6 +162,12 @@ export default function NewReleases({ title = "New releases" }) {
                   <div className="newRel__artist">{c.artistName}</div>
                 )}
               </div>
+
+              {!c.placeholder && (
+                <div className="newRel__actions">
+                  <SongActions songId={c.song.SongID} />
+                </div>
+              )}
             </div>
           ))
         )}

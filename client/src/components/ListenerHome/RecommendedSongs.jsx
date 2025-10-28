@@ -4,6 +4,8 @@ import "./RecommendedSongs.css";
 import SongCard from "./SongCard";
 import { getUser } from "../../lib/userStorage";
 import { usePlayer } from "../../context/PlayerContext";
+import { useFavPins } from "../../context/FavoritesPinsContext";
+import SongActions from "../Songs/SongActions";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 const PLACEHOLDER = "https://placehold.co/300x300/895674/ffffff?text=Song";
@@ -13,6 +15,9 @@ export default function RecommendedSongs() {
   const [covers, setCovers] = useState({});
   const [loading, setLoading] = useState(true);
   const { playSong } = usePlayer();
+
+  const favCtx = useFavPins() || {};
+  const setVisibleIds = favCtx.setVisibleIds ?? (() => {});
 
   async function loadLatest() {
     const user = getUser();
@@ -75,6 +80,10 @@ export default function RecommendedSongs() {
     ? songs.filter((s, i, arr) => s.SongID && arr.findIndex(t => t.SongID === s.SongID) === i)
     : [];
 
+  useEffect(() => {
+    setVisibleIds(uniqueSongs.map(s => s.SongID).filter(Boolean));
+  }, [uniqueSongs]);
+
   const totalSlots = 3;
   const filledSlots = uniqueSongs.length;
   const emptySlots = Math.max(0, totalSlots - filledSlots);
@@ -119,26 +128,28 @@ export default function RecommendedSongs() {
                 role="button"
                 tabIndex={0}
                 onClick={(e) => {
-                  // let links inside navigate; only play when clicking non-link areas
-                  if (e.target.closest("a")) return;
+                  if (e.target.closest("a") || e.target.closest(".songActions")) return;
                   if (s.song) handlePlay(s.song);
                 }}
                 onKeyDown={(e) => {
-                  if (e.target.closest && e.target.closest("a")) return;
                   if ((e.key === "Enter" || e.key === " ") && s.song) handlePlay(s.song);
                 }}
               >
                 <SongCard image={s.image} title={s.title} />
                 <div className="rs__meta">
                   {s.artistId ? (
-                    <Link
-                      to={`/artist/${s.artistId}`}
-                      className="rs__artistLink"
-                    >
+                    <Link to={`/artist/${s.artistId}`} className="rs__artistLink">
                       {s.artist}
                     </Link>
                   ) : (
                     <span className="rs__artistText">{s.artist}</span>
+                  )}
+
+                  {/* ❤️📌 icons below artist name */}
+                  {!s.placeholder && (
+                    <div className="rs__actions">
+                      <SongActions songId={s.songId} />
+                    </div>
                   )}
                 </div>
               </div>

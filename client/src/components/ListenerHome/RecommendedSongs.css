@@ -107,3 +107,26 @@
 .rs__item {
   cursor: pointer;
 }
+
+/* in RecommendedSongs.css */
+.rs__actions {
+  display: flex;
+  justify-content: center; /* or flex-end if you want right-aligned */
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.songActions { display: inline-flex; gap: 8px; }
+.songActions__btn {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;   /* small icons */
+  cursor: pointer;
+  color: var(--stroke);
+  transition: transform .2s ease, color .2s ease;
+}
+.songActions__btn:hover { transform: scale(1.1); color: var(--accent); }
+.songActions__btn.is-on { color: var(--accent); }
