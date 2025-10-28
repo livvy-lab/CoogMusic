@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
+import ListenerPublic from "./pages/ListenerPublic";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
 import ArtistView from "./pages/ArtistView";
@@ -16,20 +17,27 @@ import EditProfile from "./pages/EditProfile";
 import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
-import ArtistUpload from "./pages/ArtistUpload"; 
+import ArtistUpload from "./pages/ArtistUpload";
+import UploadSong from "./pages/UploadSong";
+import CreateAlbum from "./pages/CreateAlbum";
+import RequireArtist from "./components/Auth/RequireArtist";
+import SearchResults from "./pages/SearchResults";
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
 import MyAds from "./pages/MyAds";
 
 
+import { PlayerProvider } from "./context/PlayerContext";
+import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Redirect root to login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
+    <PlayerProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Redirect root to login */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
@@ -52,19 +60,26 @@ export default function App() {
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/my-ads" element={<MyAds />} />
 
+          {/* Artist routes */}
+          <Route path="/artist/:artistId" element={<ArtistView />} />
+          <Route path="/upload" element={<Navigate to="/upload/song" replace />} />
+          <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
+          <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
 
-        {/* Artist routes */}
-        <Route path="/artist" element={<ArtistView />} />
-        <Route path="/upload" element={<ArtistUpload />} /> 
+          {/* Song routes */}
+          <Route path="/song" element={<Song />} />
+          <Route path="/genres/:genreId" element={<Song />} />
+          <Route path="/genre/:genreId" element={<Song />} />
 
-        {/* Song routes */}
-        <Route path="/song" element={<Song />} />
-        <Route path="/genres/:genreId" element={<Song />} />
-        <Route path="/genre/:genreId" element={<Song />} />
+          {/* Search routes */}
+          <Route path="/search" element={<SearchResults />} />
 
-        {/* Catch-all (optional) */}
-        <Route path="*" element={<Navigate to="/home" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/home" replace />} />
+        </Routes>
+      </BrowserRouter>
+
+      <MusicPlayBar />
+    </PlayerProvider>
   );
 }

@@ -1,4 +1,3 @@
-// server/index.js
 import http from "http";
 import fs from "fs";
 import path from "path";
@@ -35,8 +34,9 @@ import { handlePlayRoutes } from "./routes/plays.js";
 //import { handlePfpRoutes } from "./routes/pfp.js";
 //import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
-import { handlePfpRoutes } from "./routes/pfp.js";
-import { handleSetListenerAvatar } from "./routes/avatar.js";
+
+import { handleMediaRoutes } from "./routes/media.js";
+import { handleSearchRoutes } from "./routes/search.js";
 
 const PORT = 3001;
 
@@ -70,7 +70,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 2) Upload endpoints (/upload/album, /upload/song) — handle ONLY /upload/*
+    // 2) Media routes (/media, /songs/:id/cover, /albums/:id/cover)
+    if (pathname === "/media" || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
+      await handleMediaRoutes(req, res);
+      return;
+    }
+
+    // 3) Upload endpoints (/upload/album, /upload/song) — handle ONLY /upload/*
     if (pathname.startsWith("/upload/")) {
       await handleUploadRoutes(req, res);
       return;
@@ -113,6 +119,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/login")) {
       await handleLogin(req, res); return;
+    }
+
+    // 5.5) Search (place before generic resource routers)
+    if (pathname.startsWith("/search")) {
+      await handleSearchRoutes(req, res); return;
     }
 
     // 6) Resource routers (prefix checks)

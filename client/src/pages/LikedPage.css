@@ -130,9 +130,9 @@
 .likedTableHeader .th-num   { left: 55px; }     /* # */
 .likedTableHeader .th-heart { left: 90px; }    /* ♥ */
 .likedTableHeader .th-title { left: 210px; }    /* Title */
-.likedTableHeader .th-album { left: 637px; }    /* Album */
-.likedTableHeader .th-date  { left: 895px; }    /* Date Added */
-.likedTableHeader .th-dur   { left: 1180px; }   /* Clock icon */
+.likedTableHeader .th-album { left: 550px; }    /* Album */
+.likedTableHeader .th-date  { left: 768px; }    /* Date Added */
+.likedTableHeader .th-dur   { left: 1107px; }   /* Clock icon */
 
 /* optional tweak for the clock */
 .likedTableHeader .th-dur svg {
@@ -280,4 +280,31 @@
   font-size: 0.85rem;
   color: #a06a90;
   margin-top: 2px;
+}
+
+
+.likedRow {
+  display: grid;
+  grid-template-columns: 40px 1.5fr 1fr 1fr 100px;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  background: #e6cbd9;
+  margin: 0.5rem 0;
+  box-shadow: inset 0 0 0 2px #78235540;
+}
+
+.col-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.col-album {
+  text-align: left;
+  color: #782355;
+  font-size: 16px;
+  font-weight: 500;
+  padding-left: 24.9rem;
 }

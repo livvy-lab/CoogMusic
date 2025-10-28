@@ -24,15 +24,14 @@ export async function handleLikedSongRoutes(req, res) {
     if (/^\/listeners\/\d+\/liked_songs$/.test(pathname) && method === "GET") {
       const listenerId = Number(pathname.split("/")[2]);
 
- const [rows] = await db.query(
-  `
+const [rows] = await db.query(`
   SELECT
     s.SongID,
     s.Title,
     s.DurationSeconds,
     s.ReleaseDate,
-    al.Title AS Album,
-    ar.ArtistName,
+    COALESCE(al.Title, 'Unknown Album') AS Album,
+    GROUP_CONCAT(DISTINCT ar.ArtistName ORDER BY ar.ArtistName SEPARATOR ', ') AS ArtistName,
     ls.LikedDate
   FROM Liked_Song ls
   JOIN Song s ON ls.SongID = s.SongID
@@ -41,10 +40,11 @@ export async function handleLikedSongRoutes(req, res) {
   LEFT JOIN Song_Artist sa ON s.SongID = sa.SongID
   LEFT JOIN Artist ar ON sa.ArtistID = ar.ArtistID
   WHERE ls.ListenerID = ?
+  GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, al.Title, ls.LikedDate
   ORDER BY ls.LikedDate DESC;
-  `,
-  [listenerId]
-);
+`, [listenerId]);
+
+
 
 
       res.writeHead(200, { "Content-Type": "application/json" });

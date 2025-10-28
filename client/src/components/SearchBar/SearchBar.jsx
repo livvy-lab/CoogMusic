@@ -1,13 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search } from "lucide-react";
 import "./SearchBar.css";
 
-export default function SearchBar({ placeholder = "What are you looking for?", onSearch }) {
+export default function SearchBar({ placeholder = "What are you looking for?" }) {
   const [query, setQuery] = useState("");
+  const nav = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSearch) onSearch(query);
+    const q = query.trim();
+    if (q) nav(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
