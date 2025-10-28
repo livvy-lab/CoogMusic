@@ -67,14 +67,8 @@ export async function handleArtistRoutes(req, res) {
         `,
         [artistId]
       );
-      if (!artist) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Artist not found" }));
-        return;
-      }
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ Bio: artist.Bio || "" }));
-      return;
+      if (!row) return json(res, 404, { error: "Artist not found" });
+      return json(res, 200, { ...row, PFP: row.pfpUrl || null });
     }
 
     // ─────────────────────────────────────────────
@@ -180,10 +174,6 @@ export async function handleArtistRoutes(req, res) {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ albums, singles }));
       return;
-    }
-
-      if (!row) return json(res, 404, { error: "Artist not found" });
-      return json(res, 200, { ...row, PFP: row.pfpUrl || null });
     }
 
     // ------------------------------------------------------------

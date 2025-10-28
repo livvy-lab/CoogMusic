@@ -67,6 +67,9 @@ export default function App() {
           <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
           <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
 
+            {/* Public listener profile (search links point to /listeners/:id) */}
+            <Route path="/listeners/:id" element={<ListenerPublic />} />
+
             {/* Song routes */}
             <Route path="/song" element={<Song />} />
             <Route path="/genres/:genreId" element={<Song />} />
