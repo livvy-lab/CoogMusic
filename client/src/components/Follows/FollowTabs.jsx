@@ -20,7 +20,7 @@ export default function FollowTabs() {
     ? "Listener"
     : "Artist";
 
-  // Always use the logged in user for follow/unfollow actions
+  // Hide follow button for logged in user
   const currentUserId = loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
   const currentUserType = loggedInUser.accountType === "listener" ? "Listener" : "Artist";
 
@@ -29,7 +29,7 @@ export default function FollowTabs() {
   const [following, setFollowing] = useState([]);
   const [search, setSearch] = useState("");
 
-  // Refetch lists for the currently viewed profile
+  // Refetch lists for profile being viewed
   const refetchData = async () => {
     const followersRes = await fetch(
       `http://localhost:3001/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`
@@ -77,8 +77,7 @@ export default function FollowTabs() {
     await refetchData();
   };
 
-  // The following list refers to the list currently being viewed, not who you are following
-  // isFollowing below determines if the logged-in user is following each listed user
+  // Display list (followers or following) for the user being viewed
   const listToDisplay = activeTab === "followers" ? followers : following;
 
   return (
@@ -118,13 +117,15 @@ export default function FollowTabs() {
               key={`${user.type}-${user.id}`}
               user={user}
               isFollowing={
-                // check if the logged in user following this user
+                // check if the logged in user is following this user
                 following.some(
                   (f) => f.id === user.id && f.type === user.type
                 )
               }
               onFollow={() => handleFollow(user)}
               onUnfollow={() => handleUnfollow(user)}
+              currentUserId={currentUserId}
+              currentUserType={currentUserType}
             />
           ))}
       </div>
