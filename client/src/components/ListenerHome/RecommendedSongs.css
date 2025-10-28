@@ -80,3 +80,30 @@
     }
   }
   
+.rs__artistLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.rs__artistLink:hover {
+  color: var(--stroke);
+  text-shadow: 0 0 6px rgba(137, 86, 116, 0.35);
+  text-decoration: underline;
+}
+
+.rs__artistText {
+  color: var(--accent);
+  opacity: 0.85;
+  font-size: clamp(11px, 1.1vw, 13px);
+}
+
+.rs__meta {
+  margin-top: 4px;
+  text-align: center;
+}
+
+.rs__item {
+  cursor: pointer;
+}

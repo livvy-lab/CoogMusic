@@ -2,14 +2,23 @@
   --stroke: #895674;
   --shadow: #6e4760;
   --bg: #ffe8f5;
+  --accent: #af578a;
+  --ink: #4b2c3d;
   --gap: 16px;
+
+  /* how many cards per row (bigger cards = smaller number) */
+  --cols-desktop: 4;
+  --cols-tablet: 3;
+  --cols-mobile: 2;
 }
 
 /* container */
 .newRel {
-  width: min(96%, 1000px);           /* tweak size here */
-  margin: 28px auto;
+  width: min(96%, 1000px);
+  margin: 32px auto;
   text-align: center;
+  overflow: visible;
+  position: relative;
 }
 
 /* title */
@@ -18,69 +27,130 @@
   font-weight: 800;
   color: #782355;
   text-align: left;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  z-index: 2;
+  position: relative;
 }
 
 /* rail */
 .newRel__rail {
   display: grid;
   grid-auto-flow: column;
-  /* choose how many visible: 5 smaller, 4 bigger, 3 largest */
-  grid-auto-columns: calc((100% - 4 * var(--gap)) / 5);
+  grid-auto-columns: calc((100% - (var(--cols-desktop) - 1) * var(--gap)) / var(--cols-desktop));
   gap: var(--gap);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
+  overflow-x: hidden;
+  overflow-y: visible;
   scroll-snap-type: x mandatory;
-  padding-bottom: 10px;
+  padding-bottom: 16px;
   scrollbar-width: none;
 }
-.newRel__rail::-webkit-scrollbar { display: none; }
+.newRel__rail::-webkit-scrollbar {
+  display: none;
+}
 
 /* card */
 .newRel__card {
   scroll-snap-align: start;
-  border-radius: 18px;
+  border-radius: 20px;
   border: 4px solid var(--stroke);
-  box-shadow: 0 4px 0 var(--shadow);
+  box-shadow: 0 6px 0 var(--shadow);
   background: var(--bg);
   overflow: hidden;
-  transition: transform .15s ease, box-shadow .15s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
 }
-.newRel__card:hover { transform: translateY(-2px); box-shadow: 0 6px 0 var(--shadow); }
 
-/* image */
-.newRel__img {
-  width: 100%;
+/* refined “polaroid” image */
+.newRel--polaroid .newRel__img {
+  width: 88%;
+  margin: 12px auto 10px;
+  display: block;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: 14px;
-  display: block;
+  border: 5px solid var(--stroke);
+  border-radius: 12px;
+  background: #f8d0e0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* hover effect only for the image */
+.newRel--polaroid .newRel__img:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* song + artist container */
+.newRel__meta {
+  padding: 8px 10px 14px;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+  gap: 4px;
+}
+
+/* song title */
+.newRel__song {
+  font-weight: 800;
+  font-size: clamp(13px, 1.3vw, 16px);
+  color: var(--accent);
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* clickable artist */
+.newRel__artistLink {
+  color: var(--stroke);
+  font-size: clamp(11px, 1.1vw, 14px);
+  opacity: 0.9;
+  text-decoration: none;
+  transition: color 0.25s ease;
+}
+
+.newRel__artistLink:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+
+/* non-link fallback */
+.newRel__artist {
+  color: var(--accent);
+  opacity: 0.8;
+  font-size: clamp(11px, 1.1vw, 14px);
 }
 
 /* controls */
 .newRel__controls {
-  margin-top: 12px;
+  margin-top: 18px;
   display: flex;
   justify-content: center;
   gap: 16px;
 }
+
 .newRel__controls button {
   border: 3px solid var(--stroke);
   background: var(--bg);
   color: var(--stroke);
   border-radius: 12px;
-  width: 44px; height: 36px;
-  font-size: 22px; line-height: 1;
+  width: 44px;
+  height: 36px;
+  font-size: 22px;
+  line-height: 1;
   cursor: pointer;
   box-shadow: 0 3px 0 var(--shadow);
-  transition: transform .15s ease, background .15s ease;
 }
-.newRel__controls button:hover { transform: translateY(-2px); background: #f8d0e0; }
 
 /* responsive */
 @media (max-width: 1100px) {
-  .newRel__rail { grid-auto-columns: calc((100% - 3 * var(--gap)) / 4); }
+  .newRel__rail {
+    grid-auto-columns: calc((100% - (var(--cols-tablet) - 1) * var(--gap)) / var(--cols-tablet));
+  }
 }
+
 @media (max-width: 740px) {
-  .newRel__rail { grid-auto-columns: calc((100% - 2 * var(--gap)) / 3); }
+  .newRel__rail {
+    grid-auto-columns: calc((100% - (var(--cols-mobile) - 1) * var(--gap)) / var(--cols-mobile));
+  }
 }
