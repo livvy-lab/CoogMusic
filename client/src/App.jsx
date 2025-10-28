@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
+import ListenerPublic from "./pages/ListenerPublic";
 import ListenerHome from "./pages/ListenerHome";
 import UserReport from "./pages/UserReport";
 import ArtistView from "./pages/ArtistView";
@@ -47,6 +48,7 @@ export default function App() {
           <Route path="/likedsongs" element={<LikedSong />} />
           <Route path="/me/playlists" element={<MyPlaylistsPage />} />
           <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
+          <Route path="/listeners/:id" element={<ListenerPublic />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/follows" element={<FollowsPage />} />
           <Route path="/buy-ads" element={<BuyAds />} />
