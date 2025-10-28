@@ -4,10 +4,12 @@ import "./NavigationBar.css";
 import { getUser, clearUser } from "../../lib/userStorage";
 
 export default function NavigationBar() {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const user = useMemo(() => getUser(), []);
   const isArtist = (user?.accountType || "").toLowerCase() === "artist";
+
+  // Open the sidebar by default for artists (desktop layout in Figma)
+  const [open, setOpen] = useState(() => !!isArtist);
 
   const handleLogout = () => {
     clearUser();
@@ -48,8 +50,11 @@ export default function NavigationBar() {
         {isArtist && (
           <nav className="navSection">
             <div className="navTitle">Artist</div>
-            <Link className="navLink" to="/my-ads" onClick={() => setOpen(false)}>📢 My Ads</Link>
-            <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
+            <Link className="navLink" to="/artist-dashboard" onClick={() => setOpen(false)}>🏁 Dashboard</Link>
+            <Link className="navLink" to="/artists" onClick={() => setOpen(false)}>🎤 Artists</Link>
+            <Link className="navLink" to="/upload/song" onClick={() => setOpen(false)}>⬆️ Upload Music</Link>
+            <Link className="navLink" to="/upload/album" onClick={() => setOpen(false)}>💿 Create Album</Link>
+            <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Promote My Music</Link>
           </nav>
         )}
 
