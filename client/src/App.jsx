@@ -20,6 +20,7 @@ import ArtistUpload from "./pages/ArtistUpload";
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
+import MyAds from "./pages/MyAds";
 
 
 
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="/buy-ads" element={<BuyAds />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/playlists" element={<Playlists />} />
+        <Route path="/my-ads" element={<MyAds />} />
 
 
         {/* Artist routes */}

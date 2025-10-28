@@ -109,6 +109,25 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 400, e.message || "multipart_parse_error");
       }
 
+      // Authorization: only allow Artists to upload ads
+      try {
+        const accountId = Number(fields.accountId ?? fields.accountID ?? fields.AccountID);
+        if (!Number.isFinite(accountId) || accountId <= 0) {
+          return bad(res, 401, "missing_or_invalid_accountId");
+        }
+        const [acctRows] = await db.query(
+          "SELECT AccountType FROM AccountInfo WHERE AccountID = ? AND IsDeleted = 0 LIMIT 1",
+          [accountId]
+        );
+        const acct = acctRows && acctRows[0];
+        const type = (acct?.AccountType || "").toString().toLowerCase();
+        if (type !== "artist") {
+          return bad(res, 403, "forbidden_artist_only");
+        }
+      } catch (authErr) {
+        return bad(res, 500, authErr.message || "auth_check_failed");
+      }
+
   const raw = files?.audio || null;
       const up = raw && {
         filepath: raw.filepath || null,

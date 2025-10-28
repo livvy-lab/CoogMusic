@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './BuyAds.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import cat_left from '../assets/left_cat.svg';
 import cat_right from '../assets/right_cat.svg';
+import { getUser } from '../lib/userStorage';
 
 const BuyAds = () => {
   const [formData, setFormData] = useState({
@@ -26,8 +27,16 @@ const BuyAds = () => {
     }));
   };
 
+  const user = useMemo(() => getUser(), []);
+
+  const isArtist = (user?.accountType || '').toLowerCase() === 'artist';
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isArtist) {
+      alert('Only artist accounts can upload ads.');
+      return;
+    }
     if (!formData.adFile) {
       alert('Please select a file to upload.');
       return;
@@ -38,6 +47,7 @@ const BuyAds = () => {
       fd.append('adFile', formData.adFile);
       if (formData.adTitle) fd.append('adTitle', formData.adTitle);
       if (formData.adDescription) fd.append('adDescription', formData.adDescription);
+      if (user?.accountId) fd.append('accountId', String(user.accountId));
 
       const res = await fetch('http://localhost:3001/upload/ad', {
         method: 'POST',
@@ -69,6 +79,11 @@ const BuyAds = () => {
         </div>
 
         <div className="buyads-form-container">
+          {!isArtist && (
+            <div className="error-message" style={{ marginBottom: 16 }}>
+              This feature is available to artist accounts only. Please log in as an artist.
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
             {/* Ad Title - full width on top */}
             <div className="form-group artist-id-group">
@@ -79,6 +94,7 @@ const BuyAds = () => {
                 value={formData.adTitle}
                 onChange={handleInputChange}
                 className="artist-id-input"
+                disabled={!isArtist}
               />
             </div>
 
@@ -92,6 +108,7 @@ const BuyAds = () => {
                   name="adFile"
                   onChange={handleFileUpload}
                   style={{ display: 'none' }}
+                  disabled={!isArtist}
                 />
               </div>
               {formData.adFile && <span className="file-name">{formData.adFile.name}</span>}
@@ -104,11 +121,12 @@ const BuyAds = () => {
                 placeholder="Ad Description"
                 value={formData.adDescription}
                 onChange={handleInputChange}
+                disabled={!isArtist}
               />
             </div>
 
             {/* Centered smaller submit button */}
-            <button type="submit" className="submit-button">Submit</button>
+            <button type="submit" className="submit-button" disabled={!isArtist}>Submit</button>
           </form>
 
           <div className="decoration">
