@@ -43,7 +43,27 @@ export async function handleFollowsRoutes(req, res) {
   const url = parse(req.url, true);
 
   try {
-    // GET /follows?userId=&userType=&tab=
+    // Check follow relationship
+    if (req.method === "GET" && url.pathname === "/follows/relationship") {
+      const { followerId, followerType, followingId, followingType } = url.query;
+
+      if (!followerId || !followerType || !followingId || !followingType) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Missing required parameters" }));
+        return;
+      }
+
+      const [rows] = await db.query(
+        "SELECT 1 FROM Follows WHERE FollowerID = ? AND FollowerType = ? AND FollowingID = ? AND FollowingType = ?",
+        [followerId, followerType, followingId, followingType]
+      );
+      const isFollowing = rows.length > 0;
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ isFollowing }));
+      return;
+    }
+
+    // Get follow list
     if (req.method === "GET" && url.pathname === "/follows") {
       const { userId, userType, tab } = url.query;
 
@@ -74,83 +94,85 @@ export async function handleFollowsRoutes(req, res) {
         res.end(JSON.stringify(users.filter(Boolean)));
         return;
       }
-      
-      // Fallback for just /follows without parameters
+
+      // Fallback: all follows
       const [rows] = await db.query("SELECT * FROM Follows");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
+    // Create follow relationship
     if (req.method === "POST" && url.pathname === "/follows") {
       let body = "";
-      req.on("data", chunk => body += chunk);
-      req.on("end", async () => {
-        const { FollowerID, FollowerType, FollowingID, FollowingType } = JSON.parse(body);
+      req.on("data", chunk => body += chunk);
+      req.on("end", async () => {
+        const { FollowerID, FollowerType, FollowingID, FollowingType } = JSON.parse(body);
 
-        if (!FollowerID || !FollowerType || !FollowingID || !FollowingType) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing required fields" }));
-          return;
-        }
+        if (!FollowerID || !FollowerType || !FollowingID || !FollowingType) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing required fields" }));
+          return;
+        }
 
-        const followDate = new Date().toISOString().slice(0, 10);
+        const followDate = new Date().toISOString().slice(0, 10);
 
-        const [result] = await db.query(
-          "INSERT INTO Follows (FollowerID, FollowerType, FollowingID, FollowingType, FollowDate) VALUES (?, ?, ?, ?, ?)",
-          [FollowerID, FollowerType, FollowingID, FollowingType, followDate]
-        );
+        const [result] = await db.query(
+          "INSERT INTO Follows (FollowerID, FollowerType, FollowingID, FollowingType, FollowDate) VALUES (?, ?, ?, ?, ?)",
+          [FollowerID, FollowerType, FollowingID, FollowingType, followDate]
+        );
 
-        res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          message: "Follow relationship created successfully",
-          FollowerID,
-          FollowerType,
-          FollowingID,
-          FollowingType,
-          FollowDate: followDate
-        }));
-      });
-      return;
+        res.writeHead(201, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({
+          message: "Follow relationship created successfully",
+          FollowerID,
+          FollowerType,
+          FollowingID,
+          FollowingType,
+          FollowDate: followDate
+        }));
+      });
+      return;
     }
 
+    // Delete follow relationship
     if (req.method === "DELETE" && url.pathname === "/follows") {
-        let body = "";
-      req.on("data", chunk => body += chunk);
-      req.on("end", async () => {
-        const { FollowerID, FollowerType, FollowingID, FollowingType } = JSON.parse(body);
+      let body = "";
+      req.on("data", chunk => body += chunk);
+      req.on("end", async () => {
+        const { FollowerID, FollowerType, FollowingID, FollowingType } = JSON.parse(body);
 
-        if (!FollowerID || !FollowerType || !FollowingID || !FollowingType) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Missing required fields in body to identify follow relationship" }));
-          return;
-        }
+        if (!FollowerID || !FollowerType || !FollowingID || !FollowingType) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Missing required fields in body to identify follow relationship" }));
+          return;
+        }
 
-        const [result] = await db.query(
-          "DELETE FROM Follows WHERE FollowerID = ? AND FollowerType = ? AND FollowingID = ? AND FollowingType = ?",
-          [FollowerID, FollowerType, FollowingID, FollowingType]
-        );
+        const [result] = await db.query(
+          "DELETE FROM Follows WHERE FollowerID = ? AND FollowerType = ? AND FollowingID = ? AND FollowingType = ?",
+          [FollowerID, FollowerType, FollowingID, FollowingType]
+        );
 
-        if (result.affectedRows === 0) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Follow relationship not found" }));
-          return;
-        }
+        if (result.affectedRows === 0) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Follow relationship not found" }));
+          return;
+        }
 
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ message: "Follow relationship deleted successfully" }));
-      });
-      return;
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ message: "Follow relationship deleted successfully" }));
+      });
+      return;
     }
 
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') {
-      res.writeHead(409, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "This follow relationship already exists." }));
-      return;
-    }
-    console.error("Follows route error:", err);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Internal server error" }));
+      res.writeHead(409, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "This follow relationship already exists." }));
+      return;
+    }
+    console.error("Follows route error:", err);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Internal server error" }));
   }
 }

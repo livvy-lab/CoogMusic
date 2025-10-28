@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getUser } from "../../lib/userStorage";
 import "./ProfileCard.css";
 
 const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:3001";
@@ -13,14 +14,19 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   const [loading, setLoading] = useState(true);
   const [countLoading, setCountLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [pfpUrl, setPfpUrl] = useState(""); // <- NEW
+  const [pfpUrl, setPfpUrl] = useState("");
+  const [isFollowing, setIsFollowing] = useState(false);
+
+  // Get current user info
+  const currentUser = getUser();
+  const currentUserType = currentUser?.accountType?.toLowerCase() || "";
+  const currentUserId = currentUser?.listenerId || currentUser?.artistId || currentUser?.accountId;
+  const isOwnProfile = Number(currentUserId) === Number(listenerId);
 
   // read listenerId (+ cached pfp if present)
   useEffect(() => {
-    // If a prop listener id was provided (public view), prefer that.
     if (propListenerId != null) {
       setListenerId(propListenerId);
-      // try to reuse cached pfp if it belongs to the same id
       try {
         const stored = JSON.parse(localStorage.getItem("user") || "null");
         if (stored?.listenerId && stored.listenerId === propListenerId && stored?.pfpUrl) {
@@ -29,12 +35,11 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
       } catch {}
       return;
     }
-
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
       if (stored?.listenerId) {
         setListenerId(stored.listenerId);
-        if (stored?.pfpUrl) setPfpUrl(stored.pfpUrl); // optimistic cache
+        if (stored?.pfpUrl) setPfpUrl(stored.pfpUrl);
       } else {
         setError("No listener ID found. Please log in again.");
         setLoading(false);
@@ -60,7 +65,6 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         const j = await r.json();
         if (!cancel) {
           setData(j);
-          // temporary fallback to legacy PFP while /pfp resolves
           const legacy = j?.listener?.PFP;
           if (legacy && !pfpUrl) setPfpUrl(legacy);
         }
@@ -71,9 +75,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         if (!cancel) setLoading(false);
       }
     })();
-    return () => {
-      cancel = true;
-    };
+    return () => { cancel = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listenerId]);
 
@@ -89,17 +91,12 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         const url = j?.url || "";
         if (!cancel && url) {
           setPfpUrl(url);
-          // persist for later
           const stored = JSON.parse(localStorage.getItem("user") || "{}");
           localStorage.setItem("user", JSON.stringify({ ...stored, pfpUrl: url }));
         }
-      } catch {
-        /* ignore; keep legacy or cached pfp */
-      }
+      } catch {}
     })();
-    return () => {
-      cancel = true;
-    };
+    return () => { cancel = true; };
   }, [listenerId]);
 
   // public playlist count (unchanged)
@@ -123,16 +120,78 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         if (!cancel) setCountLoading(false);
       }
     })();
-    return () => {
-      cancel = true;
-    };
+    return () => { cancel = true; };
   }, [listenerId]);
+
+  // Check follow status, whenever user or profile changes or after toggle
+  const checkFollowStatus = async () => {
+    if (!listenerId || !currentUserId || isOwnProfile) {
+      setIsFollowing(false);
+      return;
+    }
+    try {
+      const res = await fetch(
+        `${API_BASE}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)}&followingId=${listenerId}&followingType=Listener`
+      );
+      if (!res.ok) {
+        setIsFollowing(false);
+        return;
+      }
+      const isFollow = await res.json();
+      setIsFollowing(Boolean(isFollow?.isFollowing || isFollow?.following));
+    } catch {
+      setIsFollowing(false);
+    }
+  };
+
+  useEffect(() => {
+    checkFollowStatus();
+  }, [listenerId, currentUserId, currentUserType, isOwnProfile]);
 
   if (loading) return <section className="pc">Loading…</section>;
   if (error || !data) return <section className="pc">Error: {error || "No data"}</section>;
 
   const { listener, counts } = data;
   const playlistsPublic = publicCount ?? counts?.playlists ?? 0;
+
+  // Handler for Follow/Unfollow button
+  const handleFollowToggle = async () => {
+    if (isFollowing) {
+      // Unfollow
+      try {
+        await fetch(`${API_BASE}/follows`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            FollowerID: currentUserId,
+            FollowerType: currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1),
+            FollowingID: listenerId,
+            FollowingType: "Listener"
+          }),
+        });
+        await checkFollowStatus();
+      } catch (e) {
+        
+      }
+    } else {
+      // Follow
+      try {
+        await fetch(`${API_BASE}/follows`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            FollowerID: currentUserId,
+            FollowerType: currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1),
+            FollowingID: listenerId,
+            FollowingType: "Listener"
+          }),
+        });
+        await checkFollowStatus();
+      } catch (e) {
+        
+      }
+    }
+  };
 
   return (
     <section className="pc">
@@ -143,17 +202,28 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
           <div className="pc__avatarPlaceholder" />
         )}
       </div>
-
       <div className="pc__details">
-        <h2 className="pc__heading">
-          About {listener.FirstName} {listener.LastName}
-        </h2>
+        <div className="pc__headingRow">
+          <h2 className="pc__heading">
+            About {listener.FirstName} {listener.LastName}
+          </h2>
+          {
+            !isOwnProfile && (
+              <button
+                className={`pc__followBtn${isFollowing ? " following" : ""}`}
+                onClick={handleFollowToggle}
+                style={{ marginLeft: 18 }}
+              >
+                {isFollowing ? "Following" : "+ Follow"}
+              </button>
+            )
+          }
+        </div>
         <div className="pc__meta">
           <span>Major: {listener.Major || "—"}</span>
           <span>Minor: {listener.Minor || "—"}</span>
         </div>
         <p className="pc__bio">{listener.Bio || "No bio available."}</p>
-
         <div className="pc__stats">
           <button
             onClick={() => navigate("/follows?tab=followers")}
