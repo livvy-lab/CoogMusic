@@ -5,11 +5,9 @@ import "../pages/ArtistView.css";
 export default function UploadSong() {
   return (
     <PageLayout>
-      <div style={{ padding: 24, maxWidth: 920, margin: "0 auto" }}>
-        <h1 style={{ margin: 0, marginBottom: 12 }}>Upload Music</h1>
-        <div style={{ background: "#fff", padding: 18, borderRadius: 12 }}>
-          <SongForm />
-        </div>
+      <div style={{ padding: '40px 24px', maxWidth: 720, margin: "0 auto" }}>
+        <h1 style={{ margin: 0, marginBottom: 24, fontSize: 32, fontWeight: 600, color: '#2D2D2D' }}>Upload Music</h1>
+        <SongForm />
       </div>
     </PageLayout>
   );
