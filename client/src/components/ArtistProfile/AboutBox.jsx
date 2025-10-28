@@ -4,56 +4,50 @@ import "./AboutBox.css";
 const FALLBACK_TEXT = "This artist hasn’t filled out their information yet.";
 
 export default function AboutBox({ artistId }) {
-  const [bio, setBio] = useState("Loading artist info...");
+  const [bio, setBio] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    console.log("[AboutBox] artistId:", artistId);
-
-    // Guard: no/invalid id → show fallback immediately
-    const parsedId = Number(artistId);
-    if (!artistId || Number.isNaN(parsedId)) {
+    const id = Number(artistId);
+    if (!artistId || Number.isNaN(id)) {
       setBio(FALLBACK_TEXT);
       setLoading(false);
       return;
     }
 
-    const ctrl = new AbortController();
-    const timer = setTimeout(() => {
-      console.warn("[AboutBox] fetch timeout");
-      setBio(FALLBACK_TEXT);
-      setLoading(false);
-      ctrl.abort();
-    }, 8000); // safety timeout
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
-    (async () => {
+    const fetchBio = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/artists/${parsedId}/about`, {
-          signal: ctrl.signal,
+        setLoading(true);
+        const res = await fetch(`http://localhost:3001/artists/${id}/about`, {
+          signal: controller.signal,
         });
 
         if (res.status === 404) {
           setBio(FALLBACK_TEXT);
-          setLoading(false);
           return;
         }
+
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         const data = await res.json();
-        const text = (data?.Bio || "").trim();
-        setBio(text.length ? text : FALLBACK_TEXT);
+        const text = (data?.Bio ?? "").trim();
+        setBio(text || FALLBACK_TEXT);
       } catch (err) {
-        console.error("[AboutBox] error fetching artist bio:", err);
+        console.error("[AboutBox] Failed to load artist bio:", err);
         setBio(FALLBACK_TEXT);
       } finally {
-        clearTimeout(timer);
+        clearTimeout(timeout);
         setLoading(false);
       }
-    })();
+    };
 
+    fetchBio();
     return () => {
-      clearTimeout(timer);
-      ctrl.abort();
+      clearTimeout(timeout);
+      controller.abort();
     };
   }, [artistId]);
 

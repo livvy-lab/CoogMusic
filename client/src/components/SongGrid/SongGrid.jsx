@@ -1,6 +1,6 @@
 // client/src/components/SongGrid/SongGrid.jsx
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
 import "./SongGrid.css";
 
@@ -43,14 +43,10 @@ export default function SongGrid() {
 
   async function handlePlay(song) {
     await playSong(song);
-
     const u = JSON.parse(localStorage.getItem("user") || "null");
     const listenerId = Number(u?.listenerId ?? u?.ListenerID ?? u?.listenerID ?? NaN);
-
     setStreams(prev => ({ ...prev, [song.SongID]: (prev[song.SongID] ?? 0) + 1 }));
-
     if (!Number.isFinite(listenerId)) return;
-
     try {
       const res = await fetch("http://localhost:3001/plays", {
         method: "POST",
@@ -95,24 +91,39 @@ export default function SongGrid() {
     <section className="songGrid">
       <h2 className="songGrid__title">{genreName}</h2>
       <div className="songGrid__container">
-        {songs.map((s) => (
-          <button className="songCard" key={s.SongID} onClick={() => handlePlay(s)}>
-            <div className="songCard__frame">
-              <img
-                src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
-                alt={s.Title}
-                className="songCard__art"
-              />
-            </div>
-            <div className="songCard__meta">
-              <div className="songCard__title">{s.Title}</div>
-              <div className="songCard__artist">{s.ArtistName || "Unknown Artist"}</div>
-              <div className="songCard__streams">
-                {streams[s.SongID] !== undefined ? `${streams[s.SongID]} streams` : "Click to play"}
+        {songs.map((s) => {
+          const names = (s.ArtistName || "Unknown Artist").split(", ").filter(Boolean);
+          const ids = (s.ArtistIDs || "").split(",").map(x => Number(x)).filter(Boolean);
+          const hasLinkedArtists = ids.length === names.length && ids.length > 0;
+
+          return (
+            <button className="songCard" key={s.SongID} onClick={() => handlePlay(s)}>
+              <div className="songCard__frame">
+                <img
+                  src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
+                  alt={s.Title}
+                  className="songCard__art"
+                />
               </div>
-            </div>
-          </button>
-        ))}
+              <div className="songCard__meta">
+                <div className="songCard__title">{s.Title}</div>
+                <div className="songCard__artist">
+                  {hasLinkedArtists
+                    ? names.map((name, i) => (
+                        <span key={ids[i]}>
+                          <Link to={`/artist/${ids[i]}`}>{name}</Link>
+                          {i < names.length - 1 ? ", " : ""}
+                        </span>
+                      ))
+                    : (names.join(", ") || "Unknown Artist")}
+                </div>
+                <div className="songCard__streams">
+                  {streams[s.SongID] !== undefined ? `${streams[s.SongID]} streams` : "Click to play"}
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

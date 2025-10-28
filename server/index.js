@@ -1,4 +1,3 @@
-// server/index.js
 import http from "http";
 import fs from "fs";
 import path from "path";
@@ -37,6 +36,7 @@ import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
+import { handleSearchRoutes } from "./routes/search.js";
 
 const PORT = 3001;
 
@@ -113,6 +113,11 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/login")) {
       await handleLogin(req, res); return;
+    }
+
+    // 5.5) Search (place before generic resource routers)
+    if (pathname.startsWith("/search")) {
+      await handleSearchRoutes(req, res); return;
     }
 
     // 6) Resource routers (prefix checks)

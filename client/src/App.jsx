@@ -17,7 +17,7 @@ import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload";
-import ArtistUpload from "./pages/ArtistUpload"; 
+import SearchResults from "./pages/SearchResults";
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
@@ -53,13 +53,16 @@ export default function App() {
           <Route path="/edit-profile" element={<EditProfile />} />
 
           {/* Artist routes */}
-          <Route path="/artist" element={<ArtistView />} />
+          <Route path="/artist/:artistId" element={<ArtistView />} />
           <Route path="/upload" element={<ArtistUpload />} />
 
           {/* Song routes */}
           <Route path="/song" element={<Song />} />
           <Route path="/genres/:genreId" element={<Song />} />
           <Route path="/genre/:genreId" element={<Song />} />
+
+          {/* Search routes */}
+          <Route path="/search" element={<SearchResults />} />
 
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/home" replace />} />

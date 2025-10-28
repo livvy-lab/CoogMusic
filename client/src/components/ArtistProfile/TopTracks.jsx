@@ -4,12 +4,11 @@ import "./TopTracks.css";
 
 export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp }) {
   const params = useParams();
-  const artistId = artistIdProp ?? params.id ?? params.artistId; // supports /artists/:id or /artists/:artistId
+  const artistId = artistIdProp ?? params.id ?? params.artistId; // supports /artist/:id or /artist/:artistId
   const [tracks, setTracks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // No artist ID → show empty state
     if (!artistId) {
       setTracks([]);
       setLoading(false);
@@ -17,22 +16,23 @@ export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp
     }
 
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 8000); // safety timeout
+    const timer = setTimeout(() => ctrl.abort(), 8000);
 
     (async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/artists/${artistId}/top-tracks?limit=10`, {
-          signal: ctrl.signal,
-        });
+        const res = await fetch(
+          `http://localhost:3001/artists/${artistId}/top-tracks?limit=10`,
+          { signal: ctrl.signal }
+        );
         if (!res.ok) {
-          setTracks([]); // fall back to empty
+          setTracks([]);
           return;
         }
         const data = await res.json();
         setTracks(Array.isArray(data.tracks) ? data.tracks : []);
       } catch {
-        setTracks([]); // fall back to empty
+        setTracks([]);
       } finally {
         clearTimeout(timer);
         setLoading(false);
@@ -58,15 +58,21 @@ export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp
       ) : (
         <div className="tt__card" role="region" aria-label={title}>
           <ul className="tt__list">
-            {tracks.map((t, i) => (
-              <li key={t.SongID ?? i} className="tt__row">
-                <span className="tt__art" aria-hidden="true" />
-                <span className="tt__name">{t.Title}</span>
-                <span className="tt__dur">
-                  {t.StreamCount ? `${t.StreamCount.toLocaleString()} plays` : "0 plays"}
-                </span>
-              </li>
-            ))}
+            {tracks.map((t, i) => {
+              // Robustly read stream count regardless of backend alias
+              const plays = Number(
+                t.Streams ?? t.StreamCount ?? t.streams ?? t.playCount ?? 0
+              );
+              return (
+                <li key={t.SongID ?? i} className="tt__row">
+                  <span className="tt__art" aria-hidden="true" />
+                  <span className="tt__name">{t.Title}</span>
+                  <span className="tt__dur">
+                    {plays.toLocaleString()} {plays === 1 ? "play" : "plays"}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}

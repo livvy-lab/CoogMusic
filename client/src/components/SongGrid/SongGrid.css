@@ -99,4 +99,19 @@
       font-size: 13px;
     }
   }
-  
+  /* --- ARTIST LINK STYLE --- */
+.songCard__artist a {
+  color: #895674;             /* match your artist text color */
+  text-decoration: none;      /* remove underline */
+  font-weight: 600;           /* slightly bolder for emphasis */
+  transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.songCard__artist a:hover {
+  color: #782355;             /* darker shade on hover */
+  text-shadow: 0 0 4px rgba(120, 35, 85, 0.3); /* soft glow */
+}
+
+.songCard__artist a:active {
+  color: #5a1b45;             /* pressed state */
+}
