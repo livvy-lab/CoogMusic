@@ -9,13 +9,23 @@ function json(res, status, body) {
 const STREAM_MS_THRESHOLD = 0;
 
 export async function handleArtistRoutes(req, res) {
-  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname, searchParams } = new URL(
+    req.url,
+    `http://${req.headers.host}`
+  );
   const method = req.method;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+  if (method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   try {
     if (method === "GET" && pathname === "/artists") {
@@ -35,7 +45,11 @@ export async function handleArtistRoutes(req, res) {
         ORDER BY a.ArtistID ASC
         `
       );
-      return json(res, 200, rows.map(r => ({ ...r, PFP: r.pfpUrl || null })));
+      return json(
+        res,
+        200,
+        rows.map((r) => ({ ...r, PFP: r.pfpUrl || null }))
+      );
     }
 
     const mBio = pathname.match(/^\/artists\/(\d+)\/bio\/?$/);
@@ -79,7 +93,10 @@ export async function handleArtistRoutes(req, res) {
 
     if (/^\/artists\/\d+\/top-tracks\/?$/.test(pathname) && method === "GET") {
       const artistId = Number(pathname.split("/")[2]);
-      const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 10, 1), 50);
+      const limit = Math.min(
+        Math.max(Number(searchParams.get("limit")) || 10, 1),
+        50
+      );
 
       const [tracks] = await db.query(
         `
@@ -171,7 +188,7 @@ export async function handleArtistRoutes(req, res) {
 
     if (method === "POST" && pathname === "/artists") {
       let body = "";
-      req.on("data", c => body += c);
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         const {
           AccountID = null,
@@ -192,7 +209,13 @@ export async function handleArtistRoutes(req, res) {
 
         return json(res, 201, {
           ArtistID: r.insertId,
-          AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id, IsDeleted: 0,
+          AccountID,
+          ArtistName,
+          DateCreated,
+          PFP,
+          Bio,
+          image_media_id,
+          IsDeleted: 0,
         });
       });
       return;
@@ -203,7 +226,7 @@ export async function handleArtistRoutes(req, res) {
       const artistId = Number(mPut[1]);
 
       let body = "";
-      req.on("data", c => body += c);
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         const {
           AccountID = null,
@@ -225,14 +248,28 @@ export async function handleArtistRoutes(req, res) {
                  image_media_id = ?
            WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0
           `,
-          [AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id, artistId]
+          [
+            AccountID,
+            ArtistName,
+            DateCreated,
+            PFP,
+            Bio,
+            image_media_id,
+            artistId,
+          ]
         );
 
-        if (!r.affectedRows) return json(res, 404, { error: "Artist not found" });
+        if (!r.affectedRows)
+          return json(res, 404, { error: "Artist not found" });
 
         return json(res, 200, {
           ArtistID: artistId,
-          AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id,
+          AccountID,
+          ArtistName,
+          DateCreated,
+          PFP,
+          Bio,
+          image_media_id,
           message: "Artist updated successfully",
         });
       });
@@ -246,13 +283,17 @@ export async function handleArtistRoutes(req, res) {
         `UPDATE Artist SET IsDeleted = 1 WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0`,
         [artistId]
       );
-      if (!r.affectedRows) return json(res, 404, { error: "Artist not found or already deleted" });
+      if (!r.affectedRows)
+        return json(res, 404, { error: "Artist not found or already deleted" });
       return json(res, 200, { message: "Artist soft deleted successfully" });
     }
 
     return json(res, 404, { error: "Route not found" });
   } catch (err) {
-    console.error("artist route error:", err?.sqlMessage || err?.message || err);
+    console.error(
+      "artist route error:",
+      err?.sqlMessage || err?.message || err
+    );
     return json(res, 500, { error: "Server error" });
   }
 }
