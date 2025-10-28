@@ -4,7 +4,6 @@ import fs from "fs";
 import { stat } from "fs/promises";
 import { createHash, randomUUID } from "crypto";
 import db from "../db.js";
-// If your stable parser is files.diag.js, swap the import to that file:
 import { parseMultipart } from "../utils/files.js";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -24,6 +23,7 @@ function cors(res) {
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
 }
+
 function ok(res, code, data) {
   res.writeHead(code, {
     "Content-Type": "application/json",
@@ -31,10 +31,12 @@ function ok(res, code, data) {
   });
   res.end(JSON.stringify(data));
 }
+
 function bad(res, code, msg) {
   console.log("UPLOAD ERROR:", msg);
   ok(res, code, { error: msg });
 }
+
 function slug(s) {
   return String(s || "")
     .toLowerCase()
@@ -82,9 +84,11 @@ export async function handleUploadRoutes(req, res) {
     res.end();
     return;
   }
+
   if (!pathname.startsWith("/upload/")) return;
 
   try {
+    // === SONG UPLOAD (S3 version) ===
     if (method === "POST" && pathname === "/upload/song") {
       if (!BUCKET || !process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID) {
         return bad(res, 500, "s3_not_configured");
@@ -171,7 +175,7 @@ export async function handleUploadRoutes(req, res) {
         mediaId = ins.insertId;
       }
 
-      // 4) DurationSeconds (read from uploaded file; default to 0)
+      // 4) DurationSeconds
       let durationSeconds = 0;
       try {
         const dur = await getAudioDurationInSeconds(aud.filepath);
@@ -180,7 +184,7 @@ export async function handleUploadRoutes(req, res) {
         console.warn("Could not read duration:", durErr?.message || durErr);
       }
 
-      // 5) Insert Song (ReleaseDate = NOW(), DurationSeconds = computed)
+      // 5) Insert Song
       const cols = [
         "Title",
         "audio_media_id",
@@ -203,7 +207,6 @@ export async function handleUploadRoutes(req, res) {
       const [songIns] = await db.query(sql, vals);
       const songId = songIns.insertId;
 
-      // 6) Relations (Song_Artist, Album_Track)
       try {
         await db.query("INSERT INTO Song_Artist (SongID, ArtistID) VALUES (?, ?)", [
           songId,
@@ -220,7 +223,6 @@ export async function handleUploadRoutes(req, res) {
         } catch {}
       }
 
-      // 7) Response
       return ok(res, 201, {
         songId,
         mediaId,
@@ -234,6 +236,7 @@ export async function handleUploadRoutes(req, res) {
       });
     }
 
+    // === FALLBACK ===
     return bad(res, 404, "not_found");
   } catch (e) {
     return ok(res, 500, {
@@ -247,56 +250,81 @@ export async function handleUploadRoutes(req, res) {
 }
 
 
-try {
-if (method === "POST" && pathname === "/upload/album") {
-const { fields, files } = await parseMultipart(req, { destDir: IMAGE_DIR, allowed: ["image/png", "image/jpeg", "image/webp"] });
-const title = fields.title?.trim();
-const artistId = Number(fields.artistId);
-const releaseDate = fields.releaseDate || null;
-const coverRel = files.cover ? `/uploads/images/${files.cover.filename}` : null;
-if (!title || !artistId) {
-res.writeHead(400, { "Content-Type": "application/json" });
-res.end(JSON.stringify({ error: "title and artistId required" }));
-return;
-}
-const [result] = await db.query(
-"INSERT INTO Album (Title, ArtistID, ReleaseDate, CoverImagePath) VALUES (?, ?, ?, ?)",
-[title, artistId, releaseDate, coverRel]
-);
-res.writeHead(201, { "Content-Type": "application/json" });
-res.end(JSON.stringify({ albumId: result.insertId, coverImagePath: coverRel }));
-return;
-}
+export async function handleLocalUpload(req, res) {
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  const method = req.method;
 
+  try {
+    if (method === "POST" && pathname === "/upload/album") {
+      const { fields, files } = await parseMultipart(req, {
+        destDir: "uploads/images",
+        allowed: ["image/png", "image/jpeg", "image/webp"]
+      });
+      const title = fields.title?.trim();
+      const artistId = Number(fields.artistId);
+      const releaseDate = fields.releaseDate || null;
+      const coverRel = files.cover ? `/uploads/images/${files.cover.filename}` : null;
 
-if (method === "POST" && pathname === "/upload/song") {
-const { fields, files } = await parseMultipart(req, { destDir: AUDIO_DIR, allowed: ["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/flac", "audio/aac", "audio/ogg"] });
-const title = fields.title?.trim();
-const artistId = Number(fields.artistId);
-const albumId = fields.albumId ? Number(fields.albumId) : null;
-const genreId = fields.genreId ? Number(fields.genreId) : null;
-const explicit = fields.explicit ? Number(fields.explicit) : 0;
-const audioRel = files.audio ? `/uploads/audio/${files.audio.filename}` : null;
-if (!title || !artistId || !audioRel) {
-res.writeHead(400, { "Content-Type": "application/json" });
-res.end(JSON.stringify({ error: "title, artistId, and audio file required" }));
-return;
-}
-const [songResult] = await db.query(
-"INSERT INTO Song (Title, ArtistID, GenreID, Explicit, AudioPath) VALUES (?, ?, ?, ?, ?)",
-[title, artistId, genreId, explicit, audioRel]
-);
-const songId = songResult.insertId;
-if (albumId) {
-await db.query("INSERT INTO Album_Track (AlbumID, SongID, TrackNumber) VALUES (?, ?, ?)", [albumId, songId, fields.trackNumber ? Number(fields.trackNumber) : null]);
-}
-res.writeHead(201, { "Content-Type": "application/json" });
-res.end(JSON.stringify({ songId, audioPath: audioRel }));
-return;
-}
-} catch (e) {
-res.writeHead(500, { "Content-Type": "application/json" });
-res.end(JSON.stringify({ error: e.message }));
-return;
-}
+      if (!title || !artistId) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "title and artistId required" }));
+        return;
+      }
+
+      const [result] = await db.query(
+        "INSERT INTO Album (Title, ArtistID, ReleaseDate, CoverImagePath) VALUES (?, ?, ?, ?)",
+        [title, artistId, releaseDate, coverRel]
+      );
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ albumId: result.insertId, coverImagePath: coverRel }));
+      return;
+    }
+
+    if (method === "POST" && pathname === "/upload/song") {
+      const { fields, files } = await parseMultipart(req, {
+        destDir: "uploads/audio",
+        allowed: [
+          "audio/mpeg",
+          "audio/mp3",
+          "audio/wav",
+          "audio/x-wav",
+          "audio/flac",
+          "audio/aac",
+          "audio/ogg"
+        ]
+      });
+      const title = fields.title?.trim();
+      const artistId = Number(fields.artistId);
+      const albumId = fields.albumId ? Number(fields.albumId) : null;
+      const genreId = fields.genreId ? Number(fields.genreId) : null;
+      const explicit = fields.explicit ? Number(fields.explicit) : 0;
+      const audioRel = files.audio ? `/uploads/audio/${files.audio.filename}` : null;
+
+      if (!title || !artistId || !audioRel) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "title, artistId, and audio file required" }));
+        return;
+      }
+
+      const [songResult] = await db.query(
+        "INSERT INTO Song (Title, ArtistID, GenreID, Explicit, AudioPath) VALUES (?, ?, ?, ?, ?)",
+        [title, artistId, genreId, explicit, audioRel]
+      );
+
+      const songId = songResult.insertId;
+      if (albumId) {
+        await db.query(
+          "INSERT INTO Album_Track (AlbumID, SongID, TrackNumber) VALUES (?, ?, ?)",
+          [albumId, songId, fields.trackNumber ? Number(fields.trackNumber) : null]
+        );
+      }
+
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ songId, audioPath: audioRel }));
+      return;
+    }
+  } catch (e) {
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: e.message }));
+  }
 }

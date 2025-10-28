@@ -34,8 +34,7 @@ import { handlePlayRoutes } from "./routes/plays.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
-import { handlePfpRoutes } from "./routes/pfp.js";
-import { handleSetListenerAvatar } from "./routes/avatar.js";
+
 import { handleSearchRoutes } from "./routes/search.js";
 
 const PORT = 3001;
