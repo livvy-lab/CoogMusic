@@ -1,3 +1,4 @@
+// client/src/components/ArtistCard/ArtistCard.jsx
 import { useEffect, useState } from "react";
 import "./ArtistCard.css";
 
@@ -9,14 +10,10 @@ function PlaceholderCard() {
           <img src="/assets/artist-avatar.png" alt="" aria-hidden="true" />
         </div>
       </div>
-
       <div className="artistCard__info">
         <h1 className="artistCard__name">Unknown Artist</h1>
-        <div className="artistCard__followers">
-          This artist hasn’t started creating yet.
-        </div>
+        <div className="artistCard__followers">This artist hasn’t started creating yet.</div>
       </div>
-
       <div className="artistCard__songs">♪ 0 songs</div>
     </div>
   );
@@ -33,7 +30,6 @@ export default function ArtistCard({ artistId }) {
       setState({ loading: false, notFound: true });
       return;
     }
-
     const ctrl = new AbortController();
     (async () => {
       setState({ loading: true, notFound: false });
@@ -49,7 +45,6 @@ export default function ArtistCard({ artistId }) {
         setState({ loading: false, notFound: true });
       }
     })();
-
     return () => ctrl.abort();
   }, [artistId]);
 
@@ -60,19 +55,19 @@ export default function ArtistCard({ artistId }) {
     <div className="artistCard">
       <div className="artistCard__avatarWrap">
         <div className="artistCard__avatar">
-          <img src={artist?.PFP || "/assets/artist-avatar.png"} alt={artist?.ArtistName || "Artist"} />
+          <img
+            src={artist?.pfpSignedUrl || artist?.pfpUrl || "/assets/artist-avatar.png"}
+            alt={artist?.ArtistName || "Artist"}
+          />
         </div>
       </div>
-
       <div className="artistCard__info">
         <h1 className="artistCard__name">{artist?.ArtistName || "Unknown Artist"}</h1>
         <div className="artistCard__followers">
           {Number(artist?.FollowerCount || 0).toLocaleString()} followers
         </div>
       </div>
-
       <div className="artistCard__songs">♪ {artist?.SongCount || 0} songs</div>
-
       <button
         type="button"
         className={`artistCard__fav${favorited ? " is-active" : ""}`}

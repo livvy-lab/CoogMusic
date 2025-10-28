@@ -50,7 +50,7 @@ export default function App() {
           <Route path="/edit-profile" element={<EditProfile />} />
 
           {/* Artist routes */}
-          <Route path="/artist" element={<ArtistView />} />
+          <Route path="/artist/:artistId" element={<ArtistView />} />
           <Route path="/upload" element={<ArtistUpload />} />
 
           {/* Song routes */}
