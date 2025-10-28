@@ -1,12 +1,18 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import "./NavigationBar.css";
-import { getUser } from "../../lib/userStorage";
+import { getUser, clearUser } from "../../lib/userStorage";
 
 export default function NavigationBar() {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
   const user = useMemo(() => getUser(), []);
   const isArtist = (user?.accountType || "").toLowerCase() === "artist";
+
+  const handleLogout = () => {
+    clearUser();
+    navigate("/login");
+  };
 
   return (
     <>
@@ -46,6 +52,14 @@ export default function NavigationBar() {
             <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
           </nav>
         )}
+
+        {/* Logout Section - Always at bottom */}
+        <nav className="navSection navSection--logout">
+          <button className="navLink logoutBtn" onClick={handleLogout}>
+            🚪 Log Out
+          </button>
+        </nav>
+
       </aside>
 
       {!open && (
