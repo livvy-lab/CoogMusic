@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
+import { usePlayer } from "../context/PlayerContext";
 import PageLayout from "../components/PageLayout/PageLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
@@ -34,6 +35,7 @@ export default function SearchResults() {
   const [tab, setTab] = useState("All");
   const [groups, setGroups] = useState({ songs: [], artists: [], listeners: [], albums: [], playlists: [] });
   const [loading, setLoading] = useState(false);
+  const { playSong } = usePlayer();
 
   useEffect(() => {
     let dead = false;
@@ -107,16 +109,16 @@ export default function SearchResults() {
         {tab === "All" && top && (
           <div style={{ display: "grid", gap: 12 }}>
             <h2 style={{ margin: 0 }}>Top result</h2>
-            <BigCard r={top} to={linkFor[top.type]?.(top) || "#"} />
+            <BigCard r={top} to={linkFor[top.type]?.(top) || "#"} playSong={playSong} />
           </div>
         )}
 
         <div style={{ display: "grid", gap: 28, gridTemplateColumns: "1fr 1fr", alignItems: "start" }}>
-          <Section title="Songs" items={filtered.songs} toFn={(r) => linkFor.song(r)} />
-          <Section title="Artists" items={filtered.artists} toFn={(r) => linkFor.artist(r)} />
-          <Section title="Albums" items={filtered.albums} toFn={(r) => linkFor.album(r)} />
-          <Section title="Playlists" items={filtered.playlists} toFn={(r) => linkFor.playlist(r)} />
-          <Section title="Profiles" items={filtered.listeners} toFn={(r) => linkFor.listener(r)} />
+          <Section title="Songs" items={filtered.songs} toFn={(r) => linkFor.song(r)} playSong={playSong} />
+          <Section title="Artists" items={filtered.artists} toFn={(r) => linkFor.artist(r)} playSong={playSong} />
+          <Section title="Albums" items={filtered.albums} toFn={(r) => linkFor.album(r)} playSong={playSong} />
+          <Section title="Playlists" items={filtered.playlists} toFn={(r) => linkFor.playlist(r)} playSong={playSong} />
+          <Section title="Profiles" items={filtered.listeners} toFn={(r) => linkFor.listener(r)} playSong={playSong} />
         </div>
 
         {counts.All === 0 && <div style={{ opacity: 0.8 }}>No matches for “{q}”.</div>}
@@ -125,31 +127,34 @@ export default function SearchResults() {
   );
 }
 
-function Section({ title, items, toFn }) {
+function Section({ title, items, toFn, playSong }) {
   if (!items?.length) return null;
   return (
     <div style={{ display: "grid", gap: 12 }}>
       <h3 style={{ margin: 0 }}>{title}</h3>
       <div style={{ display: "grid", gap: 8 }}>
-        {items.slice(0, 6).map(r => <Row key={`${r.type}-${r.id}`} r={r} to={toFn(r)} />)}
+        {items.slice(0, 6).map(r => <Row key={`${r.type}-${r.id}`} r={r} to={toFn(r)} playSong={playSong} />)}
       </div>
     </div>
   );
 }
 
-function Row({ r, to }) {
-  return (
-    <Link to={to} style={{
-      display: "grid",
-      gridTemplateColumns: "56px 1fr",
-      gap: 12,
-      padding: 12,
-      border: "1px solid #bda0ae",
-      borderRadius: 16,
-      textDecoration: "none",
-      background: "#f7ecf2",
-      color: "#4b2c3d"
-    }}>
+function Row({ r, to, playSong }) {
+  const baseStyle = {
+    display: "grid",
+    gridTemplateColumns: "56px 1fr",
+    gap: 12,
+    padding: 12,
+    border: "1px solid #bda0ae",
+    borderRadius: 16,
+    textDecoration: "none",
+    background: "#f7ecf2",
+    color: "#4b2c3d",
+    cursor: "pointer",
+  };
+
+  const content = (
+    <>
       <div style={{
         width: 56, height: 56,
         background: "#e9d2df",
@@ -162,36 +167,91 @@ function Row({ r, to }) {
         <div style={{ fontWeight: 700 }}>{r.title}</div>
         <div style={{ opacity: 0.7, fontSize: 14 }}>{r.type}</div>
       </div>
+    </>
+  );
+
+  if (r.type === "song") {
+    const handleClick = async () => {
+      try {
+        localStorage.setItem('lastClicked', JSON.stringify({ type: 'song', id: r.id, title: r.title, ts: Date.now() }));
+      } catch (e) {
+        // ignore storage errors
+      }
+      if (playSong) await playSong({ songId: r.id });
+    };
+
+    const handleKey = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleClick();
+      }
+    };
+
+    return (
+      <div role="button" tabIndex={0} onClick={handleClick} onKeyDown={handleKey} style={baseStyle}>
+        {content}
+      </div>
+    );
+  }
+
+  // default: use Link for navigation for non-song types
+  return (
+    <Link to={to} style={baseStyle}>
+      {content}
     </Link>
   );
 }
 
-function BigCard({ r, to }) {
-  return (
-    <Link to={to} style={{
-      display: "grid",
-      gridTemplateColumns: "96px 1fr",
-      gap: 16,
-      padding: 16,
-      border: "1px solid #bda0ae",
-      borderRadius: 16,
-      textDecoration: "none",
-      background: "#f7ecf2",
-      color: "#4b2c3d",
-      maxWidth: 560
+function BigCard({ r, to, playSong }) {
+  const style = {
+    display: "grid",
+    gridTemplateColumns: "96px 1fr",
+    gap: 16,
+    padding: 16,
+    border: "1px solid #bda0ae",
+    borderRadius: 16,
+    textDecoration: "none",
+    background: "#f7ecf2",
+    color: "#4b2c3d",
+    maxWidth: 560,
+    cursor: "pointer",
+  };
+
+  const img = (
+    <div style={{
+      width: 96, height: 96,
+      background: "#e9d2df",
+      borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
+      display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24
     }}>
-      <div style={{
-        width: 96, height: 96,
-        background: "#e9d2df",
-        borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
-        display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24
-      }}>
-        {r.type?.[0]?.toUpperCase() || "?"}
+      {r.type?.[0]?.toUpperCase() || "?"}
+    </div>
+  );
+
+  const body = (
+    <div style={{ display: "grid", alignContent: "center" }}>
+      <div style={{ fontWeight: 800, fontSize: 22 }}>{r.title}</div>
+      <div style={{ opacity: 0.7, fontSize: 14 }}>{r.type}</div>
+    </div>
+  );
+
+  if (r.type === "song") {
+    const onClick = async () => {
+      try { localStorage.setItem('lastClicked', JSON.stringify({ type: 'song', id: r.id, title: r.title, ts: Date.now() })); } catch (e) {}
+      if (playSong) await playSong({ songId: r.id });
+    };
+    return (
+      <div role="button" tabIndex={0} onClick={onClick} style={style}>
+        {img}
+        {body}
       </div>
-      <div style={{ display: "grid", alignContent: "center" }}>
-        <div style={{ fontWeight: 800, fontSize: 22 }}>{r.title}</div>
-        <div style={{ opacity: 0.7, fontSize: 14 }}>{r.type}</div>
-      </div>
+    );
+  }
+
+  return (
+    <Link to={to} style={style}>
+      {img}
+      {body}
     </Link>
   );
 }
