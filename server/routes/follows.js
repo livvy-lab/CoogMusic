@@ -115,22 +115,37 @@ export async function handleFollowsRoutes(req, res) {
           return;
         }
 
+        // Prevent self-follow
+        if (FollowerID === FollowingID && FollowerType === FollowingType) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "A user cannot follow themselves." }));
+          return;
+        }
+
         const followDate = new Date().toISOString().slice(0, 10);
 
-        const [result] = await db.query(
-          "INSERT INTO Follows (FollowerID, FollowerType, FollowingID, FollowingType, FollowDate) VALUES (?, ?, ?, ?, ?)",
-          [FollowerID, FollowerType, FollowingID, FollowingType, followDate]
-        );
-
-        res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          message: "Follow relationship created successfully",
-          FollowerID,
-          FollowerType,
-          FollowingID,
-          FollowingType,
-          FollowDate: followDate
-        }));
+        try {
+          const [result] = await db.query(
+            "INSERT INTO Follows (FollowerID, FollowerType, FollowingID, FollowingType, FollowDate) VALUES (?, ?, ?, ?, ?)",
+            [FollowerID, FollowerType, FollowingID, FollowingType, followDate]
+          );
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            message: "Follow relationship created successfully",
+            FollowerID,
+            FollowerType,
+            FollowingID,
+            FollowingType,
+            FollowDate: followDate
+          }));
+        } catch (err) {
+          if (err.code === 'ER_DUP_ENTRY') {
+            res.writeHead(409, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "This follow relationship already exists." }));
+            return;
+          }
+          throw err; // will be caught below
+        }
       });
       return;
     }
