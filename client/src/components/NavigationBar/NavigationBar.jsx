@@ -24,7 +24,6 @@ export default function NavigationBar() {
           <div className="navTitle">Dashboard</div>
           <Link className="navLink" to="/home" onClick={() => setOpen(false)}>🏠 Home</Link>
           <Link className="navLink" to="/subscription" onClick={() => setOpen(false)}>⭐ Subscription</Link>
-          <Link className="navLink" to="/register/select" onClick={() => setOpen(false)}>📝 Register</Link>
         </nav>
 
         <nav className="navSection">
