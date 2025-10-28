@@ -1,131 +1,201 @@
+/* Album Form Container */
 .album-form-container {
-  width: min(44vw, 520px);
+  max-width: 720px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 0;
 }
 
 .album-form {
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  min-height: 600px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.form-content {
+/* Album Layout - Two Columns */
+.album-layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 32px;
+}
+
+/* Left Side - Cover Upload */
+.album-cover-section {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-.cover-upload-section {
-  width: 100%;
-  margin-top: 24px;
-}
-
-.cover-preview {
-  width: 100%;
-  height: 280px;
-  border: 2px dashed var(--border);
-  border-radius: 8px;
+.album-cover-upload {
+  width: 200px;
+  height: 200px;
+  background: #F8F4FB;
+  border: 2px dashed #D1B8E0;
+  border-radius: 12px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: var(--background);
+  overflow: hidden;
+  position: relative;
 }
 
-.cover-preview:hover {
-  border-color: var(--primary);
-  background: var(--surface-hover);
+.album-cover-upload:hover {
+  border-color: #8B5BA8;
+  background: #F0E8F5;
 }
 
-.cover-image {
+.album-cover-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 6px;
 }
 
-.cover-placeholder {
+.album-cover-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  color: var(--text-secondary);
+  gap: 12px;
 }
 
-.cover-placeholder i {
-  font-size: 32px;
+.upload-icon {
+  color: #8B5BA8;
 }
 
-.album-details {
+.upload-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.upload-text {
+  font-size: 14px;
+  font-weight: 500;
+  color: #6B4D8A;
+}
+
+/* Add Songs Section */
+.add-songs-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.add-songs-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B4D8A;
+}
+
+.choose-tracks-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: #8B5BA8;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  text-align: center;
+}
+
+.choose-tracks-btn:hover {
+  background: #6B4D8A;
+}
+
+/* Right Side - Album Details */
+.album-details-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
-.form-group {
+.form-field {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.form-group label {
-  font-weight: 500;
-  color: var(--text-primary);
-}
-
-.form-group input[type="text"],
-.form-group input[type="date"],
-.form-group textarea {
-  padding: 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--background);
-  color: var(--text-primary);
+.form-field label {
   font-size: 14px;
-  transition: border-color 0.3s ease;
+  font-weight: 600;
+  color: #6B4D8A;
 }
 
-.form-group input[type="text"]:focus,
-.form-group input[type="date"]:focus,
-.form-group textarea:focus {
-  border-color: var(--primary);
+.form-field input[type="text"],
+.form-field input[type="date"],
+.form-field textarea {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #D1B8E0;
+  border-radius: 8px;
+  background: #FFFFFF;
+  color: #2D2D2D;
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.form-field input[type="text"]:focus,
+.form-field input[type="date"]:focus,
+.form-field textarea:focus {
   outline: none;
+  border-color: #8B5BA8;
+  box-shadow: 0 0 0 3px rgba(139, 91, 168, 0.1);
 }
 
-.submit-button {
-  background: var(--primary);
-  color: white;
-  padding: 12px 24px;
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: #B8A5C7;
+}
+
+.form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Publish Button */
+.publish-button {
+  width: 100%;
+  padding: 14px;
+  background: #8B5BA8;
+  color: #FFFFFF;
   border: none;
-  border-radius: 6px;
-  font-weight: 500;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin-top: 12px;
+  transition: background 0.3s ease;
+  margin-top: 8px;
 }
 
-.submit-button:hover {
-  background: var(--primary-dark);
+.publish-button:hover {
+  background: #6B4D8A;
 }
 
-.submit-button:disabled {
-  background: var(--border);
+.publish-button:disabled {
+  background: #B8A5C7;
   cursor: not-allowed;
 }
 
-.success-message {
-  color: var(--success);
-  padding: 12px;
-  border-radius: 6px;
-  margin-top: 12px;
-  text-align: center;
-  background: var(--success-bg);
+/* Responsive */
+@media (max-width: 768px) {
+  .album-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  
+  .album-cover-upload {
+    width: 100%;
+    max-width: 300px;
+    height: 300px;
+    margin: 0 auto;
+  }
+  
+  .album-form {
+    padding: 24px;
+  }
 }

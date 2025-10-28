@@ -109,10 +109,47 @@ export default function AlbumForm() {
   return (
     <div className="album-form-container">
       <form onSubmit={handleSubmit} className="album-form">
-        {/* Album Details */}
-        <div className="form-content">
-          <div className="album-details">
-            <div className="form-group">
+        <div className="album-layout">
+          {/* Left Side - Album Cover Upload */}
+          <div className="album-cover-section">
+            <div 
+              className="album-cover-upload" 
+              onClick={() => document.getElementById("coverInput").click()}
+            >
+              {previewUrl ? (
+                <img src={previewUrl} alt="Cover preview" className="album-cover-preview" />
+              ) : (
+                <div className="album-cover-placeholder">
+                  <div className="upload-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10.6667 13.3333C11.7712 13.3333 12.6667 12.4379 12.6667 11.3333C12.6667 10.2288 11.7712 9.33333 10.6667 9.33333C9.56209 9.33333 8.66666 10.2288 8.66666 11.3333C8.66666 12.4379 9.56209 13.3333 10.6667 13.3333Z" stroke="currentColor" strokeWidth="1.5"/>
+                      <path d="M6.66666 25.3333V22.6667L10.6667 18.6667L14.6667 22.6667L20 17.3333L25.3333 22.6667V25.3333M6.66666 25.3333H25.3333M6.66666 25.3333V6.66667H25.3333V25.3333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </div>
+                  <span className="upload-text">Upload Cover</span>
+                </div>
+              )}
+              <input
+                type="file"
+                id="coverInput"
+                accept="image/*"
+                onChange={handleCoverChange}
+                style={{ display: "none" }}
+              />
+            </div>
+
+            {/* Add Songs Section */}
+            <div className="add-songs-section">
+              <div className="add-songs-label">Add Songs</div>
+              <button type="button" className="choose-tracks-btn">
+                Choose from uploaded tracks
+              </button>
+            </div>
+          </div>
+
+          {/* Right Side - Album Details */}
+          <div className="album-details-section">
+            <div className="form-field">
               <label htmlFor="title">Album Title</label>
               <input
                 type="text"
@@ -124,7 +161,7 @@ export default function AlbumForm() {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-field">
               <label htmlFor="releaseDate">Release Date</label>
               <input
                 type="date"
@@ -134,43 +171,31 @@ export default function AlbumForm() {
               />
             </div>
 
-            <div className="form-group">
+            <div className="form-field">
+              <label htmlFor="genre">Genre/Tags</label>
+              <input
+                type="text"
+                id="genre"
+                placeholder="Enter genres or tags"
+              />
+            </div>
+
+            <div className="form-field">
               <label htmlFor="description">Description</label>
               <textarea
                 id="description"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Write something about your album..."
-                rows={4}
+                rows={3}
               />
             </div>
-          </div>
 
-          {/* Cover Upload */}
-          <div className="cover-upload-section">
-            <div className="cover-preview" onClick={() => document.getElementById("coverInput").click()}>
-              {previewUrl ? (
-                <img src={previewUrl} alt="Cover preview" className="cover-image" />
-              ) : (
-                <div className="cover-placeholder">
-                  <i className="fas fa-image"></i>
-                  <span>Add Album Cover</span>
-                </div>
-              )}
-              <input
-                type="file"
-                id="coverInput"
-                accept="image/*"
-                onChange={handleCoverChange}
-                style={{ display: "none" }}
-              />
-            </div>
+            <button type="submit" className="publish-button" disabled={loading}>
+              {loading ? "Publishing..." : "Publish"}
+            </button>
           </div>
         </div>
-
-        <button type="submit" className="submit-button" disabled={loading}>
-          {loading ? "Creating Album..." : "Create Album"}
-        </button>
       </form>
     </div>
   );
