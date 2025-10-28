@@ -6,9 +6,8 @@ import cat_right from '../assets/right_cat.svg';
 
 const BuyAds = () => {
   const [formData, setFormData] = useState({
-    artistId: '',
-    email: '',
-    message: '',
+    adTitle: '',
+    adDescription: '',
     adFile: null
   });
 
@@ -27,10 +26,38 @@ const BuyAds = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
+    if (!formData.adFile) {
+      alert('Please select a file to upload.');
+      return;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append('adFile', formData.adFile);
+      if (formData.adTitle) fd.append('adTitle', formData.adTitle);
+      if (formData.adDescription) fd.append('adDescription', formData.adDescription);
+
+      const res = await fetch('http://localhost:3001/upload/ad', {
+        method: 'POST',
+        body: fd
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Upload failed');
+      }
+
+      const data = await res.json();
+      console.log('Ad uploaded to S3:', data);
+      alert('Ad uploaded successfully!');
+      // Optionally clear form after success
+      setFormData({ adTitle: '', adDescription: '', adFile: null });
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert(`Upload error: ${err.message}`);
+    }
   };
 
   return (
@@ -43,51 +70,39 @@ const BuyAds = () => {
 
         <div className="buyads-form-container">
           <form onSubmit={handleSubmit}>
-            {/* Artist ID - full width on top */}
+            {/* Ad Title - full width on top */}
             <div className="form-group artist-id-group">
               <input
                 type="text"
-                name="artistId"
-                placeholder="Artist ID"
-                value={formData.artistId}
+                name="adTitle"
+                placeholder="Ad Title"
+                value={formData.adTitle}
                 onChange={handleInputChange}
                 className="artist-id-input"
               />
             </div>
 
-            {/* Middle row: Email (left) and Upload (right) */}
-            <div className="middle-row">
-              <div className="form-group">
+            {/* Upload - full width */}
+            <div className="form-group upload-group">
+              <div className="upload-button">
+                <label htmlFor="adFile">Upload Ad File</label>
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  type="file"
+                  id="adFile"
+                  name="adFile"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
                 />
               </div>
-
-              <div className="form-group upload-group">
-                <div className="upload-button">
-                  <label htmlFor="adFile">Upload Ad File</label>
-                  <input
-                    type="file"
-                    id="adFile"
-                    name="adFile"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-                {formData.adFile && <span className="file-name">{formData.adFile.name}</span>}
-              </div>
+              {formData.adFile && <span className="file-name">{formData.adFile.name}</span>}
             </div>
 
-            {/* Message */}
+            {/* Ad Description */}
             <div className="form-group message-group">
               <textarea
-                name="message"
-                placeholder="Message"
-                value={formData.message}
+                name="adDescription"
+                placeholder="Ad Description"
+                value={formData.adDescription}
                 onChange={handleInputChange}
               />
             </div>
