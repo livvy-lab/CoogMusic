@@ -16,10 +16,34 @@
   padding: 22px 16px;
   z-index: 100;
   border-radius: 0 20px 20px 0;
+  box-sizing: border-box;
 
-  /* collapse animation */
   transform: translateX(-100%);
   transition: transform 0.3s ease-in-out;
+  height: 100vh;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-right: 12px;
+
+  scrollbar-width: thin;
+  scrollbar-color: #AF578A #612C4B;
+}
+
+/* Chrome, Safari, Edge: custom internal scrollbar (inset, inside nav) */
+.nav::-webkit-scrollbar {
+  width: 8px;
+  background: transparent;
+}
+
+.nav::-webkit-scrollbar-thumb {
+  background: #AF578A;
+  border-radius: 20px;
+  border: 2px solid #612C4B; 
+}
+
+.nav::-webkit-scrollbar-track {
+  background: #612C4B;
+  border-radius: 20px;
 }
 
 /* Slide into view when open */
@@ -55,7 +79,6 @@
 .logoutBtn:hover {
   background: rgba(255, 218, 240, 0.1);
 }
-
 
 /* Navigation brand / header area */
 .navBrand {
