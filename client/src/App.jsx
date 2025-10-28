@@ -28,8 +28,11 @@ import Playlists from "./pages/Playlists";
 import MyAds from "./pages/MyAds";
 
 import { PlayerProvider } from "./context/PlayerContext";
-import { FavoritesPinsProvider } from "./context/FavoritesPinsContext"; // ✅ add this
+import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
+
+import ArtistAnalytics from "./pages/ArtistAnalytics";
+import ListenerAnalytics from "./pages/ListenerAnalytics";
 
 export default function App() {
   return (
@@ -60,12 +63,14 @@ export default function App() {
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/my-ads" element={<MyAds />} />
+        <Route path="/listener-analytics" element={<ListenerAnalytics />} />
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />
           <Route path="/upload" element={<Navigate to="/upload/song" replace />} />
           <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
           <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
+          <Route path="/artist-analytics" element={<ArtistAnalytics />} />
 
             {/* Public listener profile (search links point to /listeners/:id) */}
             <Route path="/listeners/:id" element={<ListenerPublic />} />
