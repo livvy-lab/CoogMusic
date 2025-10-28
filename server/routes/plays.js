@@ -115,6 +115,31 @@ export async function handlePlayRoutes(req, res) {
       return;
     }
 
+    // GET /plays/artist-streams?artistId=###
+    if (pathname === "/plays/artist-streams" && method === "GET") {
+      const artistId = Number(url.searchParams.get("artistId"));
+      if (!Number.isFinite(artistId)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "artistId query param is required" }));
+        return;
+      }
+      const [[row]] = await db.query(
+        `SELECT COUNT(*) AS TotalStreams
+           FROM Play p
+           JOIN Song s ON s.SongID = p.SongID
+           JOIN Song_Artist sa ON sa.SongID = s.SongID
+          WHERE sa.ArtistID = ?
+            AND p.IsDeleted = 0
+            AND s.IsDeleted = 0
+            AND COALESCE(sa.IsDeleted, 0) = 0
+            AND p.MsPlayed >= ?`,
+        [artistId, STREAM_MS_THRESHOLD]
+      );
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ artistId, totalStreams: Number(row?.TotalStreams || 0) }));
+      return;
+    }
+
     // fallback
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Plays endpoint not found" }));

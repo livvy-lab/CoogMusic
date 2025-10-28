@@ -42,6 +42,58 @@
   color: #6d2f45;
 }
 
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.streams-stats-box,
+.followers-stats-box {
+  background: linear-gradient(135deg, #f7eef3 0%, #e8dfe7 100%);
+  border-radius: 18px;
+  box-shadow: 0 4px 12px rgba(139,24,88,0.1);
+  padding: 2rem 2.5rem;
+  text-align: center;
+  border: 3px solid #8b1858;
+}
+
+.streams-stats-box .stat-label,
+.followers-stats-box .stat-label {
+  font-size: 1rem;
+  color: #8b1858;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+
+.streams-stats-box .stat-value,
+.followers-stats-box .stat-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #8b1858;
+  margin-bottom: 0.5rem;
+}
+
+.streams-stats-box .stat-subtext,
+.followers-stats-box .stat-subtext {
+  font-size: 0.95rem;
+  color: #6d2f45;
+  opacity: 0.8;
+}
+
+@media (max-width: 768px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+
 .stat-icon {
   position: absolute;
   right: 1.2rem;

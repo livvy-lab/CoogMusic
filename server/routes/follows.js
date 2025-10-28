@@ -63,6 +63,26 @@ export async function handleFollowsRoutes(req, res) {
       return;
     }
 
+    // Get follower count for an artist
+    if (req.method === "GET" && url.pathname === "/follows/artist-followers") {
+      const { artistId } = url.query;
+
+      if (!artistId) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "artistId is required" }));
+        return;
+      }
+
+      const [[row]] = await db.query(
+        "SELECT COUNT(*) AS FollowerCount FROM Follows WHERE FollowingID = ? AND FollowingType = 'Artist'",
+        [artistId]
+      );
+      
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ artistId, followerCount: Number(row?.FollowerCount || 0) }));
+      return;
+    }
+
     // Get follow list
     if (req.method === "GET" && url.pathname === "/follows") {
       const { userId, userType, tab } = url.query;
