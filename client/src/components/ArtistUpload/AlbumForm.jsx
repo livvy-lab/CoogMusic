@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function AlbumForm() {
   const [title, setTitle] = useState("");
@@ -6,6 +6,14 @@ export default function AlbumForm() {
   const [releaseDate, setReleaseDate] = useState("");
   const [cover, setCover] = useState(null);
   const [result, setResult] = useState(null);
+
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      const id = stored?.artistId ?? stored?.ArtistID ?? null;
+      if (id) setArtistId(String(id));
+    } catch {}
+  }, []);
 
   const submit = async (e) => {
     e.preventDefault();

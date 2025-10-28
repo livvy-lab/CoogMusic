@@ -18,6 +18,9 @@ import AccountType from "./pages/Auth/AccountType";
 import ArtistsPerspective from "./pages/ArtistsPerspective";
 import ListenerPlaylistsPage from "./pages/ListenerPlaylist";
 import ArtistUpload from "./pages/ArtistUpload";
+import UploadSong from "./pages/UploadSong";
+import CreateAlbum from "./pages/CreateAlbum";
+import RequireArtist from "./components/Auth/RequireArtist";
 import SearchResults from "./pages/SearchResults";
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
@@ -56,7 +59,9 @@ export default function App() {
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />
-          <Route path="/upload" element={<ArtistUpload />} />
+          <Route path="/upload" element={<Navigate to="/upload/song" replace />} />
+          <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
+          <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
 
           {/* Song routes */}
           <Route path="/song" element={<Song />} />
