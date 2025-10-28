@@ -1,4 +1,3 @@
-// client/src/context/FavoritesPinsContext.jsx
 import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { getUser } from "../lib/userStorage";
 
