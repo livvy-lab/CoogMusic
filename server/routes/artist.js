@@ -6,22 +6,18 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-const STREAM_MS_THRESHOLD = 0; // Use 30000 (30s) for real production streaming thresholds
+const STREAM_MS_THRESHOLD = 0;
 
 export async function handleArtistRoutes(req, res) {
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
   try {
-    // ------------------------------------------------------------
-    // GET /artists  (list)
-    // ------------------------------------------------------------
     if (method === "GET" && pathname === "/artists") {
       const [rows] = await db.query(
         `
@@ -39,18 +35,28 @@ export async function handleArtistRoutes(req, res) {
         ORDER BY a.ArtistID ASC
         `
       );
-
-      // keep legacy PFP for compatibility with older UI
       return json(res, 200, rows.map(r => ({ ...r, PFP: r.pfpUrl || null })));
     }
 
-    // ------------------------------------------------------------
-    // GET /artists/:id  (basic info)
-    // ------------------------------------------------------------
+    const mBio = pathname.match(/^\/artists\/(\d+)\/bio\/?$/);
+    if (method === "GET" && mBio) {
+      const artistId = Number(mBio[1]);
+      const [[row]] = await db.query(
+        `
+        SELECT
+          a.Bio
+        FROM Artist a
+        WHERE a.ArtistID = ? AND COALESCE(a.IsDeleted,0) = 0
+        `,
+        [artistId]
+      );
+      if (!row) return json(res, 404, { error: "Artist not found" });
+      return json(res, 200, { Bio: row.Bio || "" });
+    }
+
     const mGet = pathname.match(/^\/artists\/(\d+)\/?$/);
     if (method === "GET" && mGet) {
       const artistId = Number(mGet[1]);
-
       const [[row]] = await db.query(
         `
         SELECT
@@ -71,13 +77,9 @@ export async function handleArtistRoutes(req, res) {
       return json(res, 200, { ...row, PFP: row.pfpUrl || null });
     }
 
-    // ─────────────────────────────────────────────
-    // GET /artists/:id/top-tracks?limit=10 → most streamed songs
-    // ─────────────────────────────────────────────
-    if (/^\/artists\/\d+\/top-tracks$/.test(pathname) && method === "GET") {
+    if (/^\/artists\/\d+\/top-tracks\/?$/.test(pathname) && method === "GET") {
       const artistId = Number(pathname.split("/")[2]);
-      const url = new URL(req.url, `http://${req.headers.host}`);
-      const limit = Math.min(Math.max(Number(url.searchParams.get("limit")) || 10, 1), 50);
+      const limit = Math.min(Math.max(Number(searchParams.get("limit")) || 10, 1), 50);
 
       const [tracks] = await db.query(
         `
@@ -94,28 +96,22 @@ export async function handleArtistRoutes(req, res) {
          AND sa.ArtistID = ?
         LEFT JOIN Play p
           ON p.SongID = s.SongID
-         AND p.IsDeleted = 0
+         AND COALESCE(p.IsDeleted,0) = 0
          AND p.MsPlayed >= ?
         WHERE COALESCE(s.IsDeleted,0)=0
-        GROUP BY s.SongID
+        GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate
         ORDER BY Streams DESC, s.SongID DESC
         LIMIT ?
         `,
         [artistId, STREAM_MS_THRESHOLD, limit]
       );
 
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ tracks }));
-      return;
+      return json(res, 200, { tracks });
     }
 
-    // ─────────────────────────────────────────────
-    // GET /artists/:id/discography → albums + singles
-    // ─────────────────────────────────────────────
-    if (/^\/artists\/\d+\/discography$/.test(pathname) && method === "GET") {
+    if (/^\/artists\/\d+\/discography\/?$/.test(pathname) && method === "GET") {
       const artistId = Number(pathname.split("/")[2]);
 
-      // Albums
       const [albums] = await db.query(
         `
         SELECT
@@ -140,13 +136,12 @@ export async function handleArtistRoutes(req, res) {
                  AND sa2.ArtistID = ?
             )
           )
-        GROUP BY al.AlbumID
+        GROUP BY al.AlbumID, al.Title, al.ReleaseDate
         ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
         `,
         [artistId, artistId]
       );
 
-      // Singles
       const [singles] = await db.query(
         `
         SELECT
@@ -160,27 +155,20 @@ export async function handleArtistRoutes(req, res) {
         LEFT JOIN Album_Track at ON at.SongID = s.SongID
         LEFT JOIN Play p
           ON p.SongID = s.SongID
-         AND p.IsDeleted = 0
+         AND COALESCE(p.IsDeleted,0) = 0
          AND p.MsPlayed >= ?
         WHERE COALESCE(s.IsDeleted,0)=0
           AND sa.ArtistID = ?
           AND at.SongID IS NULL
-        GROUP BY s.SongID
+        GROUP BY s.SongID, s.Title, s.ReleaseDate
         ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
         `,
         [STREAM_MS_THRESHOLD, artistId]
       );
 
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ albums, singles }));
-      return;
+      return json(res, 200, { albums, singles });
     }
 
-    // ------------------------------------------------------------
-    // POST /artists  (create)
-    // Body: { AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id }
-    // PFP is optional legacy; image_media_id preferred
-    // ------------------------------------------------------------
     if (method === "POST" && pathname === "/artists") {
       let body = "";
       req.on("data", c => body += c);
@@ -210,10 +198,6 @@ export async function handleArtistRoutes(req, res) {
       return;
     }
 
-    // ------------------------------------------------------------
-    // PUT /artists/:id  (update)
-    // Body: { AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id }
-    // ------------------------------------------------------------
     const mPut = pathname.match(/^\/artists\/(\d+)\/?$/);
     if (method === "PUT" && mPut) {
       const artistId = Number(mPut[1]);
@@ -255,23 +239,17 @@ export async function handleArtistRoutes(req, res) {
       return;
     }
 
-    // ------------------------------------------------------------
-    // DELETE /artists/:id  (soft delete)
-    // ------------------------------------------------------------
     const mDel = pathname.match(/^\/artists\/(\d+)\/?$/);
     if (method === "DELETE" && mDel) {
       const artistId = Number(mDel[1]);
-
       const [r] = await db.query(
         `UPDATE Artist SET IsDeleted = 1 WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0`,
         [artistId]
       );
-
       if (!r.affectedRows) return json(res, 404, { error: "Artist not found or already deleted" });
       return json(res, 200, { message: "Artist soft deleted successfully" });
     }
 
-    // Not found here → other handlers may cover (profile/about/etc.)
     return json(res, 404, { error: "Route not found" });
   } catch (err) {
     console.error("artist route error:", err?.sqlMessage || err?.message || err);
