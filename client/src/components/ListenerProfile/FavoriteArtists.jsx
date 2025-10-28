@@ -83,6 +83,7 @@ export default function FavoriteArtists({ listenerId, onSelect }) {
   return (
     <section className="fa">
       <h2 className="playlistSection__title">Favorite Artists</h2>
+
       <div className="fa__grid">
         {hasPins ? (
           artists.map((a, i) => {

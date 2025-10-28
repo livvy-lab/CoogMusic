@@ -8,7 +8,11 @@ export async function handleListenerProfile(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+  if (method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
   if (method !== "GET") {
     res.writeHead(405, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Method not allowed" }));
@@ -45,11 +49,11 @@ export async function handleListenerProfile(req, res) {
           LIMIT 3`,
         [listenerId]
       );
-      favArtists = rows.map(r => ({
+      favArtists = rows.map((r) => ({
         ArtistID: r.ArtistID,
         ArtistName: r.ArtistName,
         rank: r.FavRank,
-        PFP: r.PFP ?? null
+        PFP: r.PFP ?? null,
       }));
     } catch (e) {
       console.error("[profile] favorite artists SELECT failed:", e);
@@ -96,7 +100,10 @@ export async function handleListenerProfile(req, res) {
     }
 
     // 5) Counts (defensive about Follows schema)
-    let followers = 0, following = 0, playlists = 0, songs = 0;
+    let followers = 0,
+      following = 0,
+      playlists = 0,
+      songs = 0;
 
     try {
       const [[followersCountRow]] = await db.query(
@@ -115,7 +122,10 @@ export async function handleListenerProfile(req, res) {
       );
       following = followingCountRow.cnt ?? 0;
     } catch (eTypeful) {
-      console.warn("[profile] Follows typeful schema failed; falling back:", eTypeful.message);
+      console.warn(
+        "[profile] Follows typeful schema failed; falling back:",
+        eTypeful.message
+      );
       try {
         const [[followersCountRow]] = await db.query(
           `SELECT COUNT(*) AS cnt FROM Follows WHERE FolloweeID = ? AND IsDeleted = 0`,
@@ -129,7 +139,8 @@ export async function handleListenerProfile(req, res) {
         following = followingCountRow.cnt ?? 0;
       } catch (eSimple) {
         console.error("[profile] Follows simple schema also failed:", eSimple);
-        followers = 0; following = 0;
+        followers = 0;
+        following = 0;
       }
     }
 
@@ -157,20 +168,22 @@ export async function handleListenerProfile(req, res) {
 
     // 6) Respond
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({
-      listener: {
-        ListenerID: listener.ListenerID,
-        FirstName: listener.FirstName,
-        LastName: listener.LastName,
-        DateCreated: listener.DateCreated,
-        PFP: listener.PFP,
-        Bio: listener.Bio,
-        Major: listener.Major,
-        Minor: listener.Minor
-      },
-      counts: { followers, following, playlists, songs },
-      favorites: { artists: favArtists, pinnedSong, pinnedPlaylist }
-    }));
+    res.end(
+      JSON.stringify({
+        listener: {
+          ListenerID: listener.ListenerID,
+          FirstName: listener.FirstName,
+          LastName: listener.LastName,
+          DateCreated: listener.DateCreated,
+          PFP: listener.PFP,
+          Bio: listener.Bio,
+          Major: listener.Major,
+          Minor: listener.Minor,
+        },
+        counts: { followers, following, playlists, songs },
+        favorites: { artists: favArtists, pinnedSong, pinnedPlaylist },
+      })
+    );
   } catch (e) {
     console.error("profile error (outer):", e);
     res.writeHead(500, { "Content-Type": "application/json" });

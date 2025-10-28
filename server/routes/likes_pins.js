@@ -1,3 +1,4 @@
+// server/routes/likes_pins.js
 import db from "../db.js";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -12,6 +13,7 @@ export async function handleLikesPins(req, res) {
   const p = url.pathname.replace(/\/+$/, "");
   const m = req.method;
 
+  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
