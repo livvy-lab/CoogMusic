@@ -1,16 +1,17 @@
-:root{
-  --plum:#895674;
-  --ink:#4b2c3d;
-  --pink-50:#FFE8F5;
+:root {
+  --plum: #895674;
+  --ink: #4b2c3d;
+  --pink-50: #FFE8F5;
 }
 
 /* Full section */
-.fa{
+.fa {
   width: 100%;
-  max-width: none;     
+  max-width: none;
   margin: 0;
-  padding-top: 0;       
-  --circle: clamp(100px, 20vw, 180px); 
+  padding-top: 0;
+  --circle: clamp(100px, 20vw, 180px);
+  overflow: visible; /* Allow hover overflow */
 }
 
 /* Title sits above row and aligns with circles */
@@ -19,21 +20,23 @@
   font-weight: 800;
   color: #782355;
   margin: 0 0 14px;
-  text-align: left;          /* keep flush with layout */
-  padding-left: 8px;         /* nudge to align with first circle edge */
+  text-align: left;
+  padding-left: 8px;
 }
 
-/* Flex so the 3 circles sit edge-to-edge */
-.fa__grid{
+/* Flex layout for 3 circles */
+.fa__grid {
   display: flex;
-  flex-wrap: nowrap;          /* keep exactly 3 on one line */
-  justify-content: space-between; /* push first/last to edges */
+  flex-wrap: nowrap;
+  justify-content: space-between;
   align-items: flex-start;
-  gap: 0;                     /* no extra spacing that shortens row */
+  gap: 0;
+  overflow: visible; /* prevents hover clipping */
 }
 
-/* single artist */
-.fa__item{
+/* Single artist item (clickable link or button) */
+.fa__item {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -42,51 +45,85 @@
   color: var(--ink);
   background: transparent;
   border: 0;
-  cursor: default;
-  flex: 0 0 var(--circle);   /* fixed width per circle */
+  flex: 0 0 var(--circle);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
 }
 
-/* circle wrapper */
-.fa__ring{
+/* Circle wrapper */
+.fa__ring {
   width: var(--circle);
   height: var(--circle);
   border-radius: 50%;
   border: 5px solid var(--plum);
   background: #e7c4d6;
   overflow: hidden;
+  transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
+  transform-origin: center;
+  will-change: transform;
 }
 
-.fa__avatar{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  border-radius:50%;
+/* Avatar image inside circle */
+.fa__avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
 
-.fa__placeholder{
-  width:100%;
-  height:100%;
-  border-radius:50%;
-  display:grid;
-  place-items:center;
-  color:#fff;
-  font-weight:800;
+/* Placeholder (for missing images) */
+.fa__placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font-weight: 800;
   font-size: clamp(32px, 5vw, 40px);
 }
 
-/* artist name */
-.fa__name{
-  font-weight:700;
+/* Artist name text */
+.fa__name {
+  font-weight: 700;
   font-size: clamp(16px, 1.4vw, 20px);
   color: white;
-  opacity:.95;
+  opacity: 0.95;
+  transition: color 0.2s ease;
 }
 
-/* mobile: smaller circles, allow wrapping */
-@media (max-width: 700px){
-  .fa{ --circle: clamp(110px, 28vw, 140px); }
+/* Hover animations */
+.fa__item:hover {
+  color: var(--plum);
+  z-index: 10; /* bring forward */
+}
 
-  .fa__grid{
+.fa__item:hover .fa__ring {
+  transform: scale(1.08);
+  border-color: var(--pink-50);
+  background: #ffd8ec;
+}
+
+.fa__item:hover .fa__name {
+  color: var(--plum);
+}
+
+/* Remove link underlines always */
+.fa__item:link,
+.fa__item:visited,
+.fa__item:hover,
+.fa__item:active {
+  text-decoration: none;
+}
+
+/* Mobile: smaller circles and wrap */
+@media (max-width: 700px) {
+  .fa {
+    --circle: clamp(110px, 28vw, 140px);
+  }
+
+  .fa__grid {
     flex-wrap: wrap;
     justify-content: center;
     gap: clamp(14px, 2vw, 22px);

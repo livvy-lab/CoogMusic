@@ -92,6 +92,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // ───────────────────────────────────────────────
+    // Uploads & Media endpoints
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
     if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
 
@@ -102,27 +105,53 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
       const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) { res.writeHead(400, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "invalid_listener_id" })); return; }
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_listener_id" }));
+        return;
+      }
       await handleSetListenerAvatar(req, res, Number(id));
       return;
     }
 
     if (pathname.startsWith("/artists/") && pathname.endsWith("/avatar")) {
       const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) { res.writeHead(400, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "invalid_artist_id" })); return; }
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_artist_id" }));
+        return;
+      }
       await handleSetArtistAvatar(req, res, Number(id));
       return;
     }
 
+    // ───────────────────────────────────────────────
+    // Listener + Artist profile routes
+    // ───────────────────────────────────────────────
     if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
     if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
     if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
+
+    // ───────────────────────────────────────────────
+    // Plays + Login
+    // ───────────────────────────────────────────────
     if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
 
-    if (pathname.startsWith("/songs/status") || pathname.startsWith("/likes") || pathname.startsWith("/pin")) {
-      await handleLikesPinRoutes(req, res); return;
+    // ───────────────────────────────────────────────
+    // Likes + Pins (songs + artists join table)
+    // ───────────────────────────────────────────────
+    if (
+      pathname.startsWith("/songs/status") ||
+      pathname.startsWith("/likes") ||
+      pathname.startsWith("/pin") || // legacy song pin
+      /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
+      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)            // ✅ add this
+    ) {
+      await handleLikesPins(req, res);
+      return;
     }
+    
 
     if (pathname.startsWith("/search")) { await handleSearchRoutes(req, res); return; }
 
@@ -153,9 +182,14 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/analytics/artist")) { await handleArtistAnalyticsRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/listener")) { await handleListenerAnalyticsRoutes(req, res); return; }
 
+    // ───────────────────────────────────────────────
+    // Fallback
+    // ───────────────────────────────────────────────
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
+
   } catch (e) {
+    console.error("Server error:", e);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Server error" }));
   }

@@ -15,7 +15,6 @@ export default function PlaylistGrid({
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  // 🗑️ Delete playlist
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this playlist?")) return;
     try {
@@ -23,21 +22,14 @@ export default function PlaylistGrid({
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete playlist");
-      setPlaylists((prev) => prev.filter((p) => p.PlaylistID !== id));
+      setPlaylists(prev => prev.filter(p => p.PlaylistID !== id));
       setOpenMenuId(null);
-      console.log("✅ Playlist deleted:", id);
-    } catch (err) {
-      console.error("❌ Error deleting playlist:", err);
-    }
+    } catch {}
   }
 
-  // ✏️ Edit playlist
   function handleEdit(id) {
-    const playlist = playlists.find((p) => p.PlaylistID === id);
-    const newName = prompt(
-      `Rename playlist "${playlist?.Name || "Untitled"}":`,
-      playlist?.Name || ""
-    );
+    const playlist = playlists.find(p => p.PlaylistID === id);
+    const newName = prompt(`Rename playlist "${playlist?.Name || "Untitled"}":`, playlist?.Name || "");
     if (!newName || newName === playlist?.Name) return;
 
   fetch(`${API_BASE_URL}/playlists/${id}`, {
@@ -45,20 +37,14 @@ export default function PlaylistGrid({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ Name: newName }),
     })
-      .then((res) => res.json())
+      .then(res => res.json())
       .then(() => {
-        setPlaylists((prev) =>
-          prev.map((p) =>
-            p.PlaylistID === id ? { ...p, Name: newName } : p
-          )
-        );
+        setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
         setOpenMenuId(null);
-        console.log("✏️ Playlist renamed:", newName);
       })
-      .catch((err) => console.error("❌ Rename failed:", err));
+      .catch(() => {});
   }
 
-  // 📦 Fetch playlists
   useEffect(() => {
     let aborted = false;
 
@@ -80,14 +66,12 @@ export default function PlaylistGrid({
           `${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}`
         );
         if (resPinned.ok) {
-          const d = await resPinned.json();
-          if (!aborted) setPinnedId(d.PinnedPlaylistID || null);
+          const pinned = await resPinned.json();
+          if (!aborted) setPinnedId(pinned?.PlaylistID ?? null);
         }
 
         const visible = (Array.isArray(data) ? data : []).filter(
-          (p) =>
-            Number(p.IsDeleted) === 0 &&
-            (showPrivate || Number(p.IsPublic) === 1)
+          p => Number(p.IsDeleted) === 0 && (showPrivate || Number(p.IsPublic) === 1)
         );
         if (!aborted) setPlaylists(visible);
       } catch {
@@ -130,10 +114,28 @@ export default function PlaylistGrid({
     };
   }, [listenerId, showPrivate, showLikedFallback]);
 
-  async function handlePin(playlistId) {
+  async function pinPlaylist(playlistId) {
+    if (!listenerId || !playlistId) return;
+    setPinLoading(true);
+    try {
+      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/pins/playlist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ playlistId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+      setPinnedId(playlistId);
+    } catch (e) {
+      alert(e.message || "Could not pin playlist.");
+    } finally {
+      setPinLoading(false);
+    }
+  }
+
+  async function unpinPlaylist() {
     if (!listenerId) return;
     setPinLoading(true);
-
     try {
       const res = await fetch(
         `${API_BASE_URL}/listeners/${listenerId}/pinned-playlist`,
@@ -149,9 +151,9 @@ export default function PlaylistGrid({
       } else {
         alert(data.error || "Failed to pin playlist");
       }
-    } catch (err) {
-      console.error("Pin error:", err);
-      alert("Could not pin playlist.");
+      setPinnedId(null);
+    } catch (e) {
+      alert(e.message || "Could not unpin playlist.");
     } finally {
       setPinLoading(false);
     }
@@ -183,68 +185,65 @@ export default function PlaylistGrid({
           ))
         ) : (
           <>
-            {/* 💜 Always show Liked Songs */}
             {showLikedFallback && (
               <div className="pl pl--liked">
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
-                    {likedCount == null ? "—" : likedCount}{" "}
-                    {likedCount === 1 ? "song" : "songs"}
+                    {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
                   </span>
                 </div>
                 <div className="pl__coverWrap">
-                  <div
-                    className="pl__cover pl__cover--liked"
-                    role="img"
-                    aria-label="Liked Songs cover"
-                  />
+                  <div className="pl__cover pl__cover--liked" role="img" aria-label="Liked Songs cover" />
                 </div>
                 <h3 className="pl__title">Liked Songs</h3>
                 <div className="pl__by">
                   by <span className="pl__author">{authorName}</span>
                 </div>
                 <div className="pl__tracks">
-                  {likedCount == null ? "—" : likedCount}{" "}
-                  {likedCount === 1 ? "song" : "songs"}
+                  {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
                 </div>
               </div>
             )}
 
-            {/* 🎵 Show all playlists */}
             {hasPlaylists ? (
-              playlists.map((p) => {
+              playlists.map(p => {
                 const tracks = Number(p.TrackCount) || 0;
                 const title = p.Name ?? "Untitled Playlist";
-                const coverUrl =
-                  p.CoverURL ||
-                  "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
+                const coverUrl = p.CoverURL || "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
                 const isPinned = pinnedId === p.PlaylistID;
+                const isPublic = Number(p.IsPublic) === 1;
 
                 return (
-                  <div
-                    className={`pl ${isPinned ? "pl--pinned" : ""}`}
-                    key={p.PlaylistID}
-                  >
-                    {/* 📌 Pin */}
-                    <button
-                      className={`pl__pinBtn ${isPinned ? "active" : ""}`}
-                      title={isPinned ? "Pinned to profile" : "Pin to profile"}
-                      disabled={pinLoading}
-                      onClick={() => handlePin(p.PlaylistID)}
-                    >
-                      📌
-                    </button>
+                  <div className={`pl ${isPinned ? "pl--pinned" : ""}`} key={p.PlaylistID}>
+                    <div className="pl__pinRow">
+                      {!isPinned ? (
+                        <button
+                          className="pl__pinBtn"
+                          title="Pin to profile"
+                          disabled={pinLoading || !isPublic}
+                          onClick={() => pinPlaylist(p.PlaylistID)}
+                        >
+                          📌 Pin
+                        </button>
+                      ) : (
+                        <button
+                          className="pl__pinBtn pl__pinBtn--active"
+                          title="Unpin from profile"
+                          disabled={pinLoading}
+                          onClick={unpinPlaylist}
+                        >
+                          ✖ Unpin
+                        </button>
+                      )}
+                    </div>
 
-                    {/* ⋯ Dropdown */}
                     <div className="playlistOptions">
                       <button
                         className="playlistOptionsBtn"
-                        onClick={(e) => {
+                        onClick={e => {
                           e.stopPropagation();
-                          setOpenMenuId(
-                            openMenuId === p.PlaylistID ? null : p.PlaylistID
-                          );
+                          setOpenMenuId(openMenuId === p.PlaylistID ? null : p.PlaylistID);
                         }}
                       >
                         ⋯
@@ -252,16 +251,10 @@ export default function PlaylistGrid({
 
                       {openMenuId === p.PlaylistID && (
                         <div className="playlistDropdown">
-                          <button
-                            className="dropdownItem"
-                            onClick={() => handleEdit(p.PlaylistID)}
-                          >
+                          <button className="dropdownItem" onClick={() => handleEdit(p.PlaylistID)}>
                             ✏️ Edit
                           </button>
-                          <button
-                            className="dropdownItem delete"
-                            onClick={() => handleDelete(p.PlaylistID)}
-                          >
+                          <button className="dropdownItem delete" onClick={() => handleDelete(p.PlaylistID)}>
                             🗑️ Delete
                           </button>
                         </div>

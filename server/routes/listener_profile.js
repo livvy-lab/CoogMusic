@@ -83,7 +83,7 @@ export async function handleListenerProfile(req, res) {
     if (listener.PinnedPlaylistID) {
       try {
         const [pp] = await db.query(
-          `SELECT p.PlaylistID, p.PlaylistName AS Name, p.Description
+          `SELECT p.PlaylistID, p.Name AS Name, p.Description
              FROM Playlist p
             WHERE p.PlaylistID = ? AND p.IsDeleted = 0`,
           [listener.PinnedPlaylistID]
