@@ -80,3 +80,53 @@
     }
   }
   
+.rs__artistLink {
+  color: var(--accent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.25s ease, text-shadow 0.25s ease;
+}
+
+.rs__artistLink:hover {
+  color: var(--stroke);
+  text-shadow: 0 0 6px rgba(137, 86, 116, 0.35);
+  text-decoration: underline;
+}
+
+.rs__artistText {
+  color: var(--accent);
+  opacity: 0.85;
+  font-size: clamp(11px, 1.1vw, 13px);
+}
+
+.rs__meta {
+  margin-top: 4px;
+  text-align: center;
+}
+
+.rs__item {
+  cursor: pointer;
+}
+
+/* in RecommendedSongs.css */
+.rs__actions {
+  display: flex;
+  justify-content: center; /* or flex-end if you want right-aligned */
+  gap: 8px;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
+
+.songActions { display: inline-flex; gap: 8px; }
+.songActions__btn {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;   /* small icons */
+  cursor: pointer;
+  color: var(--stroke);
+  transition: transform .2s ease, color .2s ease;
+}
+.songActions__btn:hover { transform: scale(1.1); color: var(--accent); }
+.songActions__btn.is-on { color: var(--accent); }

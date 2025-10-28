@@ -3,6 +3,13 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 const Ctx = createContext(null);
 
+function getListenerId() {
+  try {
+    const u = JSON.parse(localStorage.getItem("user") || "null");
+    return u?.listenerId ?? u?.ListenerID ?? null;
+  } catch { return null; }
+}
+
 export function PlayerProvider({ children }) {
   const audioRef = useRef(null);
 
@@ -11,6 +18,34 @@ export function PlayerProvider({ children }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.8);
+
+  // NEW: track whether we've posted this session's play already
+  const postedRef = useRef(false);
+
+  async function postPlayIfPossible(msOverride) {
+    try {
+      const songId = current?.SongID;
+      const listenerId = getListenerId();
+      if (!songId || !listenerId) return;
+
+      const a = audioRef.current;
+      const msPlayed = typeof msOverride === "number"
+        ? msOverride
+        : Math.round((a?.currentTime || 0) * 1000);
+
+      if (msPlayed <= 0) return;
+
+      // avoid duplicate double-post on both pause and ended
+      if (postedRef.current) return;
+      postedRef.current = true;
+
+      await fetch(`${API_BASE}/plays`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ songId, listenerId, msPlayed }),
+      });
+    } catch {/* ignore */}
+  }
 
   useEffect(() => {
     const a = audioRef.current;
@@ -25,8 +60,16 @@ export function PlayerProvider({ children }) {
     function onLoaded() { setDuration(a.duration || 0); }
     function onTime() { setCurrentTime(a.currentTime || 0); }
     function onPlay() { setPlaying(true); }
-    function onPause() { setPlaying(false); }
-    function onEnd() { setPlaying(false); }
+    function onPause() {
+      setPlaying(false);
+      // try to record a partial play if paused after >0s
+      postPlayIfPossible();
+    }
+    function onEnd() {
+      setPlaying(false);
+      // record the play at the end
+      postPlayIfPossible();
+    }
 
     a.addEventListener("loadedmetadata", onLoaded);
     a.addEventListener("timeupdate", onTime);
@@ -40,7 +83,7 @@ export function PlayerProvider({ children }) {
       a.removeEventListener("pause", onPause);
       a.removeEventListener("ended", onEnd);
     };
-  }, []);
+  }, [current]); // rebind when track changes
 
   async function playSong(song) {
     const id = song?.SongID || song?.songId;
@@ -48,6 +91,10 @@ export function PlayerProvider({ children }) {
     const r = await fetch(`${API_BASE}/songs/${id}/stream`);
     if (!r.ok) return;
     const data = await r.json();
+
+    // reset "posted" flag for this new track session
+    postedRef.current = false;
+
     setCurrent({
       SongID: data.songId,
       Title: data.title,

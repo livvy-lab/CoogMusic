@@ -2,11 +2,15 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { usePlayer } from "../../context/PlayerContext";
+import { useFavPins } from "../../context/FavoritesPinsContext";
+import SongActions from "../Songs/SongActions";                    // ✅ actions UI
 import "./SongGrid.css";
 
 export default function SongGrid() {
   const { genreId } = useParams();
   const { playSong } = usePlayer();
+  const { setVisibleIds } = useFavPins?.() || { setVisibleIds: () => {} }; // tolerate missing provider
+
   const [songs, setSongs] = useState([]);
   const [genreName, setGenreName] = useState("Loading...");
   const [loading, setLoading] = useState(true);
@@ -19,11 +23,7 @@ export default function SongGrid() {
         setLoading(true);
         setError("");
         const res = await fetch(`http://localhost:3001/genres/${encodeURIComponent(genreId)}/songs`);
-        if (res.status === 404) {
-          setSongs([]);
-          setGenreName("Unknown Genre");
-          return;
-        }
+        if (res.status === 404) { setSongs([]); setGenreName("Unknown Genre"); return; }
         if (!res.ok) throw new Error();
         const data = await res.json();
         const list = Array.isArray(data.songs) ? data.songs : [];
@@ -40,6 +40,11 @@ export default function SongGrid() {
     }
     if (genreId) fetchSongs();
   }, [genreId]);
+
+  // ✅ hydrate visible IDs for context status (favorites/pins)
+  useEffect(() => {
+    setVisibleIds(songs.map(s => s.SongID).filter(Boolean));
+  }, [songs, setVisibleIds]);
 
   async function handlePlay(song) {
     await playSong(song);
@@ -60,32 +65,26 @@ export default function SongGrid() {
     } catch {}
   }
 
-  if (loading) {
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container">Loading songs...</div>
-      </section>
-    );
-  }
+  if (loading) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container">Loading songs...</div>
+    </section>
+  );
 
-  if (error) {
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container error">{error}</div>
-      </section>
-    );
-  }
+  if (error) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container error">{error}</div>
+    </section>
+  );
 
-  if (!songs.length) {
-    return (
-      <section className="songGrid">
-        <h2 className="songGrid__title">{genreName}</h2>
-        <div className="songGrid__container comingSoon">🎶 Coming Soon 🎶</div>
-      </section>
-    );
-  }
+  if (!songs.length) return (
+    <section className="songGrid">
+      <h2 className="songGrid__title">{genreName}</h2>
+      <div className="songGrid__container comingSoon">🎶 Coming Soon 🎶</div>
+    </section>
+  );
 
   return (
     <section className="songGrid">
@@ -97,7 +96,21 @@ export default function SongGrid() {
           const hasLinkedArtists = ids.length === names.length && ids.length > 0;
 
           return (
-            <button className="songCard" key={s.SongID} onClick={() => handlePlay(s)}>
+            // ⬇️ change wrapper to div so inner buttons can render/click
+            <div
+              className="songCard"
+              key={s.SongID}
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                if (e.target.closest && e.target.closest(".songActions")) return; // don't play when clicking actions
+                handlePlay(s);
+              }}
+              onKeyDown={(e) => {
+                if (e.target.closest && e.target.closest(".songActions")) return;
+                if (e.key === "Enter" || e.key === " ") handlePlay(s);
+              }}
+            >
               <div className="songCard__frame">
                 <img
                   src={`https://placehold.co/600x600/895674/fff?text=${encodeURIComponent(s.Title)}`}
@@ -120,8 +133,13 @@ export default function SongGrid() {
                 <div className="songCard__streams">
                   {streams[s.SongID] !== undefined ? `${streams[s.SongID]} streams` : "Click to play"}
                 </div>
+
+                {/* ✅ actions row */}
+                <div className="songCard__actionsRow">
+                  <SongActions songId={s.SongID} />
+                </div>
               </div>
-            </button>
+            </div>
           );
         })}
       </div>

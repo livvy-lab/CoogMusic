@@ -115,3 +115,6 @@
 .songCard__artist a:active {
   color: #5a1b45;             /* pressed state */
 }
+
+/* SongGrid.css */
+.songCard__actionsRow { margin-top: 8px; display: flex; justify-content: center; }

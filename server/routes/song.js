@@ -4,9 +4,8 @@ import { parse } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 0; // set to 30000 when you send real msPlayed
+const STREAM_MS_THRESHOLD = 0;
 
-// Configure S3 client
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -19,13 +18,33 @@ export async function handleSongRoutes(req, res) {
   const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
-  // Common SELECT (without Streams)
+  const SELECT_PRIMARY_ARTIST_ID = `
+    (
+      SELECT ar.ArtistID
+      FROM Song_Artist sa
+      JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
+      WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+      ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtistID
+      LIMIT 1
+    )
+  `;
+
+  const SELECT_PRIMARY_ARTIST_NAME = `
+    (
+      SELECT ar.ArtistName
+      FROM Song_Artist sa
+      JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
+      WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+      ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtID
+      LIMIT 1
+    )
+  `.replace("ar.ArtID","ar.ArtistID");
+
   const SELECT_CORE = `
     s.SongID,
     s.Title,
@@ -33,20 +52,16 @@ export async function handleSongRoutes(req, res) {
     s.ReleaseDate,
     s.GenreID,
     g.Name AS GenreName,
-    COALESCE(
-      GROUP_CONCAT(DISTINCT a.ArtistName ORDER BY a.ArtistName SEPARATOR ', '),
-      'Unknown Artist'
-    ) AS ArtistName
+    ${SELECT_PRIMARY_ARTIST_ID} AS ArtistID,
+    COALESCE(${SELECT_PRIMARY_ARTIST_NAME}, 'Unknown Artist') AS ArtistName
   `;
 
-  // SELECT that also includes Streams from Play
   const SELECT_WITH_STREAMS = `
     ${SELECT_CORE},
     COALESCE(COUNT(p.PlayID), 0) AS Streams
   `;
 
   try {
-    // GET /songs/latest?limit=10  (now includes Streams)
     if (pathname === "/songs/latest" && method === "GET") {
       const limit =
         Number.isInteger(Number(query?.limit)) && Number(query.limit) > 0
@@ -58,8 +73,6 @@ export async function handleSongRoutes(req, res) {
         SELECT ${SELECT_WITH_STREAMS}
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
-        LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-        LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
         LEFT JOIN Play p
           ON p.SongID = s.SongID
          AND p.IsDeleted = 0
@@ -77,7 +90,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // GET /songs or /songs?genreId=10 (now includes Streams)
     if (pathname === "/songs" && method === "GET") {
       const genreId = query?.genreId ? Number(query.genreId) : null;
 
@@ -87,8 +99,6 @@ export async function handleSongRoutes(req, res) {
           SELECT ${SELECT_WITH_STREAMS}
           FROM Song s
           JOIN Genre g ON g.GenreID = s.GenreID
-          LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-          LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
           LEFT JOIN Play p
             ON p.SongID = s.SongID
            AND p.IsDeleted = 0
@@ -108,8 +118,6 @@ export async function handleSongRoutes(req, res) {
           SELECT ${SELECT_WITH_STREAMS}
           FROM Song s
           LEFT JOIN Genre g ON g.GenreID = s.GenreID
-          LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-          LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
           LEFT JOIN Play p
             ON p.SongID = s.SongID
            AND p.IsDeleted = 0
@@ -126,15 +134,12 @@ export async function handleSongRoutes(req, res) {
       }
     }
 
-    // GET /songs/with_streams (all songs w/ Streams, genre-agnostic)
     if (pathname === "/songs/with_streams" && method === "GET") {
       const [rows] = await db.query(
         `
         SELECT ${SELECT_WITH_STREAMS}
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
-        LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-        LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
         LEFT JOIN Play p
           ON p.SongID = s.SongID
          AND p.IsDeleted = 0
@@ -150,7 +155,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // GET /songs/:id (details)  (unchanged, no Streams needed here)
     if (/^\/songs\/\d+$/.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
       const [rows] = await db.query(
@@ -158,8 +162,6 @@ export async function handleSongRoutes(req, res) {
         SELECT ${SELECT_CORE}, m.url AS AudioURL
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
-        LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-        LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
         LEFT JOIN Media m ON m.MediaID = s.audio_media_id
         WHERE s.SongID = ? AND s.IsDeleted = 0
         GROUP BY s.SongID
@@ -178,18 +180,23 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // GET /songs/:id/stream  (unchanged)
     if (/^\/songs\/\d+\/stream\/?$/.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
 
       const [rows] = await db.query(
         `
         SELECT s.SongID, s.Title,
-               COALESCE(GROUP_CONCAT(DISTINCT a.ArtistName SEPARATOR ', '), 'Unknown Artist') AS ArtistName,
+               COALESCE(
+                 (
+                   SELECT GROUP_CONCAT(DISTINCT ar.ArtistName SEPARATOR ', ')
+                   FROM Song_Artist sa
+                   JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
+                   WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+                 ),
+                 'Unknown Artist'
+               ) AS ArtistName,
                m.bucket, m.s3_key, m.mime
         FROM Song s
-        LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-        LEFT JOIN Artist a ON a.ArtistID = sa.ArtistID AND COALESCE(a.IsDeleted,0)=0
         JOIN Media m ON m.MediaID = s.audio_media_id
         WHERE s.SongID = ? AND s.IsDeleted = 0
         GROUP BY s.SongID
@@ -220,7 +227,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // POST /songs (unchanged)
     if (pathname === "/songs" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
@@ -279,7 +285,6 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // PUT /songs/:id (unchanged)
     if (pathname.startsWith("/songs/") && method === "PUT") {
       const id = pathname.split("/")[2];
       let body = "";
@@ -296,39 +301,20 @@ export async function handleSongRoutes(req, res) {
 
             if (key === "DurationSeconds") {
               const d = Number(value);
-              if (!Number.isInteger(d) || d < 0) {
-                res.writeHead(400, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" }));
-                return;
-              }
-              updates.push(`${key} = ?`);
-              params.push(d);
+              if (!Number.isInteger(d) || d < 0) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" })); return; }
+              updates.push(`${key} = ?`); params.push(d);
             } else if (key === "GenreID") {
               const gid = Number(value);
-              if (!Number.isInteger(gid) || gid <= 0) {
-                res.writeHead(400, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
-                return;
-              }
+              if (!Number.isInteger(gid) || gid <= 0) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "GenreID must be a positive integer" })); return; }
               const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [gid]);
-              if (!g.length) {
-                res.writeHead(400, { "Content-Type": "application/json" });
-                res.end(JSON.stringify({ error: "GenreID does not exist" }));
-                return;
-              }
-              updates.push(`GenreID = ?`);
-              params.push(gid);
+              if (!g.length) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "GenreID does not exist" })); return; }
+              updates.push(`GenreID = ?`); params.push(gid);
             } else {
-              updates.push(`${key} = ?`);
-              params.push(value ?? null);
+              updates.push(`${key} = ?`); params.push(value ?? null);
             }
           }
 
-          if (!updates.length) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "No valid fields provided to update" }));
-            return;
-          }
+          if (!updates.length) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "No valid fields provided to update" })); return; }
 
           params.push(id);
           const [result] = await db.query(
@@ -336,11 +322,7 @@ export async function handleSongRoutes(req, res) {
             params
           );
 
-          if (!result.affectedRows) {
-            res.writeHead(404, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Song not found" }));
-            return;
-          }
+          if (!result.affectedRows) { res.writeHead(404, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "Song not found" })); return; }
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ SongID: id, message: "Song updated successfully" }));
@@ -352,15 +334,10 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    // DELETE /songs/:id (unchanged)
     if (pathname.startsWith("/songs/") && method === "DELETE") {
       const id = pathname.split("/")[2];
       const [result] = await db.query(`UPDATE Song SET IsDeleted = 1 WHERE SongID = ?`, [id]);
-      if (!result.affectedRows) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Song not found or already deleted" }));
-        return;
-      }
+      if (!result.affectedRows) { res.writeHead(404, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "Song not found or already deleted" })); return; }
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Song soft deleted successfully" }));
       return;
