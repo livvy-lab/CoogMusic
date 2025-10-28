@@ -105,6 +105,7 @@ export default function AlbumForm() {
       albumFormData.append("title", formData.title);
       albumFormData.append("artistId", formData.artistId);
       albumFormData.append("description", formData.description);
+      albumFormData.append("genres", JSON.stringify(formData.genres)); // Send genres as JSON
       if (formData.releaseDate) {
         albumFormData.append("releaseDate", formData.releaseDate);
       }
