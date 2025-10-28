@@ -8,7 +8,7 @@ const TABS = ["All", "Artists", "Albums", "Playlists", "Songs", "Profiles"];
 
 const linkFor = {
   song: (r) => "#",
-  artist: (r) => `/artist?artistId=${r.id}`,
+  artist: (r) => `/artist/${r.id}`,
   album: (r) => "#",
   playlist: (r) => `/playlist/${r.id}`,
   listener: (r) => `/listeners/${r.id}`,
