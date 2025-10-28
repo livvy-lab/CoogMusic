@@ -6,7 +6,7 @@ function json(res, status, body) {
 }
 
 export async function handleArtistRoutes(req, res) {
-  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
   try {
