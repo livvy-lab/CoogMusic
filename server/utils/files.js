@@ -40,7 +40,13 @@ function isAllowedMime(mime, allowed) {
   if (!allowed || allowed.length === 0) return true;
   if (!mime) return false;
   if (allowed.includes(mime)) return true;
-  if (allowed.includes("audio/*") && mime.startsWith("audio/")) return true;
+  // Support wildcard types like image/*, audio/*, video/*, application/*
+  for (const a of allowed) {
+    if (typeof a === "string" && a.endsWith("/*")) {
+      const prefix = a.slice(0, a.indexOf("/"));
+      if (mime.startsWith(prefix + "/")) return true;
+    }
+  }
   return false;
 }
 
@@ -55,8 +61,8 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
     minFileSize: 1,
     maxFileSize: maxMB * 1024 * 1024,
 
-    // Keep only audio file fields; allow other text fields
-    filter: ({ name }) => name === "audio" || name === "file" || name === "upload",
+  // Keep only certain file fields; allow other text fields
+  filter: ({ name }) => name === "audio" || name === "file" || name === "upload" || name === "adFile",
 
     // Preserve the original extension; add a timestamp to avoid collisions
     filename: (name, ext, part) => {
@@ -78,11 +84,12 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
         fields[k] = Array.isArray(v) ? v[0] : v;
       }
 
-      // accept common keys: audio / file / upload
+      // accept common keys: audio / file / upload / adFile
       const f =
         pickFirst(filesRaw?.audio) ||
         pickFirst(filesRaw?.file) ||
-        pickFirst(filesRaw?.upload);
+        pickFirst(filesRaw?.upload) ||
+        pickFirst(filesRaw?.adFile);
 
       if (!f) return resolve({ fields, files: {} });
 
