@@ -27,6 +27,36 @@
   transform: translateX(0);
 }
 
+/* Push logout to bottom */
+.nav {
+  display: flex;
+  flex-direction: column;
+}
+
+.navSection--logout {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 218, 240, 0.1);
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  color: #FFDAF0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.logoutBtn:hover {
+  background: rgba(255, 218, 240, 0.1);
+}
+
+
 /* Navigation brand / header area */
 .navBrand {
   display: flex;

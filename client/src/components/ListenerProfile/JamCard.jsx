@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useFavPins } from "../../context/FavoritesPinsContext";
 import "./JamCard.css";
 
 export default function JamCard({ listenerId }) {
@@ -6,6 +7,10 @@ export default function JamCard({ listenerId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError]   = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  // Listen for pin changes so the Current Jam updates immediately
+  const favCtx = useFavPins?.() || {};
+  const pinnedSongId = favCtx.pinnedSongId ?? null;
 
   const fallbackCover = "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
 
@@ -18,19 +23,29 @@ export default function JamCard({ listenerId }) {
       return;
     }
 
+    // Fetch profile (includes favorites.pinnedSong). We re-run when listenerId
+    // or the global pinnedSongId changes so the UI stays in sync after pin ops.
     (async () => {
       try {
+        setLoading(true);
+        setError(null);
         const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setSong(data.favorites?.pinnedSong || null);
       } catch (e) {
         setError(e.message);
+        setSong(null);
       } finally {
         setLoading(false);
       }
     })();
-  }, [listenerId]);
+  }, [listenerId, pinnedSongId]);
+
+  // Re-fetch when the pinned song changes globally — include pinnedSongId as
+  // a dependency so the effect above triggers. (We intentionally don't dedupe
+  // the fetch here; the [listenerId, pinnedSongId] dependency set above will
+  // cause the effect to re-run when pinnedSongId changes.)
 
   const handleTogglePlay = () => setIsPlaying(p => !p);
 
