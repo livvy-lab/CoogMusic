@@ -48,13 +48,15 @@ export default function NavigationBar() {
           <Link className="navLink" to="/me/playlists" onClick={() => setOpen(false)}>🎧 Playlists</Link>
         </nav>
 
-        {isArtist && (
-          <nav className="navSection">
-            <div className="navTitle">Artist</div>
-            <Link className="navLink" to="/my-ads" onClick={() => setOpen(false)}>📢 My Ads</Link>
-            <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
-          </nav>
-        )}
+				{isArtist && (
+					<nav className="navSection">
+						<div className="navTitle">Artist</div>
+						<Link className="navLink" to="/my-ads" onClick={() => setOpen(false)}>📢 My Ads</Link>
+						<Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
+						<Link className="navLink" to="/upload/song" onClick={() => setOpen(false)}>🎵 Upload Song</Link>
+						<Link className="navLink" to="/upload/album" onClick={() => setOpen(false)}>💿 Create Album</Link>
+					</nav>
+				)}
 
         {/* Logout Section - Always at bottom */}
         <nav className="navSection navSection--logout">
