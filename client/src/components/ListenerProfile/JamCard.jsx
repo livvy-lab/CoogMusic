@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import "./JamCard.css";
+import { usePlayer } from "../../context/PlayerContext"; // adjust path if needed
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+const FALLBACK_COVER =
+  "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
 
 export default function JamCard({ listenerId }) {
   const [song, setSong] = useState(null);
@@ -16,7 +21,7 @@ export default function JamCard({ listenerId }) {
 
   useEffect(() => {
     const stored = JSON.parse(localStorage.getItem("user") || "null");
-    const id = listenerId || stored?.listenerId;
+    const id = listenerId || stored?.listenerId || stored?.ListenerID;
     if (!id) {
       setError("No listener ID found");
       setLoading(false);
@@ -32,7 +37,10 @@ export default function JamCard({ listenerId }) {
         const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        setSong(data.favorites?.pinnedSong || null);
+
+        // Expecting favorites.pinnedSong to include at least { SongID, Title, Artists, CoverURL }
+        const pinned = data?.favorites?.pinnedSong || null;
+        setSong(pinned);
       } catch (e) {
         setError(e.message);
         setSong(null);
@@ -61,16 +69,9 @@ export default function JamCard({ listenerId }) {
         <h3 className="jam__title">{title}</h3>
       </div>
 
-      {/* Volume button OUTSIDE album art */}
-      <button className="jam__volume" aria-label="Volume">🔊</button>
-
-      {/* Album art: always render an <img> to keep size */}
+      {/* Album art */}
       <div className="jam__artWrap">
-        <img
-          src={cover}
-          alt={`${track} cover`}
-          className="jam__cover"
-        />
+        <img src={cover} alt={`${track} cover`} className="jam__cover" />
       </div>
 
       {/* Song details */}
@@ -83,11 +84,11 @@ export default function JamCard({ listenerId }) {
       <div className="jam__controls">
         <button
           className="jam__control jam__play"
-          onClick={handleTogglePlay}
-          aria-label={isPlaying ? "Pause" : "Play"}
+          onClick={onPlayClick}
+          aria-label={isShowingPause ? "Pause" : "Play"}
           disabled={!song || !!error || loading}
         >
-          {isPlaying ? "⏸" : "▶️"}
+          {isShowingPause ? "⏸" : "▶️"}
         </button>
       </div>
     </aside>

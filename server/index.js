@@ -31,14 +31,11 @@ import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.
 import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
-//import { handlePfpRoutes } from "./routes/pfp.js";
-//import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleSetArtistAvatar } from "./routes/avatar_artist.js";
-import { handleLikesPinRoutes } from "./routes/likes_pins.js";
-
+import { handleLikesPins } from "./routes/likes_pins.js"; // ✅ unified likes & pins
 import { handleMediaRoutes } from "./routes/media.js";
 import { handleSearchRoutes } from "./routes/search.js";
 
@@ -61,6 +58,9 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    // ───────────────────────────────────────────────
+    // Serve static uploads
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/uploads/")) {
       const filePath = path.join(path.resolve("."), "server", pathname.replace("/uploads/", "uploads/"));
       if (fs.existsSync(filePath)) {
@@ -74,50 +74,78 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // ───────────────────────────────────────────────
+    // Uploads & Media endpoints
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
     if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
-    // 2) Media routes (/media, /songs/:id/cover, /albums/:id/cover)
+
     if (pathname === "/media" || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
       await handleMediaRoutes(req, res);
       return;
     }
 
-    // 3) Upload endpoints (/upload/album, /upload/song) — handle ONLY /upload/*
-    if (pathname.startsWith("/upload/")) {
-      await handleUploadRoutes(req, res);
-      return;
-    }
-
+    // ───────────────────────────────────────────────
+    // Avatar endpoints
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
       const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) { res.writeHead(400, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "invalid_listener_id" })); return; }
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_listener_id" }));
+        return;
+      }
       await handleSetListenerAvatar(req, res, Number(id));
       return;
     }
 
     if (pathname.startsWith("/artists/") && pathname.endsWith("/avatar")) {
       const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) { res.writeHead(400, { "Content-Type": "application/json" }); res.end(JSON.stringify({ error: "invalid_artist_id" })); return; }
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_artist_id" }));
+        return;
+      }
       await handleSetArtistAvatar(req, res, Number(id));
       return;
     }
 
+    // ───────────────────────────────────────────────
+    // Listener + Artist profile routes
+    // ───────────────────────────────────────────────
     if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
     if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
     if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
+
+    // ───────────────────────────────────────────────
+    // Plays + Login
+    // ───────────────────────────────────────────────
     if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
     if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
 
-    if (pathname.startsWith("/songs/status") || pathname.startsWith("/likes") || pathname.startsWith("/pin")) {
-      await handleLikesPinRoutes(req, res); return;
+    // ───────────────────────────────────────────────
+    // Likes + Pins (songs + artists join table)
+    // ───────────────────────────────────────────────
+    if (
+      pathname.startsWith("/songs/status") ||
+      pathname.startsWith("/likes") ||
+      pathname.startsWith("/pin") || // legacy song pin
+      /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
+      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)            // ✅ add this
+    ) {
+      await handleLikesPins(req, res);
+      return;
     }
+    
 
-    // 5.5) Search (place before generic resource routers)
-    if (pathname.startsWith("/search")) {
-      await handleSearchRoutes(req, res); return;
-    }
+    // ───────────────────────────────────────────────
+    // Search
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/search")) { await handleSearchRoutes(req, res); return; }
 
-    // 6) Resource routers (prefix checks)
+    // ───────────────────────────────────────────────
+    // Resource routers
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
     if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
@@ -145,12 +173,17 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/analytics/artist")) { await handleArtistAnalyticsRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/listener")) { await handleListenerAnalyticsRoutes(req, res); return; }
 
+    // ───────────────────────────────────────────────
+    // Fallback
+    // ───────────────────────────────────────────────
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
+
   } catch (e) {
+    console.error("Server error:", e);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Server error" }));
   }
 });
 
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

@@ -1,6 +1,6 @@
-// client/src/components/ArtistCard/ArtistCard.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./ArtistCard.css";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 function PlaceholderCard() {
   return (
@@ -24,6 +24,13 @@ export default function ArtistCard({ artistId }) {
   const [favorited, setFavorited] = useState(false);
   const [state, setState] = useState({ loading: false, notFound: false });
 
+  const listenerId = useMemo(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("user") || "null");
+      return u?.listenerId ?? u?.ListenerID ?? null;
+    } catch { return null; }
+  }, []);
+
   useEffect(() => {
     if (artistId === undefined || artistId === null || Number.isNaN(Number(artistId))) {
       setArtist(null);
@@ -34,10 +41,10 @@ export default function ArtistCard({ artistId }) {
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const res = await fetch(`http://localhost:3001/artists/${artistId}/profile`, { signal: ctrl.signal });
-        if (res.status === 404) { setArtist(null); setState({ loading: false, notFound: true }); return; }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const r = await fetch(`${API_BASE}/artists/${artistId}/profile`, { signal: ctrl.signal });
+        if (r.status === 404) { setArtist(null); setState({ loading: false, notFound: true }); return; }
+        if (!r.ok) throw new Error();
+        const data = await r.json();
         setArtist(data);
         setState({ loading: false, notFound: false });
       } catch {
@@ -47,6 +54,36 @@ export default function ArtistCard({ artistId }) {
     })();
     return () => ctrl.abort();
   }, [artistId]);
+
+  useEffect(() => {
+    if (!listenerId || !artistId) return;
+    let alive = true;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`);
+        if (!r.ok) return;
+        const pins = await r.json();
+        if (!alive) return;
+        setFavorited(pins.some(p => Number(p.ArtistID) === Number(artistId)));
+      } catch {}
+    })();
+    return () => { alive = false; };
+  }, [listenerId, artistId]);
+
+  async function togglePin() {
+    if (!listenerId || !artistId) return;
+    if (!favorited) {
+      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistId: Number(artistId) })
+      });
+      if (r.ok) setFavorited(true);
+    } else {
+      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists/${artistId}`, { method: "DELETE" });
+      if (r.ok) setFavorited(false);
+    }
+  }
 
   if (state.loading) return <div className="artistCard">Loading…</div>;
   if (state.notFound) return <PlaceholderCard />;
@@ -71,8 +108,9 @@ export default function ArtistCard({ artistId }) {
       <button
         type="button"
         className={`artistCard__fav${favorited ? " is-active" : ""}`}
-        onClick={() => setFavorited(!favorited)}
-        aria-label={favorited ? "Unfavorite artist" : "Favorite artist"}
+        onClick={togglePin}
+        aria-label={favorited ? "Unpin artist" : "Pin artist"}
+        title={favorited ? "Unpin" : "Pin to profile"}
       >
         <svg viewBox="0 0 24 24" className="artistCard__favIcon" xmlns="http://www.w3.org/2000/svg">
           <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" fill="currentColor" />
