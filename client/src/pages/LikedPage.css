@@ -129,7 +129,7 @@
 /* 🎯 move each one manually — adjust these left: values as needed */
 .likedTableHeader .th-num   { left: 55px; }     /* # */
 .likedTableHeader .th-heart { left: 90px; }    /* ♥ */
-.likedTableHeader .th-title { left: 210px; }    /* Title */
+.likedTableHeader .th-title { left: 190px; }    /* Title */
 .likedTableHeader .th-album { left: 550px; }    /* Album */
 .likedTableHeader .th-date  { left: 768px; }    /* Date Added */
 .likedTableHeader .th-dur   { left: 1107px; }   /* Clock icon */

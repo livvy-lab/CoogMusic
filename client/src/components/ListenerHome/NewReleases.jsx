@@ -1,13 +1,19 @@
-// client/src/components/NewReleases/NewReleases.jsx
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import "./NewReleases.css";
 import { usePlayer } from "../../context/PlayerContext.jsx";
+import { useFavPins } from "../../context/FavoritesPinsContext";
+import SongActions from "../Songs/SongActions";
+
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 export default function NewReleases({ title = "New releases" }) {
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
   const railRef = useRef(null);
   const { playSong } = usePlayer();
+  const favCtx = useFavPins() || {};
+  const setVisibleIds = favCtx.setVisibleIds ?? (() => {});
 
   const scrollByPage = (dir) => {
     const rail = railRef.current;
@@ -19,7 +25,7 @@ export default function NewReleases({ title = "New releases" }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("http://localhost:3001/songs/latest?limit=10");
+        const res = await fetch(`${API_BASE}/songs/latest?limit=10`);
         const data = await res.json();
         setSongs(Array.isArray(data) ? data : []);
       } catch {
@@ -30,10 +36,15 @@ export default function NewReleases({ title = "New releases" }) {
     })();
   }, []);
 
+  useEffect(() => {
+    const ids = (songs || []).map(s => s.SongID).filter(Boolean);
+    setVisibleIds(ids);
+  }, [songs]);
+
   async function resolveUrl(song) {
-    if (song?.url) return song.url; // if backend already includes it
+    if (song?.url) return song.url;
     try {
-      const r = await fetch(`http://localhost:3001/songs/${encodeURIComponent(song.SongID)}/stream`);
+      const r = await fetch(`${API_BASE}/songs/${encodeURIComponent(song.SongID)}/stream`);
       if (!r.ok) return null;
       const j = await r.json();
       return j?.url ?? null;
@@ -42,13 +53,13 @@ export default function NewReleases({ title = "New releases" }) {
     }
   }
 
-  async function handlePlayCard(song) {
+  async function handlePlay(song) {
     const url = await resolveUrl(song);
     if (!url) return;
     playSong({
       SongID: song.SongID,
       Title: song.Title,
-      ArtistName: song.ArtistName || "Unknown Artist",
+      ArtistName: song.ArtistName || song.Artist || "Unknown Artist",
       url,
       DurationSeconds: song.DurationSeconds ?? undefined,
     });
@@ -56,12 +67,18 @@ export default function NewReleases({ title = "New releases" }) {
 
   const totalSlots = 10;
   const realCards = songs.map((s) => ({
-    key: s.SongID,
+    key: String(s.SongID ?? s.songId ?? `${s.Title}-${s.ArtistID ?? s.artistId ?? Math.random()}`),
     song: s,
-    img: "https://placehold.co/600x600/AF578A/ffffff?text=" + encodeURIComponent(s.Title || "Song"),
+    img:
+      s.coverUrl ||
+      `https://placehold.co/600x600/AF578A/ffffff?text=${encodeURIComponent(s.Title || "Song")}`,
     alt: s.Title || "Song",
+    title: s.Title || "Untitled",
+    artistName: s.ArtistName || s.artistName || s.Artist || "Unknown Artist",
+    artistId: s.ArtistID ?? s.artistId ?? s.ArtistId ?? null,
     placeholder: false,
   }));
+
   const placeholders = Array(Math.max(0, totalSlots - realCards.length))
     .fill(null)
     .map((_, i) => ({
@@ -69,39 +86,88 @@ export default function NewReleases({ title = "New releases" }) {
       song: null,
       img: "https://placehold.co/600x600/FFE8F5/895674?text=Coming+Soon",
       alt: "Coming Soon",
+      title: "Coming Soon",
+      artistName: "—",
+      artistId: null,
       placeholder: true,
     }));
+
   const cards = loading ? [] : [...realCards, ...placeholders];
 
   return (
-    <section className="newRel">
+    <section className="newRel newRel--polaroid">
       <h2 className="newRel__title">{title}</h2>
 
       <div className="newRel__rail" ref={railRef}>
         {loading ? (
-          Array(5).fill(0).map((_, i) => (
-            <div className="newRel__card placeholder" key={`sk-${i}`}>
-              <img
-                className="newRel__img"
-                src="https://placehold.co/600x600/f4d6e6/ffffff?text=Loading..."
-                alt="Loading"
-              />
-            </div>
-          ))
+          Array(5)
+            .fill(0)
+            .map((_, i) => (
+              <div className="newRel__card placeholder" key={`sk-${i}`}>
+                <img
+                  className="newRel__img"
+                  src="https://placehold.co/600x600/f4d6e6/ffffff?text=Loading..."
+                  alt="Loading"
+                />
+                <div className="newRel__meta">
+                  <div className="newRel__song">Loading…</div>
+                  <div className="newRel__artist"> </div>
+                </div>
+              </div>
+            ))
         ) : (
           cards.map((c) => (
             <div
               className={`newRel__card ${c.placeholder ? "placeholder" : ""}`}
               key={c.key}
-              onClick={() => c.song && handlePlayCard(c.song)}
-              role={c.placeholder ? undefined : "button"}
+              role={c.placeholder ? undefined : "group"}
               tabIndex={c.placeholder ? -1 : 0}
-              onKeyDown={(e) => {
-                if (!c.song) return;
-                if (e.key === "Enter" || e.key === " ") handlePlayCard(c.song);
-              }}
             >
-              <img className="newRel__img" src={c.img} alt={c.alt} />
+              <img
+                className="newRel__img"
+                src={c.img}
+                alt={c.alt}
+                onClick={() => c.song && handlePlay(c.song)}
+                onKeyDown={(e) => {
+                  if (!c.song) return;
+                  if (e.key === "Enter" || e.key === " ") handlePlay(c.song);
+                }}
+                role={c.placeholder ? undefined : "button"}
+                tabIndex={c.placeholder ? -1 : 0}
+                aria-label={c.song ? `Play ${c.title} by ${c.artistName}` : undefined}
+              />
+
+              <div className="newRel__meta">
+                <div
+                  className="newRel__song"
+                  onClick={() => c.song && handlePlay(c.song)}
+                  onKeyDown={(e) => {
+                    if (!c.song) return;
+                    if (e.key === "Enter" || e.key === " ") handlePlay(c.song);
+                  }}
+                  role={c.placeholder ? undefined : "button"}
+                  tabIndex={c.placeholder ? -1 : 0}
+                >
+                  {c.title}
+                </div>
+
+                {c.artistId ? (
+                  <Link
+                    to={`/artist/${c.artistId}`}
+                    className="newRel__artistLink"
+                  >
+                    {c.artistName}
+                  </Link>
+                ) : (
+                  <div className="newRel__artist">{c.artistName}</div>
+                )}
+              </div>
+
+              {!c.placeholder && (
+                <div className="newRel__actions">
+                  <SongActions songId={c.song.SongID} />
+                </div>
+              )}
             </div>
           ))
         )}

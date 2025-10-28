@@ -27,17 +27,18 @@ import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
 import MyAds from "./pages/MyAds";
 
-
 import { PlayerProvider } from "./context/PlayerContext";
+import { FavoritesPinsProvider } from "./context/FavoritesPinsContext"; // ✅ add this
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 
 export default function App() {
   return (
     <PlayerProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Redirect root to login */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+      <FavoritesPinsProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Redirect root to login */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
 
         {/* Auth */}
         <Route path="/login" element={<Login />} />
@@ -66,10 +67,10 @@ export default function App() {
           <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
           <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
 
-          {/* Song routes */}
-          <Route path="/song" element={<Song />} />
-          <Route path="/genres/:genreId" element={<Song />} />
-          <Route path="/genre/:genreId" element={<Song />} />
+            {/* Song routes */}
+            <Route path="/song" element={<Song />} />
+            <Route path="/genres/:genreId" element={<Song />} />
+            <Route path="/genre/:genreId" element={<Song />} />
 
           {/* Search routes */}
           <Route path="/search" element={<SearchResults />} />
@@ -79,7 +80,8 @@ export default function App() {
         </Routes>
       </BrowserRouter>
 
-      <MusicPlayBar />
+        <MusicPlayBar />
+      </FavoritesPinsProvider>
     </PlayerProvider>
   );
 }

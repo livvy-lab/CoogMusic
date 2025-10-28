@@ -15,39 +15,37 @@ export default function AboutBox({ artistId }) {
       return;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8000);
+    let mounted = true;
+    const ctrl = new AbortController();
 
     const fetchBio = async () => {
       try {
         setLoading(true);
         const res = await fetch(`http://localhost:3001/artists/${id}/about`, {
-          signal: controller.signal,
+          signal: ctrl.signal,
         });
-
-        if (res.status === 404) {
+        if (!res.ok) {
+          if (!mounted) return;
           setBio(FALLBACK_TEXT);
           return;
         }
-
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
         const data = await res.json();
-        const text = (data?.Bio ?? "").trim();
-        setBio(text || FALLBACK_TEXT);
+        const text = (data?.Bio || "").trim();
+        if (!mounted) return;
+        setBio(text.length ? text : FALLBACK_TEXT);
       } catch (err) {
-        console.error("[AboutBox] Failed to load artist bio:", err);
-        setBio(FALLBACK_TEXT);
+        if (err?.name !== "AbortError") {
+          if (mounted) setBio(FALLBACK_TEXT);
+        }
       } finally {
-        clearTimeout(timeout);
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchBio();
     return () => {
-      clearTimeout(timeout);
-      controller.abort();
+      mounted = false;
+      ctrl.abort();
     };
   }, [artistId]);
 

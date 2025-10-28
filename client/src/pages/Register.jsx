@@ -1,3 +1,4 @@
+// client/src/pages/Register.jsx
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Auth.css";
@@ -9,7 +10,6 @@ export default function Register() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ?role=artist or ?role=listener
   const params = new URLSearchParams(location.search);
   const roleParam = (params.get("role") || "").toLowerCase();
   const selectedAccountType = roleParam === "artist" ? "Artist" : "Listener";
@@ -60,54 +60,46 @@ export default function Register() {
 
       if (!regRes.ok || !regData?.success) {
         const msg = regData?.message || regData?.error || `HTTP ${regRes.status}`;
-        console.warn("[register] server error:", { status: regRes.status, raw, parsed: regData });
         alert(`Sign up failed: ${msg}`);
         setSubmitting(false);
         return;
       }
 
-      // derive account type & ids
       const accountTypeLower = String(regData.accountType || selectedAccountType).toLowerCase();
-      const artistId = regData.ArtistID ?? regData.artistId ?? null;
-      const listenerId = regData.listenerId ?? null;
+      const artistId = regData.ArtistID ?? regData.artistId ?? regData.id ?? null;
+      const listenerId = regData.ListenerID ?? regData.listenerId ?? regData.id ?? null;
 
-      // stash a minimal user snapshot for subsequent pages
       const snapshot = {
         username,
-        accountType: accountTypeLower,   // "artist" | "listener"
-        artistId: accountTypeLower === "artist" ? Number(artistId) || null : null,
-        listenerId: accountTypeLower === "listener" ? Number(listenerId) || null : null,
+        accountType: accountTypeLower,
+        artistId: accountTypeLower === "artist" ? (Number(artistId) || null) : null,
+        listenerId: accountTypeLower === "listener" ? (Number(listenerId) || null) : null,
       };
       localStorage.setItem("user", JSON.stringify(snapshot));
 
-      // optional avatar upload
       const entityId = accountTypeLower === "artist" ? artistId : listenerId;
+      const avatarPath = accountTypeLower === "artist" ? "artists" : "listeners";
+
       if (file && entityId) {
         const fd = new FormData();
         fd.append("file", file);
-        const upRes = await fetch(
-          `${API_BASE}/${accountTypeLower === "artist" ? "artists" : "listeners"}/${entityId}/avatar`,
-          { method: "POST", body: fd }
-        );
+        const upRes = await fetch(`${API_BASE}/${avatarPath}/${entityId}/avatar`, { method: "POST", body: fd });
         const upRaw = await upRes.text();
         let upData = {};
         try { upData = JSON.parse(upRaw); } catch {}
-        if (upRes.ok && upData?.url) {
+        if (upRes.ok && (upData?.url || upData?.signedUrl)) {
+          const url = upData.url || upData.signedUrl;
           const curr = JSON.parse(localStorage.getItem("user") || "{}");
-          localStorage.setItem("user", JSON.stringify({ ...curr, pfpUrl: upData.url }));
-        } else {
-          console.warn("[register] avatar upload failed:", { status: upRes.status, upRaw });
+          localStorage.setItem("user", JSON.stringify({ ...curr, pfpUrl: url }));
         }
       }
 
-      // ✅ Route based on account type
       if (accountTypeLower === "artist") {
         navigate("/upload", { replace: true });
       } else {
-        navigate("/login", { replace: true }); // or "/home" if you prefer
+        navigate("/login", { replace: true });
       }
     } catch (err) {
-      console.error("Error during sign-up:", err);
       alert("Sign up failed. Please ensure the API is running and try again.");
     } finally {
       setSubmitting(false);
@@ -169,10 +161,8 @@ export default function Register() {
 
           <div className="regActions">
             <button type="button" className="authBtn authBtnGhost" onClick={onCancel} disabled={submitting}>Cancel</button>
-
             <input id="pfpInput" className="fileInputHidden" type="file" accept="image/*" onChange={onFileChange} />
             <label htmlFor="pfpInput" className="authBtn authBtnChip fileBtn">profile pic</label>
-
             <button type="submit" className="authBtn authBtnPrimary" disabled={submitting}>
               {submitting ? "Signing Up…" : "Sign Up"}
             </button>

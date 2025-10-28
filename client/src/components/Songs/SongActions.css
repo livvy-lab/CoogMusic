@@ -1,0 +1,40 @@
+.songActions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  
+  /* base button style — transparent, no outline */
+  .songActions__btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 22px;
+    color: #af578a; /* matches your accent */
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+  
+  /* hover pop */
+  .songActions__btn:hover {
+    transform: scale(1.2);
+    color: #782355;
+  }
+  
+  /* active (clicked) */
+  .songActions__btn:active {
+    transform: scale(0.95);
+  }
+  
+  /* favorited/pinned "on" state */
+  .songActions__btn.is-on {
+    color: #782355; /* darker accent when active */
+  }
+  
+  /* make buttons more tappable on mobile */
+  @media (hover: none) {
+    .songActions__btn {
+      font-size: 26px;
+    }
+  }
+  
