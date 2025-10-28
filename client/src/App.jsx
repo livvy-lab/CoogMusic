@@ -58,7 +58,7 @@ export default function App() {
         <Route path="/playlist/:id" element={<PlaylistPage />} />
         <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
         <Route path="/subscription" element={<Subscription />} />
-        <Route path="/follows" element={<FollowsPage />} />
+        <Route path="/listeners/:id/follows" element={<FollowsPage />} />
         <Route path="/buy-ads" element={<BuyAds />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/playlists" element={<Playlists />} />

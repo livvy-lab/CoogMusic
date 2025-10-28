@@ -171,7 +171,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         });
         await checkFollowStatus();
       } catch (e) {
-        
+        // Optionally handle errors
       }
     } else {
       // Follow
@@ -188,7 +188,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         });
         await checkFollowStatus();
       } catch (e) {
-        
+        // Optionally handle errors
       }
     }
   };
@@ -226,14 +226,14 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         <p className="pc__bio">{listener.Bio || "No bio available."}</p>
         <div className="pc__stats">
           <button
-            onClick={() => navigate("/follows?tab=followers")}
+            onClick={() => navigate(`/listeners/${listenerId}/follows?tab=followers`)}
             aria-label="View followers"
             title="View followers"
           >
             {counts.followers} followers
           </button>
           <button
-            onClick={() => navigate("/follows?tab=following")}
+            onClick={() => navigate(`/listeners/${listenerId}/follows?tab=following`)}
             aria-label="View following"
             title="View following"
           >

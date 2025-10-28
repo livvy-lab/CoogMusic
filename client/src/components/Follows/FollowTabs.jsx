@@ -1,37 +1,52 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import UserRow from "./UserRow";
 import "./Follows.css";
 import { getUser } from "../../lib/userStorage";
 
 export default function FollowTabs() {
-  // Read active tab from URL query
+  const { id: viewedUserIdParam } = useParams();
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get("tab") || "followers";
 
-  const user = getUser();
-  const CURRENT_USER_ID = user.listenerId || user.artistId || user.accountId;
-  const CURRENT_USER_TYPE = user.accountType === "listener" ? "Listener" : "Artist";
+  const loggedInUser = getUser();
+  const isViewingOtherListener = Boolean(viewedUserIdParam);
+  const viewedUserId = isViewingOtherListener
+    ? viewedUserIdParam
+    : loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
+  const viewedUserType = isViewingOtherListener
+    ? "Listener"
+    : loggedInUser.accountType === "listener"
+    ? "Listener"
+    : "Artist";
+
+  // Always use the logged in user for follow/unfollow actions
+  const currentUserId = loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
+  const currentUserType = loggedInUser.accountType === "listener" ? "Listener" : "Artist";
 
   const [activeTab, setActiveTab] = useState(initialTab);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [search, setSearch] = useState("");
 
-  // Refetch both lists to keep the UI in sync
+  // Refetch lists for the currently viewed profile
   const refetchData = async () => {
-    const followersRes = await fetch(`http://localhost:3001/follows?userId=${CURRENT_USER_ID}&userType=${CURRENT_USER_TYPE}&tab=followers`);
+    const followersRes = await fetch(
+      `http://localhost:3001/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`
+    );
     setFollowers(await followersRes.json());
-    const followingRes = await fetch(`http://localhost:3001/follows?userId=${CURRENT_USER_ID}&userType=${CURRENT_USER_TYPE}&tab=following`);
+    const followingRes = await fetch(
+      `http://localhost:3001/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`
+    );
     setFollowing(await followingRes.json());
   };
 
   useEffect(() => {
     refetchData();
-  }, [CURRENT_USER_ID, CURRENT_USER_TYPE]);
+  }, [viewedUserId, viewedUserType]);
 
   useEffect(() => {
-    setActiveTab(initialTab); // Update tab if URL changes
+    setActiveTab(initialTab);
   }, [initialTab]);
 
   const handleFollow = async (targetUser) => {
@@ -39,8 +54,8 @@ export default function FollowTabs() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        FollowerID: CURRENT_USER_ID,
-        FollowerType: CURRENT_USER_TYPE,
+        FollowerID: currentUserId,
+        FollowerType: currentUserType,
         FollowingID: targetUser.id,
         FollowingType: targetUser.type,
       }),
@@ -53,8 +68,8 @@ export default function FollowTabs() {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        FollowerID: CURRENT_USER_ID,
-        FollowerType: CURRENT_USER_TYPE,
+        FollowerID: currentUserId,
+        FollowerType: currentUserType,
         FollowingID: targetUser.id,
         FollowingType: targetUser.type,
       }),
@@ -62,6 +77,8 @@ export default function FollowTabs() {
     await refetchData();
   };
 
+  // The following list refers to the list currently being viewed, not who you are following
+  // isFollowing below determines if the logged-in user is following each listed user
   const listToDisplay = activeTab === "followers" ? followers : following;
 
   return (
@@ -100,7 +117,12 @@ export default function FollowTabs() {
             <UserRow
               key={`${user.type}-${user.id}`}
               user={user}
-              isFollowing={following.some(f => f.id === user.id && f.type === user.type)}
+              isFollowing={
+                // check if the logged in user following this user
+                following.some(
+                  (f) => f.id === user.id && f.type === user.type
+                )
+              }
               onFollow={() => handleFollow(user)}
               onUnfollow={() => handleUnfollow(user)}
             />
