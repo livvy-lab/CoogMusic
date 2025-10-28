@@ -1,9 +1,12 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import "./NavigationBar.css";
+import { getUser } from "../../lib/userStorage";
 
 export default function NavigationBar() {
   const [open, setOpen] = useState(false);
+  const user = useMemo(() => getUser(), []);
+  const isArtist = (user?.accountType || "").toLowerCase() === "artist";
 
   return (
     <>
@@ -21,6 +24,7 @@ export default function NavigationBar() {
           <div className="navTitle">Dashboard</div>
           <Link className="navLink" to="/home" onClick={() => setOpen(false)}>🏠 Home</Link>
           <Link className="navLink" to="/subscription" onClick={() => setOpen(false)}>⭐ Subscription</Link>
+          <Link className="navLink" to="/register/select" onClick={() => setOpen(false)}>📝 Register</Link>
         </nav>
 
         <nav className="navSection">
@@ -35,6 +39,14 @@ export default function NavigationBar() {
           <Link className="navLink" to="/likedsongs" onClick={() => setOpen(false)}>🤍 Favorite Songs</Link>
           <Link className="navLink" to="/me/playlists" onClick={() => setOpen(false)}>🎧 Playlists</Link>
         </nav>
+
+        {isArtist && (
+          <nav className="navSection">
+            <div className="navTitle">Artist</div>
+            <Link className="navLink" to="/my-ads" onClick={() => setOpen(false)}>📢 My Ads</Link>
+            <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
+          </nav>
+        )}
       </aside>
 
       {!open && (

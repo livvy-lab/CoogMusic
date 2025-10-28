@@ -25,6 +25,7 @@ import SearchResults from "./pages/SearchResults";
 import PlaylistPage from "./pages/PlaylistPage";
 import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
+import MyAds from "./pages/MyAds";
 
 
 import { PlayerProvider } from "./context/PlayerContext";
@@ -44,18 +45,20 @@ export default function App() {
         <Route path="/register/select" element={<AccountType />} />
         <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
 
-          {/* Listener routes */}
-          <Route path="/profile" element={<ListenerProfile />} />
-          <Route path="/home" element={<ListenerHome />} />
-          <Route path="/user-report" element={<UserReport />} />
-          <Route path="/likedsongs" element={<LikedSong />} />
-          <Route path="/me/playlists" element={<MyPlaylistsPage />} />
-          <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
-          <Route path="/listeners/:id" element={<ListenerPublic />} />
-          <Route path="/subscription" element={<Subscription />} />
-          <Route path="/follows" element={<FollowsPage />} />
-          <Route path="/buy-ads" element={<BuyAds />} />
-          <Route path="/edit-profile" element={<EditProfile />} />
+        {/* Listener routes */}
+        <Route path="/profile" element={<ListenerProfile />} />
+        <Route path="/home" element={<ListenerHome />} />
+        <Route path="/user-report" element={<UserReport />} />
+        <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
+        <Route path="/me/playlists" element={<MyPlaylistsPage />} />
+        <Route path="/playlist/:id" element={<PlaylistPage />} />
+        <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
+        <Route path="/subscription" element={<Subscription />} />
+        <Route path="/follows" element={<FollowsPage />} />
+        <Route path="/buy-ads" element={<BuyAds />} />
+        <Route path="/edit-profile" element={<EditProfile />} />
+        <Route path="/playlists" element={<Playlists />} />
+        <Route path="/my-ads" element={<MyAds />} />
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />

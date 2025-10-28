@@ -1,0 +1,196 @@
+.myads-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.myads-header {
+  margin-bottom: 2rem;
+}
+
+.myads-header h1 {
+  font-size: 2.5rem;
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+.myads-header p {
+  color: #666;
+  font-size: 1.1rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error-message {
+  background-color: #fee;
+  color: #c33;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border-left: 4px solid #c33;
+}
+
+.no-ads {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: #f8f9fa;
+  border-radius: 12px;
+  margin-top: 2rem;
+}
+
+.no-ads p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.upload-link {
+  display: inline-block;
+  color: #6a0dad;
+  font-size: 1.1rem;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.upload-link:hover {
+  color: #8b2dcf;
+}
+
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.ad-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+}
+
+.ad-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.ad-preview {
+  width: 100%;
+  height: 200px;
+  background: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.ad-file-preview {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ad-file-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ad-file-preview video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ad-file-preview audio {
+  width: 90%;
+}
+
+.file-icon {
+  font-size: 4rem;
+  opacity: 0.3;
+}
+
+.ad-info {
+  padding: 1.5rem;
+  flex-grow: 1;
+}
+
+.ad-title {
+  font-size: 1.3rem;
+  color: #1a1a1a;
+  margin: 0 0 0.5rem 0;
+  word-wrap: break-word;
+}
+
+.ad-meta {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ad-id {
+  font-size: 0.85rem;
+  color: #999;
+}
+
+.view-link {
+  display: inline-block;
+  color: #6a0dad;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.view-link:hover {
+  color: #8b2dcf;
+  text-decoration: underline;
+}
+
+.delete-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #dc3545;
+  color: white;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.delete-btn:hover {
+  background: #c82333;
+}
+
+.delete-btn:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .myads-container {
+    padding: 1rem;
+  }
+
+  .myads-header h1 {
+    font-size: 2rem;
+  }
+
+  .ads-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}

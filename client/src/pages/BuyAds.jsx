@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import './BuyAds.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import cat_left from '../assets/left_cat.svg';
 import cat_right from '../assets/right_cat.svg';
+import { getUser } from '../lib/userStorage';
 
 const BuyAds = () => {
   const [formData, setFormData] = useState({
-    artistId: '',
-    email: '',
-    message: '',
+    adTitle: '',
+    adDescription: '',
     adFile: null
   });
 
@@ -27,10 +27,47 @@ const BuyAds = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const user = useMemo(() => getUser(), []);
+
+  const isArtist = (user?.accountType || '').toLowerCase() === 'artist';
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission here
-    console.log('Form submitted:', formData);
+    if (!isArtist) {
+      alert('Only artist accounts can upload ads.');
+      return;
+    }
+    if (!formData.adFile) {
+      alert('Please select a file to upload.');
+      return;
+    }
+
+    try {
+      const fd = new FormData();
+      fd.append('adFile', formData.adFile);
+      if (formData.adTitle) fd.append('adTitle', formData.adTitle);
+      if (formData.adDescription) fd.append('adDescription', formData.adDescription);
+      if (user?.accountId) fd.append('accountId', String(user.accountId));
+
+      const res = await fetch('http://localhost:3001/upload/ad', {
+        method: 'POST',
+        body: fd
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err?.error || 'Upload failed');
+      }
+
+      const data = await res.json();
+      console.log('Ad uploaded to S3:', data);
+      alert('Ad uploaded successfully!');
+      // Optionally clear form after success
+      setFormData({ adTitle: '', adDescription: '', adFile: null });
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert(`Upload error: ${err.message}`);
+    }
   };
 
   return (
@@ -42,58 +79,54 @@ const BuyAds = () => {
         </div>
 
         <div className="buyads-form-container">
+          {!isArtist && (
+            <div className="error-message" style={{ marginBottom: 16 }}>
+              This feature is available to artist accounts only. Please log in as an artist.
+            </div>
+          )}
           <form onSubmit={handleSubmit}>
-            {/* Artist ID - full width on top */}
+            {/* Ad Title - full width on top */}
             <div className="form-group artist-id-group">
               <input
                 type="text"
-                name="artistId"
-                placeholder="Artist ID"
-                value={formData.artistId}
+                name="adTitle"
+                placeholder="Ad Title"
+                value={formData.adTitle}
                 onChange={handleInputChange}
                 className="artist-id-input"
+                disabled={!isArtist}
               />
             </div>
 
-            {/* Middle row: Email (left) and Upload (right) */}
-            <div className="middle-row">
-              <div className="form-group">
+            {/* Upload - full width */}
+            <div className="form-group upload-group">
+              <div className="upload-button">
+                <label htmlFor="adFile">Upload Ad File</label>
                 <input
-                  type="email"
-                  name="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  type="file"
+                  id="adFile"
+                  name="adFile"
+                  onChange={handleFileUpload}
+                  style={{ display: 'none' }}
+                  disabled={!isArtist}
                 />
               </div>
-
-              <div className="form-group upload-group">
-                <div className="upload-button">
-                  <label htmlFor="adFile">Upload Ad File</label>
-                  <input
-                    type="file"
-                    id="adFile"
-                    name="adFile"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
-                </div>
-                {formData.adFile && <span className="file-name">{formData.adFile.name}</span>}
-              </div>
+              {formData.adFile && <span className="file-name">{formData.adFile.name}</span>}
             </div>
 
-            {/* Message */}
+            {/* Ad Description */}
             <div className="form-group message-group">
               <textarea
-                name="message"
-                placeholder="Message"
-                value={formData.message}
+                name="adDescription"
+                placeholder="Ad Description"
+                value={formData.adDescription}
                 onChange={handleInputChange}
+                disabled={!isArtist}
               />
             </div>
 
             {/* Centered smaller submit button */}
-            <button type="submit" className="submit-button">Submit</button>
+            <button type="submit" className="submit-button" disabled={!isArtist}>Submit</button>
           </form>
 
           <div className="decoration">

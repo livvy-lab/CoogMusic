@@ -31,8 +31,8 @@ import { handleListenerFavoriteArtist } from "./routes/listener_favorite_artist.
 import { handleListenerProfile } from "./routes/listener_profile.js";
 import { handleArtistProfileRoutes } from "./routes/artist_profile.js";
 import { handlePlayRoutes } from "./routes/plays.js";
-import { handlePfpRoutes } from "./routes/pfp.js";
-import { handleSetListenerAvatar } from "./routes/avatar.js";
+//import { handlePfpRoutes } from "./routes/pfp.js";
+//import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleUploadRoutes } from "./routes/upload.js";
 
 import { handleMediaRoutes } from "./routes/media.js";
