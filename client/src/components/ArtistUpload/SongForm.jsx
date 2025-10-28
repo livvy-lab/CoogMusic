@@ -1,175 +1,236 @@
-import { useState, useEffect, useRef } from "react";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import "./SongForm.css";
 
 export default function SongForm() {
-  const [title, setTitle] = useState("");
-  const [albumId, setAlbumId] = useState("");
-  const [genreId, setGenreId] = useState("");
-  const [explicit, setExplicit] = useState(false);
-  const [trackNumber, setTrackNumber] = useState("");
-  const [audio, setAudio] = useState(null);
-  const [genres, setGenres] = useState([]);
-  const [result, setResult] = useState(null);
-  const [artistId, setArtistId] = useState(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
+  const [file, setFile] = useState(null);
+  const [cover, setCover] = useState(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    genres: [],
+    artists: [],
+    explicit: false
+  });
+  const [loading, setLoading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem("user") || "null");
-      const id =
-        stored?.artistId ??
-        stored?.ArtistID ??
-        stored?.artistID ??
-        stored?.artist?.ArtistID ??
-        stored?.artist?.id ??
-        null;
-      if (id) setArtistId(Number(id));
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function fetchGenres() {
-      try {
-        const r = await fetch(`${API_BASE}/genres`);
-        if (!r.ok) throw new Error("Failed to fetch genres");
-        const data = await r.json();
-        if (!cancelled) setGenres(Array.isArray(data) ? data : []);
-      } catch {
-        if (!cancelled) setGenres([]);
-      }
+  // Handle audio file selection
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    if (!selectedFile.type.startsWith("audio/")) {
+      alert("Please select an audio file");
+      return;
     }
-    fetchGenres();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    setFile(selectedFile);
+  };
 
-  const submit = async (e) => {
+  // Handle cover image selection
+  const handleCoverChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (!selectedFile) return;
+    if (!selectedFile.type.startsWith("image/")) {
+      alert("Please select an image file");
+      return;
+    }
+
+    // Create preview URL for image
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    setCover(selectedFile);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-    setResult(null);
-
-    if (!artistId || !Number.isFinite(Number(artistId)) || Number(artistId) <= 0) {
-      setError("No artist ID found. Log in as an artist again.");
+    if (!file) {
+      alert("Please select an audio file");
       return;
     }
-    if (!title.trim()) {
-      setError("Title is required.");
-      return;
-    }
-    if (!audio) {
-      setError("Select an audio file.");
-      return;
-    }
+    setLoading(true);
 
-    const fd = new FormData();
-    fd.append("title", title.trim());
-    fd.append("artistId", String(artistId));
-    if (albumId) fd.append("albumId", String(albumId));
-    if (genreId) fd.append("genreId", String(genreId));
-    if (trackNumber) fd.append("trackNumber", String(trackNumber));
-    fd.append("explicit", explicit ? "1" : "0");
-    fd.append("audio", audio, audio.name || "upload");
-
-    setSubmitting(true);
     try {
-      const r = await fetch(`${API_BASE}/upload/song`, { method: "POST", body: fd });
-      const text = await r.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = { raw: text }; }
-      if (!r.ok) {
-        setError(data?.error || r.statusText || "Upload failed");
-        return;
+      // First upload the cover image if provided
+      let coverMediaId = null;
+      if (cover) {
+        const formData = new FormData();
+        formData.append("image", cover);
+        const res = await fetch("/media", {
+          method: "POST",
+          body: formData
+        });
+        
+        if (!res.ok) {
+          throw new Error("Failed to upload cover image");
+        }
+
+        const { mediaId } = await res.json();
+        coverMediaId = mediaId;
       }
-      setResult(data);
-      setSuccess(`Uploaded “${title.trim()}” successfully.`);
-      setTitle("");
-      setAlbumId("");
-      setGenreId("");
-      setTrackNumber("");
-      setExplicit(false);
-      setAudio(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    } catch (e2) {
-      setError(e2.message || "Upload failed");
+
+      // Then upload the song
+      const songFormData = new FormData();
+      songFormData.append("file", file);
+      songFormData.append("title", formData.title);
+      songFormData.append("description", formData.description);
+      songFormData.append("genres", JSON.stringify(formData.genres));
+      songFormData.append("artists", JSON.stringify(formData.artists));
+      songFormData.append("explicit", formData.explicit);
+
+      const uploadRes = await fetch("/upload/song", {
+        method: "POST",
+        body: songFormData
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Failed to upload song");
+      }
+
+      const { songId } = await uploadRes.json();
+
+      // If we have a cover, associate it with the song
+      if (coverMediaId) {
+        const coverRes = await fetch(`/songs/${songId}/cover`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mediaId: coverMediaId })
+        });
+
+        if (!coverRes.ok) {
+          console.error("Failed to associate cover with song:", coverMediaId);
+        }
+      }
+
+      navigate(`/songs/${songId}`);
+    } catch (err) {
+      console.error("Upload failed:", err);
+      alert("Failed to upload song. Please try again.");
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-3 bg-white p-6 rounded-xl shadow-md max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold">Upload New Song</h2>
+    <div className="song-form-container">
+      <form onSubmit={handleSubmit} className="song-form">
+        <div className="form-content">
+          <div className="upload-grid">
+            {/* Cover Upload */}
+            <div className="upload-section">
+              <div className="upload-box">
+                <div 
+                  className="upload-button" 
+                  onClick={() => document.getElementById("coverInput").click()}
+                >
+                  {previewUrl ? (
+                    <img src={previewUrl} alt="Cover preview" className="cover-preview" />
+                  ) : (
+                    <div className="upload-placeholder">
+                      <i className="fas fa-image fa-2x"></i>
+                      <span>Click to browse</span>
+                    </div>
+                  )}
+                </div>
+                <input
+                  type="file"
+                  id="coverInput"
+                  accept="image/*"
+                  onChange={handleCoverChange}
+                  style={{ display: "none" }}
+                />
+                {cover && (
+                  <div className="file-name">
+                    {cover.name}
+                  </div>
+                )}
+                <button 
+                  type="button" 
+                  className="card-submit-button" 
+                  onClick={() => document.getElementById("coverInput").click()}
+                >
+                  Add Cover Image
+                </button>
+              </div>
+            </div>
 
-      {error ? <div className="text-red-600 text-sm">{error}</div> : null}
-      {success ? <div className="text-green-600 text-sm">{success}</div> : null}
+            {/* Song Upload */}
+            <div className="upload-section">
+              <div className="upload-box">
+                <div 
+                  className="upload-button" 
+                  onClick={() => document.getElementById("songInput").click()}
+                >
+                  <div className="upload-placeholder">
+                    <i className="fas fa-music fa-2x"></i>
+                    <span>Click to browse</span>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  id="songInput"
+                  accept="audio/*"
+                  onChange={handleFileChange}
+                  style={{ display: "none" }}
+                />
+                {file && (
+                  <div className="file-name">
+                    {file.name}
+                  </div>
+                )}
+                <button 
+                  type="button" 
+                  className="card-submit-button" 
+                  onClick={() => document.getElementById("songInput").click()}
+                >
+                  Choose Song
+                </button>
+              </div>
+            </div>
+          </div>
 
-      <input
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Title"
-        className="border rounded px-3 py-2"
-        required
-      />
+          {/* Song Details */}
+          <div className="song-details">
+            <div className="form-group">
+              <label htmlFor="title">Title</label>
+              <input
+                type="text"
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="Song title"
+                required
+              />
+            </div>
 
-      <input
-        value={albumId}
-        onChange={(e) => setAlbumId(e.target.value)}
-        placeholder="AlbumID (optional)"
-        className="border rounded px-3 py-2"
-        inputMode="numeric"
-      />
+            <div className="form-group">
+              <label htmlFor="description">Description</label>
+              <textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Write something about your song..."
+                rows={4}
+              />
+            </div>
 
-      <select
-        value={genreId}
-        onChange={(e) => setGenreId(e.target.value)}
-        className="border rounded px-3 py-2"
-      >
-        <option value="">Select Genre (optional)</option>
-        {genres.map((g) => (
-          <option key={g.GenreID} value={g.GenreID}>
-            {g.Name}
-          </option>
-        ))}
-      </select>
+            <div className="form-group">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={formData.explicit}
+                  onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
+                />
+                <span>Explicit Content</span>
+              </label>
+            </div>
+          </div>
+        </div>
 
-      <input
-        value={trackNumber}
-        onChange={(e) => setTrackNumber(e.target.value)}
-        placeholder="Track # (optional)"
-        className="border rounded px-3 py-2"
-        inputMode="numeric"
-      />
-
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={explicit}
-          onChange={(e) => setExplicit(e.target.checked)}
-        />
-        Explicit
-      </label>
-
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="audio/*"
-        onChange={(e) => setAudio(e.target.files?.[0] || null)}
-      />
-
-      <button
-        type="submit"
-        disabled={submitting}
-        className={`${submitting ? "opacity-60 cursor-not-allowed" : "hover:bg-purple-700"} bg-purple-600 text-white py-2 rounded`}
-      >
-        {submitting ? "Uploading..." : "Upload Song"}
-      </button>
-    </form>
+        <button type="submit" className="submit-button" disabled={loading}>
+          {loading ? "Uploading..." : "Upload Song"}
+        </button>
+      </form>
+    </div>
   );
 }
