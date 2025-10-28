@@ -5,7 +5,7 @@ import "./LikedPage.css";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
-  const listenerId = 6; // temporary static (replace later with logged-in user)
+  const listenerId = 6; // temporary static (replace with logged-in user later)
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
@@ -13,33 +13,37 @@ export default function LikedPage() {
       const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
       if (!res.ok) throw new Error("Failed to fetch liked songs");
       const data = await res.json();
-      console.log("✅ Liked songs:", data);
 
-const formatted = data.map((row) => ({
-  SongID: row.SongID,
-  title: row.Title,
-  artist: row.ArtistName || "Unknown Artist",
-  album: row.Album || "Unknown Album",
-  duration: row.DurationSeconds
-    ? `${Math.floor(row.DurationSeconds / 60)}:${String(
-        row.DurationSeconds % 60
-      ).padStart(2, "0")}`
-    : "0:00",
-  date: new Date(row.ReleaseDate).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }),
-}));
+      console.log("✅ Raw liked songs data:", data);
 
+      // Format results for UI
+      const formatted = data.map((row) => ({
+        SongID: row.SongID,
+        title: row.Title,
+        artist: row.ArtistName || "Unknown Artist",
+        album: row.Album || "Unknown Album",
+        duration: row.DurationSeconds
+          ? `${Math.floor(row.DurationSeconds / 60)}:${String(row.DurationSeconds % 60).padStart(2, "0")}`
+          : "0:00",
+        date: row.LikedDate
+          ? new Date(row.LikedDate).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A",
+      }));
 
+      // sort newest first
+      formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
       setTracks(formatted);
+      console.log("🎵 Formatted tracks:", formatted);
     } catch (err) {
       console.error("❌ Error fetching liked songs:", err);
     }
   }
 
-  // --- Un-like song (optional)
+  // --- Unlike a song
   async function unlikeSong(songId) {
     try {
       const res = await fetch(
@@ -50,9 +54,9 @@ const formatted = data.map((row) => ({
           body: JSON.stringify({ songId }),
         }
       );
-
       if (!res.ok) throw new Error("Toggle failed");
       const data = await res.json();
+
       if (!data.liked) {
         setTracks((prev) => prev.filter((t) => t.SongID !== songId));
       }
@@ -74,12 +78,13 @@ const formatted = data.map((row) => ({
             <div className="likedCoverCircle">
               <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
             </div>
-
             <div className="likedHeaderText">
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">Liked Songs</h1>
               <p className="likedUser">
-                {tracks.length ? `${tracks.length} song${tracks.length > 1 ? "s" : ""}` : "No songs"}
+                {tracks.length
+                  ? `${tracks.length} song${tracks.length > 1 ? "s" : ""}`
+                  : "No songs"}
               </p>
             </div>
           </div>
@@ -111,15 +116,14 @@ const formatted = data.map((row) => ({
               <p style={{ padding: "1rem", color: "#aaa" }}>No liked songs found.</p>
             ) : (
               tracks.map((t, i) => (
-                <div key={i} className="likedRow">
+                <div key={t.SongID} className="likedRow">
                   <div className="col-num">{i + 1}</div>
-<div className="col-title">
-  <div className="songInfo">
-    <span className="songTitle">{t.title}</span>
-    <span className="songArtist">{t.artist}</span>
-  </div>
-</div>
-
+                  <div className="col-title">
+                    <div className="songInfo">
+                      <span className="songTitle">{t.title}</span>
+                      <span className="songArtist">{t.artist}</span>
+                    </div>
+                  </div>
 
                   <div className="col-album">{t.album}</div>
                   <div className="col-date">{t.date}</div>
