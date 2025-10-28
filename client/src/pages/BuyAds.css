@@ -56,7 +56,7 @@ form {
 .artist-id-input {
   width: 100%;
   padding: 1rem 1.5rem;
-  border: 2px solid #a26aa1;
+  border: 4px solid #8b5a8b !important;
   border-radius: 30px;
   font-size: 1rem;
   outline: none;
@@ -116,12 +116,14 @@ form {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  width: 60%;
+  margin: 0 auto;
 }
 
 .upload-button {
-  background: linear-gradient(135deg, #7eb3e8 0%, #a8c8ed 100%);
-  padding: 1rem 1.5rem;
-  border: 2px dashed rgba(255, 255, 255, 0.8);
+  background: #5a8fc4 !important;
+  padding: 0.75rem 1rem;
+  border: 4px solid #8b5a8b !important;
   border-radius: 15px;
   text-align: center;
   cursor: pointer;
@@ -130,14 +132,14 @@ form {
 }
 
 .upload-button:hover {
-  background: linear-gradient(135deg, #6a9dd4 0%, #94b8e0 100%);
+  background: #4a7fb4;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(126, 179, 232, 0.4);
 }
 
 .upload-button label {
   color: white;
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   display: block;
@@ -159,7 +161,7 @@ form {
 .message-group textarea {
   width: 100%;
   padding: 1rem 1.5rem;
-  border: 2px solid #a26aa1;
+  border: 4px solid #8b5a8b !important;
   border-radius: 20px;
   font-size: 1rem;
   outline: none;
@@ -184,10 +186,10 @@ form {
 
 /* Submit Button */
 .submit-button {
-  background-color: #a26aa1;
+  background-color: #6b3d6b;
   color: white;
-  padding: 0.9rem 2.5rem;
-  border: none;
+  padding: 0.7rem 1.5rem;
+  border: 4px solid #8b5a8b !important;
   border-radius: 10px;
   font-size: 1.05rem;
   font-weight: 600;
@@ -199,16 +201,21 @@ form {
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
+  width: auto;
+  max-width: 150px;
 }
 
-.submit-button:hover {
-  background-color: #8b5a8b;
-  transform: translateY(-2px);
+.submit-button:hover:not(:disabled) {
+  background-color: #a26aa1;
+  transform: translate(-50%, -2px);
   box-shadow: 0 5px 15px rgba(162, 106, 161, 0.4);
 }
 
-.submit-button:active {
-  transform: translateY(0);
+.submit-button:disabled {
+  background-color: #ccc;
+  border-color: #999;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 /* Cat Decorations */

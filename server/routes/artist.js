@@ -182,10 +182,6 @@ export async function handleArtistRoutes(req, res) {
       return;
     }
 
-      if (!row) return json(res, 404, { error: "Artist not found" });
-      return json(res, 200, { ...row, PFP: row.pfpUrl || null });
-    }
-
     // ------------------------------------------------------------
     // POST /artists  (create)
     // Body: { AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id }
