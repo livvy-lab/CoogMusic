@@ -1,5 +1,7 @@
+// client/src/components/PlaylistGrid/PlaylistGrid.jsx
 import "./playlistgrid.css";
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function PlaylistGrid({
   listenerId,
@@ -13,6 +15,8 @@ export default function PlaylistGrid({
   const [pinnedId, setPinnedId] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+
+  const navigate = useNavigate();
 
   // 🗑️ Delete playlist
   async function handleDelete(id) {
@@ -182,9 +186,13 @@ export default function PlaylistGrid({
           ))
         ) : (
           <>
-            {/* 💜 Always show Liked Songs */}
+            {/* 💜 Clickable Liked Songs Card */}
             {showLikedFallback && (
-              <div className="pl pl--liked">
+              <div
+                className="pl pl--liked"
+                onClick={() => navigate("/likedsongs")}
+                style={{ cursor: "pointer" }}
+              >
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
@@ -210,7 +218,7 @@ export default function PlaylistGrid({
               </div>
             )}
 
-            {/* 🎵 Show all playlists */}
+            {/* 🎵 All playlists */}
             {hasPlaylists ? (
               playlists.map((p) => {
                 const tracks = Number(p.TrackCount) || 0;
@@ -221,16 +229,21 @@ export default function PlaylistGrid({
                 const isPinned = pinnedId === p.PlaylistID;
 
                 return (
-                  <div
-                    className={`pl ${isPinned ? "pl--pinned" : ""}`}
+                  <Link
+                    to={`/playlist/${p.PlaylistID}`}
                     key={p.PlaylistID}
+                    className={`pl ${isPinned ? "pl--pinned" : ""}`}
                   >
                     {/* 📌 Pin */}
                     <button
                       className={`pl__pinBtn ${isPinned ? "active" : ""}`}
                       title={isPinned ? "Pinned to profile" : "Pin to profile"}
                       disabled={pinLoading}
-                      onClick={() => handlePin(p.PlaylistID)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handlePin(p.PlaylistID);
+                      }}
                     >
                       📌
                     </button>
@@ -240,6 +253,7 @@ export default function PlaylistGrid({
                       <button
                         className="playlistOptionsBtn"
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
                           setOpenMenuId(
                             openMenuId === p.PlaylistID ? null : p.PlaylistID
@@ -253,13 +267,21 @@ export default function PlaylistGrid({
                         <div className="playlistDropdown">
                           <button
                             className="dropdownItem"
-                            onClick={() => handleEdit(p.PlaylistID)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleEdit(p.PlaylistID);
+                            }}
                           >
                             ✏️ Edit
                           </button>
                           <button
                             className="dropdownItem delete"
-                            onClick={() => handleDelete(p.PlaylistID)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleDelete(p.PlaylistID);
+                            }}
                           >
                             🗑️ Delete
                           </button>
@@ -283,7 +305,7 @@ export default function PlaylistGrid({
                     <div className="pl__tracks">
                       {tracks} {tracks === 1 ? "track" : "tracks"}
                     </div>
-                  </div>
+                  </Link>
                 );
               })
             ) : (

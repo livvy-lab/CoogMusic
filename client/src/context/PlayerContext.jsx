@@ -42,23 +42,71 @@ export function PlayerProvider({ children }) {
     };
   }, []);
 
+  // Commented out the original playSong function for testing purposes
+  // async function playSong(song) {
+  //   const id = song?.SongID || song?.songId;
+  //   if (!id) return;
+  //   const r = await fetch(`${API_BASE}/songs/${id}/stream`);
+  //   if (!r.ok) return;
+  //   const data = await r.json();
+  //   setCurrent({
+  //     SongID: data.songId,
+  //     Title: data.title,
+  //     ArtistName: data.artistName,
+  //     url: data.url,
+  //     mime: data.mime,
+  //   });
+  //   const a = audioRef.current;
+  //   if (a) {
+  //     a.src = data.url;
+  //     a.play().catch(() => {});
+  //   }
+  // }
+
+  // New code for testing
   async function playSong(song) {
     const id = song?.SongID || song?.songId;
-    if (!id) return;
-    const r = await fetch(`${API_BASE}/songs/${id}/stream`);
-    if (!r.ok) return;
-    const data = await r.json();
-    setCurrent({
-      SongID: data.songId,
-      Title: data.title,
-      ArtistName: data.artistName,
-      url: data.url,
-      mime: data.mime,
-    });
-    const a = audioRef.current;
-    if (a) {
-      a.src = data.url;
-      a.play().catch(() => {});
+    if (!id) {
+      // Fallback for testing mode
+      setCurrent({
+        SongID: Date.now(),
+        Title: song?.Title || "Demo Track",
+        ArtistName: song?.ArtistName || "Unknown Artist",
+        url: "", // no real audio yet
+        mime: "audio/mpeg",
+      });
+      setPlaying(true);
+      return;
+    }
+
+    try {
+      const r = await fetch(`${API_BASE}/songs/${id}/stream`);
+      if (!r.ok) throw new Error("No real stream found");
+
+      const data = await r.json();
+      setCurrent({
+        SongID: data.songId,
+        Title: data.title,
+        ArtistName: data.artistName,
+        url: data.url,
+        mime: data.mime,
+      });
+      const a = audioRef.current;
+      if (a) {
+        a.src = data.url;
+        await a.play().catch(() => {});
+      }
+    } catch (err) {
+      // ✅ Fallback if backend doesn't return audio yet
+      console.warn("Mock play:", err.message);
+      setCurrent({
+        SongID: id,
+        Title: song?.Title || "Demo Track",
+        ArtistName: song?.ArtistName || "Unknown Artist",
+        url: "",
+        mime: "audio/mpeg",
+      });
+      setPlaying(true);
     }
   }
 
