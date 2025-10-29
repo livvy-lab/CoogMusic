@@ -23,7 +23,7 @@ export default function PlayShuffleControls({ onShuffle }) {
   return (
     <div className="likedControls">
       {/* Play button triggers the onPlay function */}
-      <button className="playButton" onClick={() => onPlay(currentSong)}>
+      <button className="playButton" onClick={() => onPlay(onShuffle)}>
         <Play fill="currentColor" />
       </button>
       {/* Shuffle button triggers onShuffle function */}
