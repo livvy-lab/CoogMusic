@@ -9,6 +9,8 @@ export function PlayerProvider({ children }) {
   const [current, setCurrent] = useState(null);
   const [queue, setQueue] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(-1);
+  const [shuffleMode, setShuffleMode] = useState(false);
+  const [originalQueue, setOriginalQueue] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -133,6 +135,9 @@ export function PlayerProvider({ children }) {
   // Play a list/queue of songs starting at index (default 0)
   function playList(list = [], startIndex = 0) {
     if (!Array.isArray(list) || list.length === 0) return;
+    // When playing a normal list, record it as the original order and disable shuffle
+    setOriginalQueue(list.slice());
+    setShuffleMode(false);
     setQueue(list);
     const idx = Math.max(0, Math.min(startIndex, list.length - 1));
     setCurrentIndex(idx);
@@ -140,10 +145,98 @@ export function PlayerProvider({ children }) {
     playSong(list[idx]).catch(() => {});
   }
 
+  // Play a shuffled version of the given list
+  function playShuffled(list = []) {
+    if (!Array.isArray(list) || list.length === 0) return;
+    // Fisher-Yates shuffle
+    const cloned = list.slice();
+    for (let i = cloned.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
+    }
+    // keep a copy of original order so we can restore it when shuffle is disabled
+    setOriginalQueue(list.slice());
+    setShuffleMode(true);
+    setQueue(cloned);
+    setCurrentIndex(0);
+    playSong(cloned[0]).catch(() => {});
+  }
+
+  // Toggle shuffle for current queue (if any). When enabling, shuffle current queue and play first.
+  function toggleShuffle() {
+    if (!queue || queue.length <= 1) {
+      setShuffleMode((v) => !v);
+      return;
+    }
+    if (!shuffleMode) {
+      // enable shuffle: preserve current order as originalQueue then shuffle
+      setOriginalQueue(queue.slice());
+      const cloned = queue.slice();
+      for (let i = cloned.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
+      }
+      setQueue(cloned);
+      setCurrentIndex(0);
+      playSong(cloned[0]).catch(() => {});
+      setShuffleMode(true);
+    } else {
+      // disabling shuffle — restore original queue order if available
+      if (originalQueue && Array.isArray(originalQueue) && originalQueue.length > 0) {
+        // try to map current song to the same song in originalQueue
+        const curId = current?.SongID;
+        let idx = 0;
+        if (curId != null) {
+          const found = originalQueue.findIndex((s) => (s?.SongID || s?.songId) === curId);
+          idx = found >= 0 ? found : 0;
+        }
+        setQueue(originalQueue.slice());
+        setCurrentIndex(idx);
+        // play the song at restored index (best-effort)
+        playSong(originalQueue[idx]).catch(() => {});
+      }
+      setShuffleMode(false);
+      setOriginalQueue(null);
+    }
+  }
+
   function toggle() {
     const a = audioRef.current;
     if (!a) return;
-    if (a.paused) a.play().catch(() => {}); else a.pause();
+    if (a.paused) {
+      a.play().catch(() => {});
+      // optimistic UI update
+      setPlaying(true);
+    } else {
+      a.pause();
+      setPlaying(false);
+    }
+  }
+
+  // Go to next track in queue if possible
+  function next() {
+    if (!queue || queue.length === 0) return;
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= 0 && nextIndex < queue.length) {
+      setCurrentIndex(nextIndex);
+      playSong(queue[nextIndex]).catch(() => {});
+    }
+  }
+
+  // Go to previous track or restart current track
+  function prev() {
+    const a = audioRef.current;
+    if (a && a.currentTime > 3) {
+      // restart current track
+      seek(0);
+      return;
+    }
+    if (!queue || queue.length === 0) return;
+    const prevIndex = Math.max(0, currentIndex - 1);
+    if (prevIndex >= 0 && prevIndex < queue.length) {
+      setCurrentIndex(prevIndex);
+      playSong(queue[prevIndex]).catch(() => {});
+    }
   }
 
   function seek(seconds) {
@@ -194,6 +287,8 @@ export function PlayerProvider({ children }) {
       current,
       queue,
       currentIndex,
+      shuffleMode,
+      originalQueue,
       playing,
       duration,
       currentTime,
@@ -201,12 +296,16 @@ export function PlayerProvider({ children }) {
       audioRef,
       playSong,
       playList,
+      playShuffled,
+      next,
+      prev,
       toggle,
+      toggleShuffle,
       seek,
       setVolumePercent,
       toggleLikeCurrent,
     }),
-    [current, queue, currentIndex, playing, duration, currentTime, volume]
+    [current, queue, currentIndex, shuffleMode, originalQueue, playing, duration, currentTime, volume]
   );
 
   return (

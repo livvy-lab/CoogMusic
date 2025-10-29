@@ -10,7 +10,7 @@ export default function LikedPage() {
   const storedListener = localStorage.getItem("listener");
   const listenerId = storedListener ? JSON.parse(storedListener).ListenerID : 6;
 
-  const { playList, playSong } = usePlayer();
+  const { playList, playSong, playShuffled } = usePlayer();
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
@@ -129,7 +129,12 @@ export default function LikedPage() {
             <button className="playButton" aria-label="Play" onClick={handlePlayAll}>
               <Play fill="currentColor" size={28} />
             </button>
-            <button className="shuffleButton" aria-label="Shuffle">
+            <button className="shuffleButton" aria-label="Shuffle" onClick={() => {
+              if (!tracks || tracks.length === 0) return;
+              const list = tracks.map((t) => ({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }));
+              // use playShuffled if available
+              try { playShuffled?.(list); } catch (e) { playList(list, 0); }
+            }}>
               <Shuffle size={24} />
             </button>
           </div>
