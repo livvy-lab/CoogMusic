@@ -30,7 +30,7 @@ export default function Login() {
         };
         setUser(user);
         if (data.accountType === "artist") {
-          navigate("/upload");
+          navigate("/artist-dashboard");
         } else {
           navigate("/home");
         }

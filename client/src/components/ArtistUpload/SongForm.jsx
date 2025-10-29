@@ -113,122 +113,103 @@ export default function SongForm() {
 
   return (
     <div className="song-form-container">
+      <p className="upload-subtitle">Choose an audio file and enter the details below to upload your track</p>
+      
       <form onSubmit={handleSubmit} className="song-form">
-        <div className="form-content">
-          <div className="upload-grid">
-            {/* Cover Upload */}
-            <div className="upload-section">
-              <div className="upload-box">
-                <div 
-                  className="upload-button" 
-                  onClick={() => document.getElementById("coverInput").click()}
-                >
-                  {previewUrl ? (
-                    <img src={previewUrl} alt="Cover preview" className="cover-preview" />
-                  ) : (
-                    <div className="upload-placeholder">
-                      <i className="fas fa-image fa-2x"></i>
-                      <span>Click to browse</span>
-                    </div>
-                  )}
-                </div>
-                <input
-                  type="file"
-                  id="coverInput"
-                  accept="image/*"
-                  onChange={handleCoverChange}
-                  style={{ display: "none" }}
-                />
-                {cover && (
-                  <div className="file-name">
-                    {cover.name}
-                  </div>
-                )}
-                <button 
-                  type="button" 
-                  className="card-submit-button" 
-                  onClick={() => document.getElementById("coverInput").click()}
-                >
-                  Add Cover Image
-                </button>
-              </div>
+        <div className="upload-boxes-row">
+          {/* Audio File Upload */}
+          <div 
+            className="upload-box" 
+            onClick={() => document.getElementById("songInput").click()}
+          >
+            <div className="upload-icon">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M24 16V32M24 16L18 22M24 16L30 22M40 24C40 32.8366 32.8366 40 24 40C15.1634 40 8 32.8366 8 24C8 15.1634 15.1634 8 24 8C32.8366 8 40 15.1634 40 24Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-
-            {/* Song Upload */}
-            <div className="upload-section">
-              <div className="upload-box">
-                <div 
-                  className="upload-button" 
-                  onClick={() => document.getElementById("songInput").click()}
-                >
-                  <div className="upload-placeholder">
-                    <i className="fas fa-music fa-2x"></i>
-                    <span>Click to browse</span>
-                  </div>
-                </div>
-                <input
-                  type="file"
-                  id="songInput"
-                  accept="audio/*"
-                  onChange={handleFileChange}
-                  style={{ display: "none" }}
-                />
-                {file && (
-                  <div className="file-name">
-                    {file.name}
-                  </div>
-                )}
-                <button 
-                  type="button" 
-                  className="card-submit-button" 
-                  onClick={() => document.getElementById("songInput").click()}
-                >
-                  Choose Song
-                </button>
-              </div>
-            </div>
+            <button type="button" className="select-button">
+              Select audio file
+            </button>
+            {file && <div className="file-selected">{file.name}</div>}
+            <input
+              type="file"
+              id="songInput"
+              accept="audio/*"
+              onChange={handleFileChange}
+              style={{ display: "none" }}
+            />
           </div>
 
-          {/* Song Details */}
-          <div className="song-details">
-            <div className="form-group">
-              <label htmlFor="title">Title</label>
-              <input
-                type="text"
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Song title"
-                required
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="description">Description</label>
-              <textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Write something about your song..."
-                rows={4}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={formData.explicit}
-                  onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
-                />
-                <span>Explicit Content</span>
-              </label>
-            </div>
+          {/* Cover Image Upload */}
+          <div 
+            className="upload-box" 
+            onClick={() => document.getElementById("coverInput").click()}
+          >
+            {previewUrl ? (
+              <img src={previewUrl} alt="Cover preview" className="cover-preview-img" />
+            ) : (
+              <>
+                <div className="upload-icon">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16 20C17.6569 20 19 18.6569 19 17C19 15.3431 17.6569 14 16 14C14.3431 14 13 15.3431 13 17C13 18.6569 14.3431 20 16 20Z" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M10 38V34L16 28L22 34L30 26L38 34V38M10 38H38M10 38V10H38V38" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+                <button type="button" className="select-button">
+                  Select audio picture
+                </button>
+              </>
+            )}
+            {cover && !previewUrl && <div className="file-selected">{cover.name}</div>}
+            <input
+              type="file"
+              id="coverInput"
+              accept="image/*"
+              onChange={handleCoverChange}
+              style={{ display: "none" }}
+            />
           </div>
         </div>
 
-        <button type="submit" className="submit-button" disabled={loading}>
-          {loading ? "Uploading..." : "Upload Song"}
+        {/* Track Title */}
+        <div className="form-field">
+          <label htmlFor="title">Track Title</label>
+          <input
+            type="text"
+            id="title"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="Song title"
+            required
+          />
+        </div>
+
+        {/* Description */}
+        <div className="form-field">
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Write something about your song..."
+            rows={4}
+          />
+        </div>
+
+        {/* Explicit Content */}
+        <div className="checkbox-field">
+          <input
+            type="checkbox"
+            id="explicit"
+            checked={formData.explicit}
+            onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
+          />
+          <label htmlFor="explicit">Explicit Content</label>
+        </div>
+
+        {/* Upload Button */}
+        <button type="submit" className="upload-submit-button" disabled={loading}>
+          {loading ? "Uploading..." : "Upload"}
         </button>
       </form>
     </div>

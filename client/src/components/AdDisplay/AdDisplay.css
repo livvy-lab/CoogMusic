@@ -1,0 +1,139 @@
+.adDisplay {
+  position: fixed;
+  top: 100px;
+  right: 30px;
+  width: 280px;
+  max-height: 400px;
+  background: linear-gradient(135deg, #f7eef3 0%, #e8dfe7 100%);
+  border: 3px solid #8b1858;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000; /* ensure above page content */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.adDisplay.loading {
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  height: 150px;
+}
+
+.adHeader {
+  background: #8b1858;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none; /* allow drag without scrolling */
+}
+
+.adLabel {
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.adContent {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.adImage {
+  width: 100%;
+  max-width: 240px;
+  height: auto;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.adTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a2844;
+  text-align: center;
+  margin: 0;
+}
+
+.adFooter {
+  padding: 12px;
+  background: rgba(139, 24, 88, 0.05);
+  border-top: 1px solid rgba(139, 24, 88, 0.2);
+}
+
+.adRemovePrompt {
+  font-size: 12px;
+  color: #5a4055;
+  text-align: center;
+  margin: 0;
+}
+
+.adRemovePrompt a {
+  color: #8b1858;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.adRemovePrompt a:hover {
+  color: #af578a;
+  text-decoration: underline;
+}
+
+/* Tablet: reposition as a floating card at bottom-right */
+@media (max-width: 1200px) {
+  .adDisplay {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+    left: auto; /* ensure it's anchored to right */
+    width: 260px;
+    max-width: 80vw; /* keep reasonable width on narrow tablets */
+    max-height: 50vh;
+    border-radius: 12px;
+  }
+
+  .adImage {
+    max-width: 100%;
+  }
+}
+
+/* Smaller desktop screens */
+@media (max-width: 1400px) {
+  .adDisplay {
+    right: 15px;
+    width: 240px;
+  }
+
+  .adImage {
+    max-width: 200px;
+  }
+}
+
+/* Mobile tweaks */
+@media (max-width: 600px) {
+  .adDisplay {
+    bottom: 12px;
+    right: 12px;
+    left: auto;
+    width: 220px;
+    max-width: 75vw;
+    border-width: 2px;
+  }
+  .adHeader { padding: 6px 10px; }
+  .adLabel { font-size: 11px; }
+  .adContent { padding: 12px; }
+  .adTitle { font-size: 14px; }
+  .adFooter { padding: 10px; }
+}

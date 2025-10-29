@@ -131,7 +131,8 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 500, authErr.message || "auth_check_failed");
       }
 
-  const raw = files?.audio || null;
+  // Accept a variety of field names from forms, prefer 'adFile'
+  const raw = (files?.adFile || files?.file || files?.upload || Object.values(files || {})[0] || null);
       const up = raw && {
         filepath: raw.filepath || null,
         originalFilename: raw.originalFilename || "",
@@ -207,6 +208,78 @@ export async function handleUploadRoutes(req, res) {
       });
     }
 
+    if (method === "POST" && pathname === "/upload/album") {
+      // 1) Parse multipart (no files required for album, just metadata)
+      let fields, files;
+      try {
+        ({ fields, files } = await parseMultipart(req, { allowed: ["*/*"] }));
+      } catch (e) {
+        return bad(res, 400, e.message || "multipart_parse_error");
+      }
+
+      // 2) Validate fields
+      const title = String(fields.title || "").trim();
+      const artistId = Number(fields.artistId);
+      const releaseDate = fields.releaseDate || null;
+      const description = String(fields.description || "").trim();
+      
+      // Parse genres array (sent as JSON string)
+      let genres = [];
+      try {
+        if (fields.genres) {
+          genres = JSON.parse(fields.genres);
+          if (!Array.isArray(genres)) genres = [];
+        }
+      } catch {
+        genres = [];
+      }
+
+      if (!title) return bad(res, 400, "title_required");
+      if (!Number.isFinite(artistId) || artistId <= 0)
+        return bad(res, 400, "artistId_required");
+
+      // 3) Insert Album
+      const [albumIns] = await db.query(
+        "INSERT INTO Album (Title, ReleaseDate, Description, IsDeleted) VALUES (?, ?, ?, 0)",
+        [title, releaseDate, description]
+      );
+      const albumId = albumIns.insertId;
+
+      // 4) Link artist to album
+      try {
+        await db.query(
+          "INSERT INTO Album_Artist (AlbumID, ArtistID) VALUES (?, ?)",
+          [albumId, artistId]
+        );
+      } catch (err) {
+        console.warn("Failed to link artist to album:", err?.message);
+      }
+
+      // 5) Link genres to album
+      if (genres.length > 0) {
+        for (const genreId of genres) {
+          if (Number.isFinite(genreId) && genreId > 0) {
+            try {
+              await db.query(
+                "INSERT INTO Album_Genre (AlbumID, GenreID) VALUES (?, ?)",
+                [albumId, genreId]
+              );
+            } catch (err) {
+              console.warn(`Failed to link genre ${genreId} to album:`, err?.message);
+            }
+          }
+        }
+      }
+
+      return ok(res, 201, {
+        albumId,
+        title,
+        artistId,
+        releaseDate,
+        genres
+      });
+    }
+
     if (method === "POST" && pathname === "/upload/song") {
       if (!BUCKET || !process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID) {
         return bad(res, 500, "s3_not_configured");
@@ -239,6 +312,17 @@ export async function handleUploadRoutes(req, res) {
       const albumId = fields.albumId ? Number(fields.albumId) : null;
       const genreId = fields.genreId ? Number(fields.genreId) : null;
       const trackNumber = fields.trackNumber ? Number(fields.trackNumber) : null;
+
+      // Parse genres array (sent as JSON string from frontend)
+      let genres = [];
+      try {
+        if (fields.genres) {
+          genres = JSON.parse(fields.genres);
+          if (!Array.isArray(genres)) genres = [];
+        }
+      } catch {
+        genres = [];
+      }
 
       if (!title) return bad(res, 400, "title_required");
       if (!Number.isFinite(artistId) || artistId <= 0)
@@ -331,6 +415,22 @@ export async function handleUploadRoutes(req, res) {
           artistId
         ]);
       } catch {}
+
+      // Link genres to song
+      if (genres.length > 0) {
+        for (const genreIdFromArray of genres) {
+          if (Number.isFinite(genreIdFromArray) && genreIdFromArray > 0) {
+            try {
+              await db.query(
+                "INSERT INTO Song_Genre (SongID, GenreID) VALUES (?, ?)",
+                [songId, genreIdFromArray]
+              );
+            } catch (err) {
+              console.warn(`Failed to link genre ${genreIdFromArray} to song:`, err?.message);
+            }
+          }
+        }
+      }
 
       if (albumId && trackNumber !== null && Number.isFinite(trackNumber)) {
         try {
