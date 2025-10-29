@@ -1,4 +1,3 @@
-// server/routes/auth.js
 import "dotenv/config";
 import db from "../db.js";
 import bcrypt from "bcrypt";
@@ -20,7 +19,7 @@ export async function handleAuthRoutes(req, res) {
 
   /* =========================================================
      🎧 1) LISTENER REGISTRATION
-  ========================================================= */
+   ========================================================= */
   if (pathname === "/auth/register" && method === "POST") {
     try {
       // read JSON body
@@ -110,7 +109,7 @@ export async function handleAuthRoutes(req, res) {
 
   /* =========================================================
      🎨 2) ARTIST REGISTRATION
-  ========================================================= */
+   ========================================================= */
   if (pathname === "/auth/register/artist" && method === "POST") {
     try {
       // read JSON body
@@ -126,7 +125,7 @@ export async function handleAuthRoutes(req, res) {
         return;
       }
 
-      const first = parsed.first?.trim();            // ArtistName
+      const first = parsed.first?.trim(); // ArtistName
       const bio = parsed.bio?.trim() || null;
       const username = (parsed.username ?? parsed.user)?.trim();
       const password = parsed.password ?? "";
@@ -183,8 +182,8 @@ export async function handleAuthRoutes(req, res) {
         JSON.stringify({
           success: true,
           message: "Artist registered successfully",
-          ArtistID: artistId,   // keep capitalized for compatibility with your login handling
-          artistId,             // also include lowercase if you want
+          ArtistID: artistId,
+          artistId,
           accountType: "artist",
         })
       );
@@ -193,6 +192,79 @@ export async function handleAuthRoutes(req, res) {
       console.error("Error registering artist:", err);
       res.writeHead(500, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Artist registration failed" }));
+      return;
+    }
+  }
+
+  /* =========================================================
+     👑 3) ADMIN REGISTRATION (MOVED INSIDE THE FUNCTION)
+   ========================================================= */
+  if (pathname === "/auth/register/admin" && method === "POST") {
+    try {
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      const parsed = JSON.parse(body || "{}");
+
+      const username = parsed.username?.trim();
+      const password = parsed.password ?? "";
+
+      if (!username || !password) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Username and password are required" }));
+        return;
+      }
+
+      // Password Policy Check
+      const pwOk = /^(?=.*[A-Z])(?=.*[!@#$%^&*(),.?":{}|<>]).{8,}$/.test(password);
+      if (!pwOk) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            error: "Password must be ≥8 chars, include one uppercase and one special character.",
+          })
+        );
+        return;
+      }
+
+      // Username Uniqueness Check
+      const [existing] = await db.execute(
+        "SELECT 1 FROM AccountInfo WHERE Username = ? LIMIT 1",
+        [username]
+      );
+      if (existing.length > 0) {
+        res.writeHead(409, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Username already exists" }));
+        return;
+      }
+
+      // Create AccountInfo (Admin)
+      const hash = await bcrypt.hash(password, 10);
+      const [accIns] = await db.execute(
+        "INSERT INTO AccountInfo (Username, PasswordHash, AccountType) VALUES (?, ?, 'Admin')",
+        [username, hash]
+      );
+      const accountId = accIns.insertId;
+
+      // Create Administrator row, linking it to the AccountInfo
+      const [adminIns] = await db.execute(
+        `INSERT INTO Administrator (AccountID, Username, DateCreated) VALUES (?, ?, NOW())`,
+        [accountId, username]
+      );
+      const adminId = adminIns.insertId;
+
+      res.writeHead(201, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({
+          success: true,
+          message: "Admin registered successfully",
+          adminId,
+          accountType: "admin",
+        })
+      );
+      return;
+    } catch (err) {
+      console.error("Error registering admin:", err);
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Admin registration failed" }));
       return;
     }
   }
