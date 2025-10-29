@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import "./LikedPage.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function PlaylistView({ isLikedSongs = false, variant = "default" }) {
 
@@ -27,10 +28,10 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
 
         if (isLikedSongs) {
           // fetch liked songs
-          url = `http://localhost:3001/listeners/${listenerId}/liked_songs`;
+          url = `${API_BASE_URL}/listeners/${listenerId}/liked_songs`;
         } else {
           // fetch songs from a playlist
-          url = `http://localhost:3001/playlists/${id}/tracks`;
+          url = `${API_BASE_URL}/playlists/${id}/tracks`;
         }
 
         const res = await fetch(url);

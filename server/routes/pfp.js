@@ -13,28 +13,28 @@ const s3 = new S3Client({
 });
 
 function cors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 }
 function ok(res, data) {
   res.writeHead(200, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Origin": "*",
   });
   res.end(JSON.stringify(data));
 }
 function bad(res, msg = "bad_request") {
   res.writeHead(400, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Origin": "*",
   });
   res.end(JSON.stringify({ error: msg }));
 }
 function notFound(res) {
   res.writeHead(404, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Origin": "*",
   });
   res.end(JSON.stringify({ error: "not_found" }));
 }

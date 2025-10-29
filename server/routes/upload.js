@@ -19,7 +19,7 @@ const s3 = new S3Client({
 const BUCKET = process.env.AWS_BUCKET_NAME;
 
 function cors(res) {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Accept");
 }
@@ -27,7 +27,7 @@ function cors(res) {
 function ok(res, code, data) {
   res.writeHead(code, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173"
+    "Access-Control-Allow-Origin": "*"
   });
   res.end(JSON.stringify(data));
 }

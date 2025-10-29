@@ -3,6 +3,7 @@ import { useSearchParams, useParams } from "react-router-dom";
 import UserRow from "./UserRow";
 import "./Follows.css";
 import { getUser } from "../../lib/userStorage";
+import { API_BASE_URL } from "../../config/api";
 
 export default function FollowTabs() {
   const { id: viewedUserIdParam } = useParams();
@@ -32,11 +33,11 @@ export default function FollowTabs() {
   // Refetch lists for profile being viewed
   const refetchData = async () => {
     const followersRes = await fetch(
-      `http://localhost:3001/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`
+      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`
     );
     setFollowers(await followersRes.json());
     const followingRes = await fetch(
-      `http://localhost:3001/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`
+      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`
     );
     setFollowing(await followingRes.json());
   };
@@ -50,7 +51,7 @@ export default function FollowTabs() {
   }, [initialTab]);
 
   const handleFollow = async (targetUser) => {
-    await fetch("http://localhost:3001/follows", {
+    await fetch(`${API_BASE_URL}/follows`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -64,7 +65,7 @@ export default function FollowTabs() {
   };
 
   const handleUnfollow = async (targetUser) => {
-    await fetch("http://localhost:3001/follows", {
+    await fetch(`${API_BASE_URL}/follows`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

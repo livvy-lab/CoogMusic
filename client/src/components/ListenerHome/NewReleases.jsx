@@ -4,8 +4,7 @@ import "./NewReleases.css";
 import { usePlayer } from "../../context/PlayerContext.jsx";
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import SongActions from "../Songs/SongActions";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../../config/api";
 
 export default function NewReleases({ title = "New releases" }) {
   const [songs, setSongs] = useState([]);
@@ -25,7 +24,7 @@ export default function NewReleases({ title = "New releases" }) {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/songs/latest?limit=10`);
+  const res = await fetch(`${API_BASE_URL}/songs/latest?limit=10`);
         const data = await res.json();
         setSongs(Array.isArray(data) ? data : []);
       } catch {
@@ -44,7 +43,7 @@ export default function NewReleases({ title = "New releases" }) {
   async function resolveUrl(song) {
     if (song?.url) return song.url;
     try {
-      const r = await fetch(`${API_BASE}/songs/${encodeURIComponent(song.SongID)}/stream`);
+  const r = await fetch(`${API_BASE_URL}/songs/${encodeURIComponent(song.SongID)}/stream`);
       if (!r.ok) return null;
       const j = await r.json();
       return j?.url ?? null;

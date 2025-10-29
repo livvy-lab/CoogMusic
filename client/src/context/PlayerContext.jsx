@@ -1,6 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../config/api";
 const Ctx = createContext(null);
 
 function getListenerId() {
@@ -39,7 +38,7 @@ export function PlayerProvider({ children }) {
       if (postedRef.current) return;
       postedRef.current = true;
 
-      await fetch(`${API_BASE}/plays`, {
+      await fetch(`${API_BASE_URL}/plays`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ songId, listenerId, msPlayed }),
@@ -88,7 +87,7 @@ export function PlayerProvider({ children }) {
   async function playSong(song) {
     const id = song?.SongID || song?.songId;
     if (!id) return;
-    const r = await fetch(`${API_BASE}/songs/${id}/stream`);
+  const r = await fetch(`${API_BASE_URL}/songs/${id}/stream`);
     if (!r.ok) return;
     const data = await r.json();
 

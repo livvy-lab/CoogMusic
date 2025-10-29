@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { getUser } from "../lib/userStorage";
 import "./ArtistAnalytics.css";
+import { API_BASE_URL } from "../config/api";
 
 function todayOffset(days = 0) {
   const d = new Date();
@@ -57,7 +58,7 @@ export default function ArtistAnalytics() {
       ...(appliedFilterAlbum ? { album: appliedFilterAlbum } : {}),
       ...(appliedSearchTitle ? { song: appliedSearchTitle } : {}),
     }).toString();
-    fetch(`http://localhost:3001/analytics/artist/${artistId}/summary?${params}`)
+    fetch(`${API_BASE_URL}/analytics/artist/${artistId}/summary?${params}`)
       .then(r => r.json())
       .then(summary => {
         setStats(summary);

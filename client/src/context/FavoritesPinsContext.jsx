@@ -1,7 +1,6 @@
 import { createContext, useContext, useMemo, useRef, useState } from "react";
 import { getUser } from "../lib/userStorage";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../config/api";
 const Ctx = createContext(null);
 
 export function FavoritesPinsProvider({ children }) {
@@ -21,7 +20,7 @@ export function FavoritesPinsProvider({ children }) {
         ...(idsParam.length ? { ids: idsParam.join(",") } : {}),
       });
 
-      const r = await fetch(`${API_BASE}/songs/status?${qs.toString()}`);
+  const r = await fetch(`${API_BASE_URL}/songs/status?${qs.toString()}`);
       if (!r.ok) return;
       const j = await r.json();
       setFavoriteIds(new Set(j.favorites || []));
@@ -47,7 +46,7 @@ export function FavoritesPinsProvider({ children }) {
       return next;
     });
 
-    fetch(`${API_BASE}/likes`, {
+  fetch(`${API_BASE_URL}/likes`, {
       method: has ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ listenerId, songId }),
@@ -62,7 +61,7 @@ export function FavoritesPinsProvider({ children }) {
     const willUnpin = pinnedSongId === songId;
     setPinnedSongId(willUnpin ? null : songId);
 
-    fetch(`${API_BASE}/pin`, {
+  fetch(`${API_BASE_URL}/pin`, {
       method: willUnpin ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ listenerId, songId }),

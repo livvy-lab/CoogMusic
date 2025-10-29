@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './ArtistsPerspective.css';
 import PageLayout from '../components/PageLayout/PageLayout';
+import { API_BASE_URL } from "../config/api";
 import { getUser } from '../lib/userStorage';
 
 export default function ArtistsPerspective() {
@@ -21,7 +22,7 @@ export default function ArtistsPerspective() {
 
     async function loadArtist() {
       try {
-        const res = await fetch('http://localhost:3001/artists', { signal });
+  const res = await fetch(`${API_BASE_URL}/artists`, { signal });
         if (!res.ok) return;
         const artists = await res.json();
 
@@ -46,7 +47,7 @@ export default function ArtistsPerspective() {
 
     async function fetchTotalStreams(artistId, signal) {
       try {
-        const res = await fetch(`http://localhost:3001/plays/artist-streams?artistId=${artistId}`, { signal });
+  const res = await fetch(`${API_BASE_URL}/plays/artist-streams?artistId=${artistId}`, { signal });
         if (!res.ok) return;
         const data = await res.json();
         setTotalStreams(data.totalStreams || 0);
@@ -57,7 +58,7 @@ export default function ArtistsPerspective() {
 
     async function fetchFollowerCount(artistId, signal) {
       try {
-        const res = await fetch(`http://localhost:3001/follows/artist-followers?artistId=${artistId}`, { signal });
+  const res = await fetch(`${API_BASE_URL}/follows/artist-followers?artistId=${artistId}`, { signal });
         if (!res.ok) return;
         const data = await res.json();
         setFollowerCount(data.followerCount || 0);

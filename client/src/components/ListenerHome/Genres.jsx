@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 import "./Genres.css";
 
 export default function Genres() {
@@ -12,7 +13,7 @@ export default function Genres() {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const res = await fetch("http://localhost:3001/genres");
+        const res = await fetch(`${API_BASE_URL}/genres`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setGenres(Array.isArray(data) ? data : []);

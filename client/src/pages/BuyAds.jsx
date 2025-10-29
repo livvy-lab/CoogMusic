@@ -4,6 +4,7 @@ import PageLayout from '../components/PageLayout/PageLayout';
 import cat_left from '../assets/left_cat.svg';
 import cat_right from '../assets/right_cat.svg';
 import { getUser } from '../lib/userStorage';
+import { API_BASE_URL } from "../config/api";
 
 const BuyAds = () => {
   const [formData, setFormData] = useState({
@@ -49,7 +50,7 @@ const BuyAds = () => {
       if (formData.adDescription) fd.append('adDescription', formData.adDescription);
       if (user?.accountId) fd.append('accountId', String(user.accountId));
 
-      const res = await fetch('http://localhost:3001/upload/ad', {
+      const res = await fetch(`${API_BASE_URL}/upload/ad`, {
         method: 'POST',
         body: fd
       });

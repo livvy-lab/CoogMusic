@@ -18,14 +18,14 @@ const s3 = new S3Client({
 function json(res, code, obj) {
   res.writeHead(code, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Origin": "*",
   });
   res.end(JSON.stringify(obj));
 }
 
 export function handleSetArtistAvatar(req, res, artistId) {
   if (req.method === "OPTIONS") {
-    res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     res.writeHead(204);
@@ -40,7 +40,7 @@ export function handleSetArtistAvatar(req, res, artistId) {
 
   form.parse(req, async (err, fields, files) => {
     try {
-      res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Origin", "*");
       if (err) throw new Error("invalid_multipart");
 
       const file = Array.isArray(files.file) ? files.file[0] : files.file;

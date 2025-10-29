@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 export default function CreatePlaylistForm({ listenerId, onCreated }) {
   const [name, setName] = useState("");
@@ -10,7 +11,7 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
     e.preventDefault();
     setError(null);
 
-    const res = await fetch("http://localhost:3001/playlists", {
+    const res = await fetch(`${API_BASE_URL}/playlists`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

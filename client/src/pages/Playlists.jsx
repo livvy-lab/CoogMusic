@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import PlaylistForm from "../components/Playlist/PlaylistForm";
+import { API_BASE_URL } from "../config/api";
 
 export default function Playlists() {
   const [playlists, setPlaylists] = useState([]);
@@ -8,7 +9,7 @@ export default function Playlists() {
   // 🧩 Fetch playlists from backend
   async function fetchPlaylists() {
     try {
-      const res = await fetch("http://localhost:3001/playlists");
+      const res = await fetch(`${API_BASE_URL}/playlists`);
       if (!res.ok) throw new Error("Failed to fetch playlists");
       const data = await res.json();
       setPlaylists(data);

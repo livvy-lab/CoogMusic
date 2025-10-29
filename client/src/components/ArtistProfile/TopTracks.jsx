@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import "./TopTracks.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp }) {
   const params = useParams();
@@ -22,7 +23,7 @@ export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp
       try {
         setLoading(true);
         const res = await fetch(
-          `http://localhost:3001/artists/${artistId}/top-tracks?limit=10`,
+          `${API_BASE_URL}/artists/${artistId}/top-tracks?limit=10`,
           { signal: ctrl.signal }
         );
         if (!res.ok) {
