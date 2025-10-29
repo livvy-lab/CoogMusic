@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { usePlayer } from "../context/PlayerContext";
 import PageLayout from "../components/PageLayout/PageLayout";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../config/api";
 const TABS = ["All", "Artists", "Albums", "Playlists", "Songs", "Profiles"];
 
 const linkFor = {
@@ -44,7 +43,7 @@ export default function SearchResults() {
       if (!qq) { setGroups({ songs: [], artists: [], listeners: [], albums: [], playlists: [] }); return; }
       setLoading(true);
       try {
-        const r = await fetch(`${API_BASE}/search?q=${encodeURIComponent(qq)}`);
+  const r = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(qq)}`);
         const j = await r.json();
         if (!dead && j?.groups) setGroups(j.groups);
       } finally {

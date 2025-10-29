@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { getUser } from "../lib/userStorage";
 import "./ListenerAnalytics.css";
+import { API_BASE_URL } from "../config/api";
 
 function todayOffset(days = 0) {
   const d = new Date();
@@ -65,7 +66,7 @@ export default function ListenerAnalytics() {
       ...(appliedFilterArtist ? { artist: appliedFilterArtist } : {}),
       ...(appliedFilterGenre ? { genre: appliedFilterGenre } : {}),
     }).toString();
-    fetch(`http://localhost:3001/analytics/listener/${listenerId}/summary?${params}`)
+    fetch(`${API_BASE_URL}/analytics/listener/${listenerId}/summary?${params}`)
       .then((r) => r.json())
       .then((summary) => {
         setStats(summary);

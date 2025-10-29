@@ -1,6 +1,7 @@
 // client/src/components/ArtistCard/ArtistCard.jsx
 import { useEffect, useState } from "react";
 import "./ArtistCard.css";
+import { API_BASE_URL } from "../../config/api";
 
 function PlaceholderCard() {
   return (
@@ -34,7 +35,7 @@ export default function ArtistCard({ artistId }) {
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const res = await fetch(`http://localhost:3001/artists/${artistId}/profile`, { signal: ctrl.signal });
+  const res = await fetch(`${API_BASE_URL}/artists/${artistId}/profile`, { signal: ctrl.signal });
         if (res.status === 404) { setArtist(null); setState({ loading: false, notFound: true }); return; }
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();

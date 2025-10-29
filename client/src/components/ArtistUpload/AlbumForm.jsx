@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 import "./AlbumForm.css";
 
 export default function AlbumForm() {
@@ -29,7 +30,7 @@ export default function AlbumForm() {
   useEffect(() => {
     const fetchGenres = async () => {
       try {
-        const res = await fetch("http://localhost:3001/genres");
+        const res = await fetch(`${API_BASE_URL}/genres`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setAvailableGenres(Array.isArray(data) ? data : []);

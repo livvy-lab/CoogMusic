@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 export default function AddToPlaylistMenu({ songId, onAdded }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -6,7 +7,7 @@ export default function AddToPlaylistMenu({ songId, onAdded }) {
 
   // 🧩 Fetch all playlists when menu is opened
   async function fetchPlaylists() {
-    const res = await fetch("http://localhost:3001/playlists");
+    const res = await fetch(`${API_BASE_URL}/playlists`);
     if (res.ok) {
       const data = await res.json();
       setPlaylists(data);
@@ -21,7 +22,7 @@ export default function AddToPlaylistMenu({ songId, onAdded }) {
 
   // 🧩 Add song to selected playlist
   async function addSongToPlaylist(playlistId) {
-    const res = await fetch(`http://localhost:3001/playlists/${playlistId}/add`, {
+    const res = await fetch(`${API_BASE_URL}/playlists/${playlistId}/add`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ songId }),

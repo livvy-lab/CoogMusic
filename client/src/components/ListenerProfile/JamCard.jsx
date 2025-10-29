@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useFavPins } from "../../context/FavoritesPinsContext";
+import { API_BASE_URL } from "../../config/api";
 import "./JamCard.css";
 
 export default function JamCard({ listenerId }) {
@@ -29,7 +30,7 @@ export default function JamCard({ listenerId }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
+  const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setSong(data.favorites?.pinnedSong || null);
@@ -42,10 +43,7 @@ export default function JamCard({ listenerId }) {
     })();
   }, [listenerId, pinnedSongId]);
 
-  // Re-fetch when the pinned song changes globally — include pinnedSongId as
-  // a dependency so the effect above triggers. (We intentionally don't dedupe
-  // the fetch here; the [listenerId, pinnedSongId] dependency set above will
-  // cause the effect to re-run when pinnedSongId changes.)
+
 
   const handleTogglePlay = () => setIsPlaying(p => !p);
 

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./AboutBox.css";
+import { API_BASE_URL } from "../../config/api";
 
 const FALLBACK_TEXT = "This artist hasn’t filled out their information yet.";
 
@@ -21,7 +22,7 @@ export default function AboutBox({ artistId }) {
     const fetchBio = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://localhost:3001/artists/${id}/about`, {
+        const res = await fetch(`${API_BASE_URL}/artists/${id}/about`, {
           signal: ctrl.signal,
         });
         if (!res.ok) {

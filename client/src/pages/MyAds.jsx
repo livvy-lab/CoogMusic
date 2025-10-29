@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import './MyAds.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import { getUser } from '../lib/userStorage';
+import { API_BASE_URL } from "../config/api";
 
 const MyAds = () => {
   const [ads, setAds] = useState([]);
@@ -29,7 +30,7 @@ const MyAds = () => {
       }
 
       // Fetch all advertisements (you may want to filter by artist/account later)
-      const res = await fetch('http://localhost:3001/advertisements');
+  const res = await fetch(`${API_BASE_URL}/advertisements`);
       if (!res.ok) throw new Error('Failed to fetch ads');
       
       const data = await res.json();
@@ -52,7 +53,7 @@ const MyAds = () => {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/advertisements/${adId}`, {
+      const res = await fetch(`${API_BASE_URL}/advertisements/${adId}`, {
         method: 'DELETE'
       });
 
@@ -98,7 +99,7 @@ const MyAds = () => {
         ) : (
           <div className="ads-grid">
             {ads.map(ad => {
-              const fileUrl = (ad.AdFileUrl || (ad.AdFile && (ad.AdFile.startsWith('http') ? ad.AdFile : `http://localhost:3001${ad.AdFile}`)) || '');
+              const fileUrl = (ad.AdFileUrl || (ad.AdFile && (ad.AdFile.startsWith('http') ? ad.AdFile : `${API_BASE_URL}${ad.AdFile}`)) || '');
               return (
               <div key={ad.AdID} className="ad-card">
                 <div className="ad-preview">

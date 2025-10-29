@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./FavoriteArtists.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function FavoriteArtists({ listenerId, onSelect }) {
   const [artists, setArtists] = useState([]);
@@ -17,7 +18,7 @@ export default function FavoriteArtists({ listenerId, onSelect }) {
 
     (async () => {
       try {
-        const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
+  const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const favs = data.favorites?.artists || [];

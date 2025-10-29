@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../lib/userStorage";
+import { API_BASE_URL } from "../../config/api";
 import "./ProfileCard.css";
-
-const API_BASE = import.meta.env?.VITE_API_BASE || "http://localhost:3001";
 
 export default function ProfileCard({ listenerId: propListenerId = null, publicView = false }) {
   const navigate = useNavigate();
@@ -60,7 +59,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch(`${API_BASE}/listeners/${listenerId}/profile`);
+  const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const j = await r.json();
         if (!cancel) {
@@ -85,7 +84,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     let cancel = false;
     (async () => {
       try {
-        const r = await fetch(`${API_BASE}/pfp/listener/${listenerId}`);
+  const r = await fetch(`${API_BASE_URL}/pfp/listener/${listenerId}`);
         if (!r.ok) return;
         const j = await r.json();
         const url = j?.url || "";
@@ -106,7 +105,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     (async () => {
       try {
         setCountLoading(true);
-        const res = await fetch(`${API_BASE}/playlists?listenerId=${listenerId}`);
+  const res = await fetch(`${API_BASE_URL}/playlists?listenerId=${listenerId}`);
         if (!res.ok) throw new Error("count fetch failed");
         const arr = await res.json();
         const count = Array.isArray(arr)
@@ -131,7 +130,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     }
     try {
       const res = await fetch(
-        `${API_BASE}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)}&followingId=${listenerId}&followingType=Listener`
+  `${API_BASE_URL}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)}&followingId=${listenerId}&followingType=Listener`
       );
       if (!res.ok) {
         setIsFollowing(false);

@@ -1,5 +1,6 @@
 import "./PlaylistGrid.css";
 import { useEffect, useState } from "react";
+import { API_BASE_URL } from "../../config/api";
 
 export default function PlaylistGrid({
   listenerId,
@@ -18,7 +19,7 @@ export default function PlaylistGrid({
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this playlist?")) return;
     try {
-      const res = await fetch(`http://localhost:3001/playlists/${id}`, {
+  const res = await fetch(`${API_BASE_URL}/playlists/${id}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete playlist");
@@ -39,7 +40,7 @@ export default function PlaylistGrid({
     );
     if (!newName || newName === playlist?.Name) return;
 
-    fetch(`http://localhost:3001/playlists/${id}`, {
+  fetch(`${API_BASE_URL}/playlists/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ Name: newName }),
@@ -71,12 +72,12 @@ export default function PlaylistGrid({
       try {
         setLoading(true);
         const res = await fetch(
-          `http://localhost:3001/playlists?listenerId=${encodeURIComponent(listenerId)}`
+          `${API_BASE_URL}/playlists?listenerId=${encodeURIComponent(listenerId)}`
         );
         const data = res.ok ? await res.json() : [];
 
         const resPinned = await fetch(
-          `http://localhost:3001/listeners/${encodeURIComponent(listenerId)}`
+          `${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}`
         );
         if (resPinned.ok) {
           const d = await resPinned.json();
@@ -99,7 +100,7 @@ export default function PlaylistGrid({
 
       try {
         const res1 = await fetch(
-          `http://localhost:3001/liked_songs/count?listenerId=${encodeURIComponent(listenerId)}`
+          `${API_BASE_URL}/liked_songs/count?listenerId=${encodeURIComponent(listenerId)}`
         );
         if (res1.ok) {
           const d = await res1.json();
@@ -110,7 +111,7 @@ export default function PlaylistGrid({
 
       try {
         const res2 = await fetch(
-          `http://localhost:3001/liked_songs?listenerId=${encodeURIComponent(listenerId)}`
+          `${API_BASE_URL}/liked_songs?listenerId=${encodeURIComponent(listenerId)}`
         );
         if (res2.ok) {
           const d2 = await res2.json();
@@ -135,7 +136,7 @@ export default function PlaylistGrid({
 
     try {
       const res = await fetch(
-        `http://localhost:3001/listeners/${listenerId}/pinned-playlist`,
+        `${API_BASE_URL}/listeners/${listenerId}/pinned-playlist`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },

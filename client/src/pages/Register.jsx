@@ -3,8 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Auth.css";
 import Loading from "../components/LoadingLayout/Loading";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../config/api";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -40,8 +39,8 @@ export default function Register() {
     try {
       const endpoint =
         selectedAccountType === "Artist"
-          ? `${API_BASE}/auth/register/artist`
-          : `${API_BASE}/auth/register`;
+          ? `${API_BASE_URL}/auth/register/artist`
+          : `${API_BASE_URL}/auth/register`;
 
       const body =
         selectedAccountType === "Artist"
@@ -83,7 +82,7 @@ export default function Register() {
       if (file && entityId) {
         const fd = new FormData();
         fd.append("file", file);
-        const upRes = await fetch(`${API_BASE}/${avatarPath}/${entityId}/avatar`, { method: "POST", body: fd });
+  const upRes = await fetch(`${API_BASE_URL}/${avatarPath}/${entityId}/avatar`, { method: "POST", body: fd });
         const upRaw = await upRes.text();
         let upData = {};
         try { upData = JSON.parse(upRaw); } catch {}

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "./Auth.css";
 import { setUser } from "../lib/userStorage";
 import Loading from "../components/LoadingLayout/Loading";
+import { API_BASE_URL } from "../config/api";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -12,7 +13,7 @@ export default function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:3001/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ username, password })

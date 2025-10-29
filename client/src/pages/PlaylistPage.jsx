@@ -4,6 +4,7 @@ import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
 import AddToPlaylistMenu from "../components/Playlist/AddToPlaylistMenu";
+import { API_BASE_URL } from "../config/api";
 
 
 
@@ -16,7 +17,7 @@ export default function PlaylistPage() {
 
   // fetch playlist metadata
   async function fetchPlaylistInfo() {
-    const res = await fetch(`http://localhost:3001/playlists/${id}`);
+    const res = await fetch(`${API_BASE_URL}/playlists/${id}`);
     if (res.ok) {
       const data = await res.json();
       setPlaylistInfo(data);
@@ -25,7 +26,7 @@ export default function PlaylistPage() {
 
   // fetch all songs in playlist
   async function fetchPlaylistTracks() {
-    const res = await fetch(`http://localhost:3001/playlists/${id}/tracks`);
+    const res = await fetch(`${API_BASE_URL}/playlists/${id}/tracks`);
     if (res.ok) {
       const data = await res.json();
       const formatted = data.map((row) => ({
