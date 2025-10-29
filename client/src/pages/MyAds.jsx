@@ -34,8 +34,9 @@ const MyAds = () => {
       
       const data = await res.json();
       // Filter only non-deleted ads
-      const activeAds = data.filter(ad => ad.IsDeleted === 0);
-      setAds(activeAds);
+  // Treat undefined/null IsDeleted as active; backend already filters IsDeleted=0
+  const activeAds = data.filter(ad => ad.IsDeleted === 0 || ad.IsDeleted === null || ad.IsDeleted === undefined);
+  setAds(activeAds);
       setError(null);
     } catch (err) {
       console.error('Error fetching ads:', err);
@@ -96,20 +97,22 @@ const MyAds = () => {
           </div>
         ) : (
           <div className="ads-grid">
-            {ads.map(ad => (
+            {ads.map(ad => {
+              const fileUrl = (ad.AdFileUrl || (ad.AdFile && (ad.AdFile.startsWith('http') ? ad.AdFile : `http://localhost:3001${ad.AdFile}`)) || '');
+              return (
               <div key={ad.AdID} className="ad-card">
                 <div className="ad-preview">
                   {ad.AdFile && (
                     <div className="ad-file-preview">
-                      {ad.AdFile.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                        <img src={ad.AdFile} alt={ad.AdName} />
-                      ) : ad.AdFile.match(/\.(mp4|webm|mov)$/i) ? (
+                      {fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                        <img src={fileUrl} alt={ad.AdName} />
+                      ) : fileUrl.match(/\.(mp4|webm|mov)$/i) ? (
                         <video controls>
-                          <source src={ad.AdFile} />
+                          <source src={fileUrl} />
                         </video>
-                      ) : ad.AdFile.match(/\.(mp3|wav|ogg)$/i) ? (
+                      ) : fileUrl.match(/\.(mp3|wav|ogg)$/i) ? (
                         <audio controls>
-                          <source src={ad.AdFile} />
+                          <source src={fileUrl} />
                         </audio>
                       ) : (
                         <div className="file-icon">📄</div>
@@ -123,9 +126,9 @@ const MyAds = () => {
                   <div className="ad-meta">
                     <span className="ad-id">ID: {ad.AdID}</span>
                   </div>
-                  {ad.AdFile && (
+                  {fileUrl && (
                     <a 
-                      href={ad.AdFile} 
+                      href={fileUrl} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="view-link"
@@ -142,7 +145,7 @@ const MyAds = () => {
                   🗑️ Delete
                 </button>
               </div>
-            ))}
+            );})}
           </div>
         )}
       </div>

@@ -61,9 +61,14 @@ const BuyAds = () => {
 
       const data = await res.json();
       console.log('Ad uploaded to S3:', data);
-      alert('Ad uploaded successfully!');
-      // Optionally clear form after success
+      if (data?.db?.error) {
+        alert('Uploaded file, but failed to save ad record. Please try again.');
+      } else {
+        alert('Ad uploaded successfully!');
+      }
+      // Clear form and send user to My Ads so they can see it
       setFormData({ adTitle: '', adDescription: '', adFile: null });
+      window.location.href = '/my-ads';
     } catch (err) {
       console.error('Upload error:', err);
       alert(`Upload error: ${err.message}`);

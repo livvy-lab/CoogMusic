@@ -14,21 +14,19 @@ const Subscription = () => {
 
     async function checkSubscription() {
       try {
-        const res = await fetch(`http://localhost:3001/subscriptions/${user.listenerId}`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.hasActiveSubscription !== undefined) {
-          setIsSubscribed(!!data.hasActiveSubscription);
-        } else if (data?.IsActive !== undefined) {
+        const res = await fetch(`http://localhost:3001/subscriptions/listener/${user.listenerId}`);
+        
+        if (res.ok) {
+          const data = await res.json();
+          // Backend returns single subscription object with IsActive field
           setIsSubscribed(!!data.IsActive);
-        } else if (data?.Active !== undefined) {
-          setIsSubscribed(!!data.Active);
-        } else if (data?.subscription && data.subscription.IsActive !== undefined) {
-          setIsSubscribed(!!data.subscription.IsActive);
+        } else {
+          // 404 means no active subscription found
+          setIsSubscribed(false);
         }
       } catch (err) {
         console.error('Error checking subscription:', err);
-        setError('Failed to check subscription status');
+        setIsSubscribed(false);
       }
     }
 
@@ -69,6 +67,9 @@ const Subscription = () => {
       const data = await res.json();
       console.log('✅ Subscription success:', data);
       setIsSubscribed(true);
+      
+      // Reload the page to remove ads from display
+      window.location.reload();
 
 } else {
   // Unsubscribe logic
@@ -98,6 +99,9 @@ const Subscription = () => {
   if (!res.ok) throw new Error('Failed to unsubscribe');
 
   setIsSubscribed(false);
+  
+  // Reload the page to show ads again
+  window.location.reload();
 }
 
   } catch (err) {

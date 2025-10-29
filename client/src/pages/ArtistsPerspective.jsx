@@ -7,6 +7,9 @@ import { getUser } from '../lib/userStorage';
 export default function ArtistsPerspective() {
   const navigate = useNavigate();
   const [artistName, setArtistName] = useState('Artist');
+  const [totalStreams, setTotalStreams] = useState(0);
+  const [followerCount, setFollowerCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Try to resolve the artist name from the logged-in account
@@ -24,10 +27,42 @@ export default function ArtistsPerspective() {
 
         // server returns AccountID in Artist rows
         const found = artists.find(a => String(a.AccountID) === String(user.accountId));
-        if (found && found.ArtistName) setArtistName(found.ArtistName);
-        else if (user.name) setArtistName(user.name);
+        if (found && found.ArtistName) {
+          setArtistName(found.ArtistName);
+          // Fetch total streams and followers for this artist
+          if (found.ArtistID) {
+            fetchTotalStreams(found.ArtistID, signal);
+            fetchFollowerCount(found.ArtistID, signal);
+          }
+        } else if (user.name) {
+          setArtistName(user.name);
+        }
       } catch (err) {
         if (err.name !== 'AbortError') console.error('Failed to load artist name', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function fetchTotalStreams(artistId, signal) {
+      try {
+        const res = await fetch(`http://localhost:3001/plays/artist-streams?artistId=${artistId}`, { signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        setTotalStreams(data.totalStreams || 0);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Failed to load stream count', err);
+      }
+    }
+
+    async function fetchFollowerCount(artistId, signal) {
+      try {
+        const res = await fetch(`http://localhost:3001/follows/artist-followers?artistId=${artistId}`, { signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        setFollowerCount(data.followerCount || 0);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Failed to load follower count', err);
       }
     }
 
@@ -38,7 +73,25 @@ export default function ArtistsPerspective() {
   return (
     <PageLayout>
       <div className="artist-dashboard-container">
-  <h1 className="welcome-header">Welcome back, {artistName}</h1>
+        <h1 className="welcome-header">Welcome back, {artistName}</h1>
+
+        <div className="stats-grid">
+          <div className="streams-stats-box">
+            <div className="stat-label">Total Streams</div>
+            <div className="stat-value">
+              {loading ? '...' : totalStreams.toLocaleString()}
+            </div>
+            <div className="stat-subtext">People have streamed your songs</div>
+          </div>
+
+          <div className="followers-stats-box">
+            <div className="stat-label">Followers</div>
+            <div className="stat-value">
+              {loading ? '...' : followerCount.toLocaleString()}
+            </div>
+            <div className="stat-subtext">People following you</div>
+          </div>
+        </div>
 
         <div className="quick-actions-box">
           <div className="quick-actions-label">Quick Actions</div>

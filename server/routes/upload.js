@@ -131,7 +131,8 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 500, authErr.message || "auth_check_failed");
       }
 
-  const raw = files?.audio || null;
+  // Accept a variety of field names from forms, prefer 'adFile'
+  const raw = (files?.adFile || files?.file || files?.upload || Object.values(files || {})[0] || null);
       const up = raw && {
         filepath: raw.filepath || null,
         originalFilename: raw.originalFilename || "",
