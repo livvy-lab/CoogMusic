@@ -1,5 +1,5 @@
 // client/src/components/MusicPlayBar/MusicPlayBar.jsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Range, getTrackBackground } from "react-range";
 import { usePlayer } from "../../context/PlayerContext.jsx";
 import "./MusicPlayBar.css";
@@ -22,9 +22,10 @@ export default function MusicPlayBar() {
     duration,           // seconds
     currentTime,        // seconds
     volume,             // 0..1
-    toggle,             // play/pause
+      toggle,             // play/pause
     seek,               // (seconds) => void
     setVolumePercent,   // (0..1) => void
+      toggleLikeCurrent,
   } = usePlayer();
 
   // keep hooks order stable (don’t early return)
@@ -50,6 +51,29 @@ export default function MusicPlayBar() {
     const pct = duration ? (currentTime / duration) * 100 : 0;
     return { background: `linear-gradient(to right, #895674 ${pct}%, #FFE8F5 ${pct}%)` };
   }, [currentTime, duration]);
+
+  // When the current song changes, fetch whether it's liked by this listener
+  useEffect(() => {
+    let mounted = true;
+    async function checkLiked() {
+      setIsLiked(false);
+      if (!current?.SongID) return;
+      const stored = localStorage.getItem('listener');
+      const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
+      try {
+        const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted) return;
+        const found = Array.isArray(data) && data.some((r) => r.SongID === current.SongID);
+        setIsLiked(Boolean(found));
+      } catch (err) {
+        // ignore
+      }
+    }
+    checkLiked();
+    return () => { mounted = false; };
+  }, [current]);
 
   return (
     <div
@@ -160,7 +184,34 @@ export default function MusicPlayBar() {
 
         <button
           className={`control-btn small-btn ${isLiked ? "is-active" : ""}`}
-          onClick={() => setIsLiked((v) => !v)}
+          onClick={async () => {
+            // Optimistic UI
+            setIsLiked((v) => !v);
+            try {
+              if (typeof toggleLikeCurrent === 'function') {
+                const res = await toggleLikeCurrent();
+                // if backend returned liked state, ensure UI matches
+                if (res && typeof res.liked === 'boolean') setIsLiked(Boolean(res.liked));
+              } else {
+                // fallback: direct fetch + dispatch
+                const stored = localStorage.getItem('listener');
+                const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
+                if (current?.SongID) {
+                  const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: current.SongID })
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: current.SongID, liked: data.liked } }));
+                    setIsLiked(Boolean(data.liked));
+                  }
+                }
+              }
+            } catch (err) {
+              // if something fails, flip back
+              setIsLiked((v) => !v);
+            }
+          }}
           aria-pressed={isLiked}
           aria-label="Like"
         >

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { usePlayer } from "../context/PlayerContext.jsx";
 import { useParams } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
@@ -15,6 +16,31 @@ export default function PlaylistView({ isLikedSongs = false }) {
   const listenerId = storedListener
     ? JSON.parse(storedListener).ListenerID
     : 6;
+
+  const { playList, playSong } = usePlayer();
+
+  // Unlike handler for liked songs view
+  async function unlikeSong(songId) {
+    try {
+      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId })
+      });
+      if (!res.ok) throw new Error('toggle-failed');
+      const data = await res.json();
+      // dispatch event so other components update
+      try { window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId, liked: data.liked } })); } catch (e) {}
+      if (!data.liked) setTracks((prev) => prev.filter((t) => t.SongID !== songId));
+    } catch (err) {
+      console.error('Error toggling liked song:', err);
+    }
+  }
+
+  // play whole list
+  function handlePlayAll() {
+    if (!tracks || tracks.length === 0) return;
+    const list = tracks.map((t) => ({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }));
+    playList(list, 0);
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -112,7 +138,7 @@ export default function PlaylistView({ isLikedSongs = false }) {
           </div>
 
           <div className="likedControls">
-            <button className="playButton" aria-label="Play">
+            <button className="playButton" aria-label="Play" onClick={handlePlayAll}>
               <Play fill="currentColor" size={28} />
             </button>
             <button className="shuffleButton" aria-label="Shuffle">
@@ -141,14 +167,28 @@ export default function PlaylistView({ isLikedSongs = false }) {
               <p className="noTracks">No songs found.</p>
             ) : (
               tracks.map((t, i) => (
-                <div key={t.SongID || i} className="likedRow">
+                <div
+                  key={t.SongID || i}
+                  className="likedRow"
+                  onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                >
                   <div className="col-num">{i + 1}</div>
                   <div className="col-heart">
-                    <Heart
-                      size={16}
-                      color="#782355"
-                      fill={isLikedSongs ? "#782355" : "none"}
-                    />
+                    {isLikedSongs ? (
+                      <button
+                        className="heartBtn"
+                        onClick={(e) => { e.stopPropagation(); unlikeSong(t.SongID); }}
+                        aria-label={isLikedSongs ? 'Unlike' : 'Like'}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                      >
+                        <Heart size={16} color="#782355" fill="#782355" />
+                      </button>
+                    ) : (
+                      <Heart size={16} color="#782355" fill="none" />
+                    )}
                   </div>
                   <div className="col-title">
                     <div className="songInfo">

@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
+import { usePlayer } from "../context/PlayerContext.jsx";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
-  const listenerId = 6; // temporary static (replace with logged-in user later)
+  // derive listener id from localStorage like other pages; fallback to test account
+  const storedListener = localStorage.getItem("listener");
+  const listenerId = storedListener ? JSON.parse(storedListener).ListenerID : 6;
+
+  const { playList, playSong } = usePlayer();
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
@@ -57,6 +62,12 @@ export default function LikedPage() {
       if (!res.ok) throw new Error("Toggle failed");
       const data = await res.json();
 
+      // Notify other parts of the app that liked state changed
+      try {
+        window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId, liked: data.liked } }));
+      } catch (e) {}
+
+      // If the backend reports the song is now unliked, remove it from this page
       if (!data.liked) {
         setTracks((prev) => prev.filter((t) => t.SongID !== songId));
       }
@@ -65,8 +76,33 @@ export default function LikedPage() {
     }
   }
 
+  // --- Handle play button: play the whole liked list
+  function handlePlayAll() {
+    if (!tracks || tracks.length === 0) return;
+    // map to minimal song objects PlayerContext expects
+    const list = tracks.map((t) => ({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }));
+    playList(list, 0);
+  }
+
   useEffect(() => {
     fetchLikedSongs();
+  }, []);
+
+  // update list when likes change elsewhere (music bar)
+  useEffect(() => {
+    function onLikedChanged(e) {
+      const { songId, liked } = e.detail || {};
+      if (!songId) return;
+      if (!liked) {
+        // remove from list if present
+        setTracks((prev) => prev.filter((t) => t.SongID !== songId));
+      } else {
+        // refresh whole list (safe and simple)
+        fetchLikedSongs();
+      }
+    }
+    window.addEventListener('likedChanged', onLikedChanged);
+    return () => window.removeEventListener('likedChanged', onLikedChanged);
   }, []);
 
   return (
@@ -90,7 +126,7 @@ export default function LikedPage() {
           </div>
 
           <div className="likedControls">
-            <button className="playButton" aria-label="Play">
+            <button className="playButton" aria-label="Play" onClick={handlePlayAll}>
               <Play fill="currentColor" size={28} />
             </button>
             <button className="shuffleButton" aria-label="Shuffle">
@@ -115,8 +151,15 @@ export default function LikedPage() {
             {tracks.length === 0 ? (
               <p style={{ padding: "1rem", color: "#aaa" }}>No liked songs found.</p>
             ) : (
-              tracks.map((t, i) => (
-                <div key={t.SongID} className="likedRow">
+                      tracks.map((t, i) => (
+                        <div
+                          key={t.SongID}
+                          className="likedRow"
+                          onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                        >
                   <div className="col-num">{i + 1}</div>
                   <div className="col-title">
                     <div className="songInfo">
@@ -130,7 +173,7 @@ export default function LikedPage() {
                   <div className="col-duration">
                     {t.duration}
                     <button
-                      onClick={() => unlikeSong(t.SongID)}
+                      onClick={(e) => { e.stopPropagation(); unlikeSong(t.SongID); }}
                       style={{
                         background: "none",
                         border: "none",
