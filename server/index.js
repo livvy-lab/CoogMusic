@@ -40,6 +40,7 @@ import { handleMediaRoutes } from "./routes/media.js";
 import { handleSearchRoutes } from "./routes/search.js";
 import { handleArtistAnalyticsRoutes } from "./routes/artist_analytics.js";
 import { handleListenerAnalyticsRoutes } from "./routes/listener_analytics.js";
+import { handleAdminAnalyticsRoutes } from "./routes/admin_analytics.js";
 
 const PORT = process.env.PORT || 3001;
 
@@ -181,6 +182,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/listeners")) { await handleListenerRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/artist")) { await handleArtistAnalyticsRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/listener")) { await handleListenerAnalyticsRoutes(req, res); return; }
+    if (pathname.startsWith("/analytics/admin")) { await handleAdminAnalyticsRoutes(req, res); return; }
 
     // ───────────────────────────────────────────────
     // Fallback

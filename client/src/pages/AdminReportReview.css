@@ -1,0 +1,117 @@
+.admin-report-container {
+  max-width: 940px;
+  margin: 2.5rem auto;
+  background: #ffe6f6;
+  border: 4px solid #895674;
+  border-radius: 16px;
+  padding: 42px 34px 36px 34px;
+  color: #c7517e;
+  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  box-shadow: 0 4px 40px rgba(220, 42, 120, 0.15);
+}
+
+.admin-report-container h2 {
+  font-size: 2.3rem;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+  text-align: left;
+  margin-bottom: 30px;
+  color: #501a33;
+}
+
+.arr-filter-bar {
+  display: flex;
+  gap: 2.4rem 2rem;
+  margin-bottom: 26px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+.arr-filter-label {
+  font-size: 1rem;
+  color: #a11362;
+  margin-right: 7px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.arr-filter-bar select,
+.arr-filter-bar input[type="date"] {
+  padding: 0.44em 0.9em;
+  border: 1px solid #f2c3d8;
+  border-radius: 7px;
+  background: #fff0f7;
+  color: #a81d57;
+  font-size: 1rem;
+  margin-right: 8px;
+  margin-top: 0.16em;
+}
+
+.arr-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  background: #fff5fb;
+  border-radius: 13px;
+  overflow: hidden;
+  box-shadow: 0 1.5px 12px rgba(232, 46, 115, 0.11);
+}
+.arr-table th, .arr-table td {
+  padding: 0.69rem 1.1rem;
+  text-align: left;
+  border-bottom: 1.5px solid #ffdff1;
+}
+.arr-table th {
+  background: #b56f92;
+  font-weight: 700;
+  color: #fbe5f1;
+}
+.arr-table td {
+  color: #a11356;
+}
+
+.arr-loading {
+  text-align: center;
+  font-size: 1.2rem;
+  margin: 36px 0;
+  color: #ec367f;
+}
+
+.arr-section {
+  margin: 2.4rem 0 1.2rem;
+}
+
+.arr-filter-apply-btn {
+  padding: 0.58em 1.8em;
+  background: #895674;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.02rem;
+  margin-left: 7px;
+  box-shadow: 0 1px 9px rgba(232, 46, 115, 0.10);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.arr-filter-apply-btn:hover,
+.arr-filter-apply-btn:focus {
+  background: #a07096;
+}
+
+.arr-no-reports {
+  text-align: center;
+  padding: 2rem;
+  color: #888;
+  font-style: italic;
+}
+
+.status-pending {
+  color: #c8a2c8;
+  font-weight: bold;
+}
+
+.status-resolved {
+  color: #77dd77;
+  font-weight: bold;
+}
