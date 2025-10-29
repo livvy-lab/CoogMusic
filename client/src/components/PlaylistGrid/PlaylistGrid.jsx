@@ -1,4 +1,4 @@
-import "./playlistgrid.css";
+import "./PlaylistGrid.css";
 import { useEffect, useState } from "react";
 
 export default function PlaylistGrid({
