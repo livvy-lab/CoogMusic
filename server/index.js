@@ -35,7 +35,7 @@ import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleSetArtistAvatar } from "./routes/avatar_artist.js";
-import { handleLikesPinRoutes } from "./routes/likes_pins.js";
+import { handleLikesPins} from "./routes/likes_pins.js";
 import { handleMediaRoutes } from "./routes/media.js";
 import { handleSearchRoutes } from "./routes/search.js";
 import { handleArtistAnalyticsRoutes } from "./routes/artist_analytics.js";
