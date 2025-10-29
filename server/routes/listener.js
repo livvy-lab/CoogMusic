@@ -6,7 +6,7 @@ export async function handleListenerRoutes(req, res) {
   const method = req.method;
 
   // ✅ CORS setup
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+  res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
     "GET, POST, PATCH, PUT, DELETE, OPTIONS"
