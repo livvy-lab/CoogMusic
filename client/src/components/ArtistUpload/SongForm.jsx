@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SongForm.css";
 
@@ -11,10 +11,20 @@ export default function SongForm() {
     description: "",
     genres: [],
     artists: [],
+    artistId: "",
     explicit: false
   });
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  // Load artistId from localStorage when available (artist-only page is already guarded)
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      const id = stored?.artistId ?? stored?.ArtistID ?? null;
+      if (id) setFormData(data => ({ ...data, artistId: String(id) }));
+    } catch {}
+  }, []);
 
   // Handle audio file selection
   const handleFileChange = (e) => {
@@ -48,6 +58,10 @@ export default function SongForm() {
       alert("Please select an audio file");
       return;
     }
+    if (!formData.artistId) {
+      alert("Missing artist account. Please log in as an artist and try again.");
+      return;
+    }
     setLoading(true);
 
     try {
@@ -71,12 +85,16 @@ export default function SongForm() {
 
       // Then upload the song
       const songFormData = new FormData();
-      songFormData.append("file", file);
+      // Backend expects field name 'audio' (not 'file')
+      songFormData.append("audio", file);
       songFormData.append("title", formData.title);
       songFormData.append("description", formData.description);
       songFormData.append("genres", JSON.stringify(formData.genres));
       songFormData.append("artists", JSON.stringify(formData.artists));
       songFormData.append("explicit", formData.explicit);
+      if (formData.artistId) {
+        songFormData.append("artistId", formData.artistId);
+      }
 
       const uploadRes = await fetch("/upload/song", {
         method: "POST",
