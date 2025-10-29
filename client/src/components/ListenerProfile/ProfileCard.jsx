@@ -158,7 +158,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     if (isFollowing) {
       // Unfollow
       try {
-        await fetch(`${API_BASE}/follows`, {
+        await fetch(`${API_BASE_URL}/follows`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -175,7 +175,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     } else {
       // Follow
       try {
-        await fetch(`${API_BASE}/follows`, {
+        await fetch(`${API_BASE_URL}/follows`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
