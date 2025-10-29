@@ -6,7 +6,6 @@ import "./ProfileCard.css";
 
 export default function ProfileCard({ listenerId: propListenerId = null, publicView = false }) {
   const navigate = useNavigate();
-
   const [listenerId, setListenerId] = useState(null);
   const [data, setData] = useState(null);
   const [publicCount, setPublicCount] = useState(null);
@@ -22,7 +21,6 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   const currentUserId = currentUser?.listenerId || currentUser?.artistId || currentUser?.accountId;
   const isOwnProfile = Number(currentUserId) === Number(listenerId);
 
-  // read listenerId (+ cached pfp if present)
   useEffect(() => {
     if (propListenerId != null) {
       setListenerId(propListenerId);
@@ -52,14 +50,13 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     }
   }, [propListenerId]);
 
-  // fetch profile (names, counts, legacy PFP)
   useEffect(() => {
     if (!listenerId) return;
     let cancel = false;
     (async () => {
       try {
         setLoading(true);
-  const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`);
+        const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const j = await r.json();
         if (!cancel) {
@@ -75,16 +72,14 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
       }
     })();
     return () => { cancel = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listenerId]);
 
-  // fetch canonical PFP from /pfp (Media join → S3), override cache/legacy
   useEffect(() => {
     if (!listenerId) return;
     let cancel = false;
     (async () => {
       try {
-  const r = await fetch(`${API_BASE_URL}/pfp/listener/${listenerId}`);
+        const r = await fetch(`${API_BASE_URL}/pfp/listener/${listenerId}`);
         if (!r.ok) return;
         const j = await r.json();
         const url = j?.url || "";
@@ -98,14 +93,13 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     return () => { cancel = true; };
   }, [listenerId]);
 
-  // public playlist count (unchanged)
   useEffect(() => {
     if (!listenerId) return;
     let cancel = false;
     (async () => {
       try {
         setCountLoading(true);
-  const res = await fetch(`${API_BASE_URL}/playlists?listenerId=${listenerId}`);
+        const res = await fetch(`${API_BASE_URL}/playlists?listenerId=${listenerId}`);
         if (!res.ok) throw new Error("count fetch failed");
         const arr = await res.json();
         const count = Array.isArray(arr)
@@ -122,7 +116,6 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     return () => { cancel = true; };
   }, [listenerId]);
 
-  // Check follow status, whenever user or profile changes or after toggle
   const checkFollowStatus = async () => {
     if (!listenerId || !currentUserId || isOwnProfile) {
       setIsFollowing(false);
@@ -130,7 +123,7 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     }
     try {
       const res = await fetch(
-  `${API_BASE_URL}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)}&followingId=${listenerId}&followingType=Listener`
+        `${API_BASE_URL}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType.charAt(0).toUpperCase() + currentUserType.slice(1)}&followingId=${listenerId}&followingType=Listener`
       );
       if (!res.ok) {
         setIsFollowing(false);
@@ -153,10 +146,8 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   const { listener, counts } = data;
   const playlistsPublic = publicCount ?? counts?.playlists ?? 0;
 
-  // Handler for Follow/Unfollow button
   const handleFollowToggle = async () => {
     if (isFollowing) {
-      // Unfollow
       try {
         await fetch(`${API_BASE_URL}/follows`, {
           method: "DELETE",
@@ -169,11 +160,8 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
           }),
         });
         await checkFollowStatus();
-      } catch (e) {
-        // Optionally handle errors
-      }
+      } catch (e) {}
     } else {
-      // Follow
       try {
         await fetch(`${API_BASE_URL}/follows`, {
           method: "POST",
@@ -186,10 +174,12 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
           }),
         });
         await checkFollowStatus();
-      } catch (e) {
-        // Optionally handle errors
-      }
+      } catch (e) {}
     }
+  };
+
+  const handleReportClick = () => {
+    navigate("/user-report", { state: { reportedId: listenerId } });
   };
 
   return (
@@ -208,13 +198,22 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
           </h2>
           {
             !isOwnProfile && (
-              <button
-                className={`pc__followBtn${isFollowing ? " following" : ""}`}
-                onClick={handleFollowToggle}
-                style={{ marginLeft: 18 }}
-              >
-                {isFollowing ? "Following" : "+ Follow"}
-              </button>
+              <>
+                <button
+                  className={`pc__followBtn${isFollowing ? " following" : ""}`}
+                  onClick={handleFollowToggle}
+                  style={{ marginLeft: 18 }}
+                >
+                  {isFollowing ? "Following" : "+ Follow"}
+                </button>
+                <button
+                  className="pc__reportBtn"
+                  onClick={handleReportClick}
+                  style={{ marginLeft: 12 }}
+                >
+                  Report
+                </button>
+              </>
             )
           }
         </div>
@@ -247,7 +246,6 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
           </button>
         </div>
       </div>
-
       <div className="pc__songs">🎵 {counts.songs} songs</div>
     </section>
   );

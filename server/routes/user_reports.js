@@ -16,144 +16,65 @@ export async function handleUserReportsRoutes(req, res) {
   }
 
   try {
-    // GET all user reports
     if (pathname === "/user_reports" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM UserReport WHERE IsDeleted = 0");
+      const [rows] = await db.query(
+        "SELECT * FROM UserReport WHERE IsDeleted = 0"
+      );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
-    // GET one report by ID
     if (pathname.startsWith("/user_reports/") && method === "GET") {
       const reportId = pathname.split("/")[2];
       const [rows] = await db.query(
         "SELECT * FROM UserReport WHERE ReportID = ? AND IsDeleted = 0",
         [reportId]
       );
-
       if (rows.length === 0) {
         res.writeHead(404, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ error: "User report not found" }));
         return;
       }
-
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows[0]));
       return;
     }
 
-    // POST new user report
     if (pathname === "/user_reports" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
         try {
-          const { ReporterID, ReportedUserID, Reason, DateReported, IsResolved } = JSON.parse(body);
-
-          if (!ReporterID || !ReportedUserID || !Reason) {
+          const { ListenerID, EntityType, EntityID, Reason, ReportType } = JSON.parse(body);
+          if (!ListenerID || !EntityType || !EntityID || !Reason || !ReportType) {
             res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "Missing required fields: ReporterID, ReportedUserID, Reason" }));
+            res.end(JSON.stringify({ error: "Missing required fields" }));
             return;
           }
-
+          const dateCreated = new Date().toISOString().slice(0, 10);
           const [result] = await db.query(
-            "INSERT INTO UserReport (ReporterID, ReportedUserID, Reason, DateReported, IsResolved) VALUES (?, ?, ?, ?, ?)",
-            [ReporterID, ReportedUserID, Reason, DateReported || null, IsResolved !== undefined ? IsResolved : 0]
+            `INSERT INTO UserReport (ListenerID, EntityType, EntityID, Reason, ReportType, DateCreated) VALUES (?, ?, ?, ?, ?, ?)`,
+            [ListenerID, EntityType, EntityID, Reason, ReportType, dateCreated]
           );
-
           res.writeHead(201, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({
-              ReportID: result.insertId,
-              ReporterID,
-              ReportedUserID,
-              Reason,
-              DateReported: DateReported || null,
-              IsResolved: IsResolved !== undefined ? IsResolved : 0,
-            })
-          );
+          res.end(JSON.stringify({ ReportID: result.insertId, message: "Report created successfully" }));
         } catch (err) {
-          console.error("Error parsing request body for POST /user_reports:", err);
+          console.error("Error creating user report:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+          res.end(JSON.stringify({ error: "Invalid request body or database error" }));
         }
       });
       return;
     }
 
-    // PUT update user report (partial allowed)
-    if (pathname.startsWith("/user_reports/") && method === "PUT") {
-      const reportId = pathname.split("/")[2];
-      let body = "";
-      req.on("data", chunk => (body += chunk));
-      req.on("end", async () => {
-        try {
-          const { ReporterID, ReportedUserID, Reason, DateReported, IsResolved } = JSON.parse(body);
-
-          const fields = [];
-          const params = [];
-
-          if (ReporterID !== undefined) { fields.push("ReporterID = ?"); params.push(ReporterID); }
-          if (ReportedUserID !== undefined) { fields.push("ReportedUserID = ?"); params.push(ReportedUserID); }
-          if (Reason !== undefined) { fields.push("Reason = ?"); params.push(Reason); }
-          if (DateReported !== undefined) { fields.push("DateReported = ?"); params.push(DateReported); }
-          if (IsResolved !== undefined) { fields.push("IsResolved = ?"); params.push(IsResolved); }
-
-          if (fields.length === 0) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "No fields provided to update" }));
-            return;
-          }
-
-          params.push(reportId);
-          const [result] = await db.query(
-            `UPDATE UserReport SET ${fields.join(", ")} WHERE ReportID = ? AND IsDeleted = 0`,
-            params
-          );
-
-          if (result.affectedRows === 0) {
-            res.writeHead(404, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "User report not found" }));
-            return;
-          }
-
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ ReportID: reportId, message: "User report updated successfully" }));
-        } catch (err) {
-          console.error("Error parsing request body for PUT /user_reports/:id:", err);
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid JSON body" }));
-        }
-      });
-      return;
-    }
-
-    // DELETE user report (soft delete)
-    if (pathname.startsWith("/user_reports/") && method === "DELETE") {
-      const reportId = pathname.split("/")[2];
-      const [result] = await db.query(
-        "UPDATE UserReport SET IsDeleted = 1 WHERE ReportID = ?",
-        [reportId]
-      );
-
-      if (result.affectedRows === 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "User report not found or already deleted" }));
-        return;
-      }
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "User report soft deleted successfully" }));
-      return;
-    }
-
-    // 404 Not found
+    // Fallback error if no method/path inside this file matches
     res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Route not found" }));
+    res.end(JSON.stringify({ error: "Route not found within UserReports handler" }));
+
   } catch (err) {
-    console.error("Error handling user_report route:", err);
+    console.error("Server error handling user report route:", err);
     res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Server error" }));
+    res.end(JSON.stringify({ error: "Internal Server Error" }));
   }
 }

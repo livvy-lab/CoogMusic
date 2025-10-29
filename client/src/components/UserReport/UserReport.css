@@ -1,161 +1,146 @@
-.report-form-container {
-    position: absolute;
-    left: 55%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 809px;
-    height: 541px;
-    background: #FFE8F5;
-    border: 4px solid #895674;
-    border-radius: 16px;
-    box-sizing: border-box;
-    box-shadow: 5px 5px 0 0 #895674;
-    z-index: 1;
+.user-report-container {
+  font-family: 'Inter', sans-serif;
+  background: #F5D6E5;
+  border-radius: 20px;
+  box-shadow: 5px 5px 0 #895674;
+  padding: 36px;
+  max-width: 600px;
+  margin: 0 auto;
+  color: #823D6A;
+  position: relative;
+  border: 5px solid #895674;
 }
 
-/* heading: "Submit a report" */
-.report-form-container h1 {
-    position: absolute;
-    left: 72px;
-    top: 28px;
-    width: 405px;
-    height: 58px;
-    font-size: 38px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    line-height: 150%;
-    letter-spacing: -0.01em;
-    color: #782355;
-    margin: 0;
+.user-report-title {
+  font-weight: 700;
+  font-size: 2.5rem;
+  margin-top: 0;
+  margin-bottom: 24px;
 }
 
-/* text: "You are reporting <entity> for:" */
-.reporting-info-text {
-    position: absolute;
-    left: 72px;
-    top: 102px;
-    width: 405px;
-    height: 38px;
-    font-size: 26px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    line-height: 150%;
-    letter-spacing: -0.01em;
-    color: #782355;
-    margin: 0;
+.user-report-label {
+  font-size: 1.6rem;
+  margin-bottom: 24px;
+  font-weight: 500;
 }
 
-.custom-dropdown-wrapper {
-    position: absolute;
-    left: 482px;
-    top: 102px;
+.user-report-label-bold {
+  font-weight: 700;
 }
 
-.dropdown-trigger {
-    width: 277px;
-    height: 40px;
-    background: #AD7D9B;
-    color: #F2F2F2;
-    border: 3.2px solid #895674;
-    border-radius: 13px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 19px;
-    line-height: 150%;
-    text-align: center;
-    padding: 5px 0;
-    cursor: pointer;
-    box-sizing: border-box;
+.user-report-dropdown {
+  position: relative;
+  margin-bottom: 34px;
 }
 
-.dropdown-options {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    z-index: 10;
-    width: 277px;
-    background: #AD7D9B;
-    border: 3.2px solid #895674;
-    border-radius: 13px;
-    box-sizing: border-box;
-    margin-top: 5px;
+.user-report-reason-btn {
+  background: #946786;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.2rem;
+  border-radius: 14px;
+  border: none;
+  padding: 10px 48px;
+  cursor: pointer;
+  outline: none;
+  width: auto;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  box-sizing: border-box;
+  border: 4px solid #895674;
 }
 
-.dropdown-option {
-    color: #F2F2F2;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 19px;
-    line-height: 150%;
-    padding: 8px 12px;
-    text-align: center;
-    cursor: pointer;
+.user-report-dropdown-list {
+  box-sizing: border-box;
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 346px;
+  background: #AD7D9B;
+  border: 4px solid #895674;
+  border-radius: 16px;
+  z-index: 10;
+  margin-top: 8px;
+  overflow: hidden;
 }
 
-.dropdown-option:first-child {
-    background: #875B76;
-    border-radius: 11px 11px 0 0;
+.user-report-dropdown-selected {
+  background: #875B76;
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #F2F2F2;
+  text-align: center;
 }
 
-.dropdown-option:hover {
-    background: #9c6e8a;
+.user-report-dropdown-item {
+  padding: 8px 16px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #F2F2F2;
+  text-align: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
 }
 
-/* label: "Additional Details:" */
-.report-form-container label {
-    position: absolute;
-    left: 72px;
-    top: 169px;
-    width: 247px;
-    height: 34px;
-    font-size: 22px;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    line-height: 150%;
-    letter-spacing: -0.01em;
-    color: #AD7D9B;
-    margin: 0;
+.user-report-dropdown-item:hover {
+  background-color: #9d6d8b;
 }
 
-/* text area */
-.report-form-container textarea {
-    position: absolute;
-    left: 72px;
-    top: 207px;
-    width: 674px;
-    height: 238px;
-    box-sizing: border-box;
-    background: #F2F2F2;
-    border: 4px solid #895674;
-    border-radius: 16px;
-    font-family: 'Inter', sans-serif;
-    font-size: 1em;
-    padding: 14px;
-    resize: none;
+.user-report-details-label {
+  display: block;
+  font-weight: 700;
+  color: #AE81A6;
+  font-size: 1.2rem;
+  margin-bottom: 8px;
 }
 
-/* submit button */
-.submit-button {
-    position: absolute;
-    left: 617px;
-    top: 462px;
-    width: 130px;
-    height: 50px;
-    box-sizing: border-box;
-    background: #AD7D9B;
-    border: 4px solid #895674;
-    border-radius: 16px;
-    color: #F2F2F2;
-    font-family: 'Inter', sans-serif;
-    font-weight: 700;
-    font-size: 19px;
-    line-height: 150%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
+.user-report-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
-.submit-button:hover {
-    background: #9c6e8a;
+.user-report-textarea {
+  width: 100%;
+  border-radius: 14px;
+  border: 5px solid #946786;
+  padding: 20px;
+  font-size: 1.25rem;
+  resize: vertical;
+  background: #fff;
+  min-height: 120px;
+  box-sizing: border-box;
+  outline: none;
+  color: #4D2041;
+}
+
+.user-report-submit-btn {
+  margin-top: 16px;
+  background: #946786;
+  color: #fff;
+  font-weight: 700;
+  font-size: 1.5rem;
+  border-radius: 16px;
+  border: none;
+  padding: 10px 38px;
+  cursor: pointer;
+  box-shadow: 2px 2px 8px #ccb2c8;
+  opacity: 0.8;
+  z-index: 2;
+  transition: opacity 0.15s;
+}
+
+.user-report-submit-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.user-report-submit-btn:hover:enabled {
+  opacity: 1;
 }
