@@ -90,22 +90,28 @@
 }
 
 /* Close button inside the sidebar */
-.navBurger {
+.navBurger.closeBtn {
   position: absolute;
   top: 16px;
   right: 16px;
   background: transparent;
   border: none;
-  color: #FFDAF0;
+  color: #FFB3D9;
   font-size: 22px;
   cursor: pointer;
-  transition: color 0.25s ease;
+  transition: color 0.25s ease, background 0.25s ease;
   z-index: 20;
   padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.navBurger:hover {
-  color: #fff;
+.navBurger.closeBtn:hover {
+  color: #C44F87;
+  background: transparent;
 }
 
 /* Logo text */
