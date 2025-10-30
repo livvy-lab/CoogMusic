@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 function send(res, code, obj) {
   res.writeHead(code, {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "http://localhost:5173",
+    "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type, Accept",
   });
@@ -40,6 +40,7 @@ export async function handleLogin(req, res) {
       return;
     }
 
+    // Validate credentials
     const [acctRows] = await db.execute(
       "SELECT AccountID, Username, PasswordHash, IsDeleted FROM AccountInfo WHERE Username = ? LIMIT 1",
       [username]
@@ -59,15 +60,27 @@ export async function handleLogin(req, res) {
       [accountId]
     );
 
-    // Only fetch ArtistID; do NOT assume a StageName column exists
     const [artistRows] = await db.execute(
       "SELECT ArtistID FROM Artist WHERE AccountID = ? AND IsDeleted = 0 LIMIT 1",
       [accountId]
     );
 
+    // ADMIN CHECK
+    const [adminRows] = await db.execute(
+      "SELECT AdminID FROM Administrator WHERE AccountID = ? LIMIT 1",
+      [accountId]
+    );
+
+    const isAdmin = adminRows.length > 0;
     const isArtist = artistRows.length > 0;
     const isListener = listenerRows.length > 0;
-    const accountType = isArtist ? "artist" : (isListener ? "listener" : "unknown");
+    const accountType = isAdmin
+      ? "admin"
+      : isArtist
+      ? "artist"
+      : isListener
+      ? "listener"
+      : "unknown";
 
     const payload = {
       success: true,
@@ -76,7 +89,6 @@ export async function handleLogin(req, res) {
       accountType,
       listenerId: isListener ? listenerRows[0].ListenerID : null,
       artistId: isArtist ? artistRows[0].ArtistID : null,
-      // name available only for listeners here; artist display name can be fetched separately if needed
       name: isListener ? `${listenerRows[0].FirstName} ${listenerRows[0].LastName}`.trim() : null,
     };
 

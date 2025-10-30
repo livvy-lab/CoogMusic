@@ -6,8 +6,7 @@ import { getUser } from "../../lib/userStorage";
 import { usePlayer } from "../../context/PlayerContext";
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import SongActions from "../Songs/SongActions";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../../config/api";
 const PLACEHOLDER = "https://placehold.co/300x300/895674/ffffff?text=Song";
 
 export default function RecommendedSongs() {
@@ -23,7 +22,7 @@ export default function RecommendedSongs() {
     const user = getUser();
     const id = user?.listenerId ?? user?.ListenerID;
     if (!id) { setSongs([]); return; }
-    const res = await fetch(`${API_BASE}/listen_history/latest?listenerId=${encodeURIComponent(id)}`);
+  const res = await fetch(`${API_BASE_URL}/listen_history/latest?listenerId=${encodeURIComponent(id)}`);
     const data = res.ok ? await res.json() : [];
     setSongs(Array.isArray(data) ? data : []);
   }
@@ -41,7 +40,7 @@ export default function RecommendedSongs() {
       const entries = await Promise.all(
         needed.map(async (id) => {
           try {
-            const r = await fetch(`${API_BASE}/media/${id}`);
+            const r = await fetch(`${API_BASE_URL}/media/${id}`);
             if (!r.ok) return [id, PLACEHOLDER];
             const j = await r.json();
             return [id, j?.url || PLACEHOLDER];
@@ -67,7 +66,7 @@ export default function RecommendedSongs() {
 
     await playSong(song);
 
-    await fetch(`${API_BASE}/plays`, {
+    await fetch(`${API_BASE_URL}/plays`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ songId: song.SongID, listenerId, msPlayed: 30000 }),

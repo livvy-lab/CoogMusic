@@ -4,7 +4,8 @@ import ProfileCard from "../components/ListenerProfile/ProfileCard";
 import FavoriteArtists from "../components/ListenerProfile/FavoriteArtists";
 import JamCard from "../components/ListenerProfile/JamCard";
 import FavPlaylist from "../components/ListenerProfile/FavPlaylist";
-import "./ListenerProfile.css";
+// Fixed case-sensitive import for Linux deployment
+import "./Listenerprofile.css";
 
 export default function ListenerProfile({ profileId = null, publicView = false }) {
   const [listenerId, setListenerId] = useState(profileId);

@@ -5,6 +5,7 @@ import { usePlayer } from "../../context/PlayerContext";
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import SongActions from "../Songs/SongActions";                    // ✅ actions UI
 import "./SongGrid.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function SongGrid() {
   const { genreId } = useParams();
@@ -22,7 +23,7 @@ export default function SongGrid() {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch(`http://localhost:3001/genres/${encodeURIComponent(genreId)}/songs`);
+  const res = await fetch(`${API_BASE_URL}/genres/${encodeURIComponent(genreId)}/songs`);
         if (res.status === 404) { setSongs([]); setGenreName("Unknown Genre"); return; }
         if (!res.ok) throw new Error();
         const data = await res.json();
@@ -53,7 +54,7 @@ export default function SongGrid() {
     setStreams(prev => ({ ...prev, [song.SongID]: (prev[song.SongID] ?? 0) + 1 }));
     if (!Number.isFinite(listenerId)) return;
     try {
-      const res = await fetch("http://localhost:3001/plays", {
+  const res = await fetch(`${API_BASE_URL}/plays`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ songId: song.SongID, listenerId, msPlayed: 0 }),

@@ -1,70 +1,152 @@
-import React, { useState } from 'react';
-import './UserReport.css';
+import React, { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { getUser } from "../../lib/userStorage";
+import { API_BASE_URL } from "../../config/api";
+import "./UserReport.css";
 
-const UserReport = () => {
-    const [reason, setReason] = useState(''); 
-    const [details, setDetails] = useState('');
-    // manage if the dropdown is open or closed
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+const REPORT_TYPES = [
+  "Copyright Infringement",
+  "Inappropriate Content",
+  "Impersonation",
+  "Other",
+];
 
-    const handleSubmit = (event) => {
-        event.preventDefault();
-        // validation to ensure a reason is selected
-        if (!reason) {
-            alert('Please select a reason.');
-            return;
+export default function UserReport() {
+  const location = useLocation();
+  const reportedId = location.state?.reportedId || "";
+  const currentUser = getUser();
+
+  const [listenerName, setListenerName] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [reportType, setReportType] = useState("");
+  const [reason, setReason] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function fetchName() {
+      if (!reportedId) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/listeners/${reportedId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setListenerName([data.FirstName, data.LastName].filter(Boolean).join(" "));
         }
-        console.log({ reason, details });
-    };
+      } catch {
+        setListenerName("");
+      }
+    }
+    fetchName();
+  }, [reportedId]);
 
-    // handle selecting an option
-    const handleSelectOption = (selectedReason) => {
-        setReason(selectedReason);
-        setIsDropdownOpen(false); // close the dropdown after selection
-    };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess(false);
 
-    const options = ["Inappropriate Content", "Copyright", "Other"];
+    if (!currentUser || !currentUser.listenerId) {
+      setError("You must be logged in to submit a report.");
+      return;
+    }
+    if (!reportType) {
+      setError("Please select a reason for the report.");
+      return;
+    }
+    if (!reason.trim()) {
+      setError("Please provide additional details in the text box.");
+      return;
+    }
 
-    return (
-        <form className="report-form-container" onSubmit={handleSubmit}>
-            
-            <h1>Submit a report</h1>
-            <p className="reporting-info-text">You are reporting &lt;entity&gt; for:</p>
-            <div className="custom-dropdown-wrapper">
-                <button 
-                    type="button" // prevents form submission on click
-                    className="dropdown-trigger" 
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                >
-                    {reason || "Select a reason"}
-                </button>
+    setSubmitting(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/user_reports`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ListenerID: currentUser.listenerId,
+          EntityType: "Listener", // Assuming you're reporting a listener
+          EntityID: reportedId,
+          Reason: reason.substring(0, 500), // Ensure it fits varchar(500)
+          ReportType: reportType,
+        }),
+      });
 
-                {isDropdownOpen && (
-                    <div className="dropdown-options">
-                        {options.map((option) => (
-                            <div
-                                key={option}
-                                className="dropdown-option"
-                                onClick={() => handleSelectOption(option)}
-                            >
-                                {option}
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <label htmlFor="details">Additional Details:</label>
-            <textarea
-                id="details"
-                placeholder="Provide more information here..."
-                value={details}
-                onChange={(e) => setDetails(e.target.value)}
-            />
-            
-            <button type="submit" className="submit-button">Submit</button>
+      if (!res.ok) {
+        let errMsg = "Failed to submit report due to a server error.";
+        try {
+          const errData = await res.json();
+          errMsg = errData.error || errMsg;
+        } catch {}
+        throw new Error(errMsg);
+      }
 
-        </form>
-    );
-};
+      setSuccess(true);
+      setReason("");
+      setReportType("");
 
-export default UserReport;
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="user-report-container">
+      <h1 className="user-report-title">Submit a Report</h1>
+      <div className="user-report-label">
+        You are reporting{" "}
+        <span className="user-report-label-bold">
+          {listenerName || (reportedId ? `profile #${reportedId}` : "selected item")}
+        </span>{" "}
+        for:
+      </div>
+      <div className="user-report-dropdown">
+        <button
+          type="button"
+          className="user-report-reason-btn"
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+        >
+          {reportType || "Select a reason"}
+        </button>
+        {dropdownOpen && (
+          <div className="user-report-dropdown-list">
+            {REPORT_TYPES.map((t) => (
+              <div
+                key={t}
+                className="user-report-dropdown-item"
+                onClick={() => {
+                  setReportType(t);
+                  setDropdownOpen(false);
+                }}
+              >
+                {t}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <label className="user-report-details-label">Additional Details:</label>
+      <form className="user-report-form" onSubmit={handleSubmit}>
+        <textarea
+          className="user-report-textarea"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          rows={5}
+          maxLength={500}
+          placeholder="Provide more information here..."
+        />
+        <button
+          type="submit"
+          disabled={submitting || !reportType || !reason.trim()}
+          className="user-report-submit-btn"
+        >
+          {submitting ? "Submitting..." : "Submit"}
+        </button>
+      </form>
+      {error && <div className="user-report-error">{error}</div>}
+      {success && <div className="user-report-success">Report submitted successfully. Thank you!</div>}
+    </div>
+  );
+}

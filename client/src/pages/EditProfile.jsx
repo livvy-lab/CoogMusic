@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import "./EditProfile.css";
-
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
+import { API_BASE_URL } from "../config/api";
 
 export default function EditProfile() {
   const [listenerId, setListenerId] = useState(null);
@@ -36,7 +35,7 @@ export default function EditProfile() {
     if (!listenerId) return;
     (async () => {
       try {
-        const res = await fetch(`${API_BASE}/listeners/${listenerId}/profile`);
+  const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
@@ -78,7 +77,7 @@ export default function EditProfile() {
     setSaving(true);
 
     try {
-      const res = await fetch(`${API_BASE}/listeners/${listenerId}`, {
+      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,7 +95,7 @@ export default function EditProfile() {
         const fd = new FormData();
         fd.append("file", file);
 
-        const up = await fetch(`${API_BASE}/listeners/${listenerId}/avatar`, {
+        const up = await fetch(`${API_BASE_URL}/listeners/${listenerId}/avatar`, {
           method: "POST",
           body: fd,
         });

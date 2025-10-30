@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css";
+import { API_BASE_URL } from "../config/api";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
@@ -10,7 +11,7 @@ export default function LikedPage() {
   // --- Fetch liked songs
   async function fetchLikedSongs() {
     try {
-      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
+  const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs`);
       if (!res.ok) throw new Error("Failed to fetch liked songs");
       const data = await res.json();
 
@@ -47,7 +48,7 @@ export default function LikedPage() {
   async function unlikeSong(songId) {
     try {
       const res = await fetch(
-        `http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`,
+        `${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

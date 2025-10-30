@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdDisplay.css';
+import { API_BASE_URL } from "../../config/api";
 
 export default function AdDisplay({ isSubscribed, listenerId }) {
   const [ad, setAd] = useState(null);
@@ -20,7 +21,7 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
 
     const fetchRandomAd = async () => {
       try {
-        const response = await fetch('http://localhost:3001/advertisements/random');
+  const response = await fetch(`${API_BASE_URL}/advertisements/random`);
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -56,7 +57,7 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
 
   const recordAdView = async (adId, listenerId) => {
     try {
-      await fetch('http://localhost:3001/ad-views', {
+      await fetch(`${API_BASE_URL}/ad-views`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -192,7 +193,7 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
       <div className="adContent">
         {(ad.AdFileUrl || ad.AdFile) && (
           <img 
-          src={ad.AdFileUrl || (ad.AdFile.startsWith('http') ? ad.AdFile : `http://localhost:3001${ad.AdFile}`)}
+          src={ad.AdFileUrl || (ad.AdFile.startsWith('http') ? ad.AdFile : `${API_BASE_URL}${ad.AdFile}`)}
             alt={ad.AdName || 'Advertisement'} 
             className="adImage"
             onError={(e) => {

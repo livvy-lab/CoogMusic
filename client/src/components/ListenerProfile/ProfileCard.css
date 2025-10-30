@@ -198,3 +198,19 @@
 .pc__followBtn.following:hover {
   background: #c377a5;
 }
+
+.pc__reportBtn {
+  background: #d58cb0;
+  color: #fff;
+  border: none;
+  border-radius: 13px;
+  padding: 0.5em 1.6em;
+  font-weight: bold;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-left: 12px;
+}
+.pc__reportBtn:hover {
+  background: #be477a;
+}

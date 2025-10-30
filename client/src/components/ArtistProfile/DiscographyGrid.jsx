@@ -1,6 +1,7 @@
 import "./DiscographyGrid.css";
 import { useRef, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { API_BASE_URL } from "../../config/api";
 
 export default function Discography({ artistId: artistIdProp }) {
   const params = useParams();
@@ -43,7 +44,7 @@ export default function Discography({ artistId: artistIdProp }) {
         setError("");
 
         const res = await fetch(
-          `http://localhost:3001/artists/${artistId}/discography`,
+          `${API_BASE_URL}/artists/${artistId}/discography`,
           { signal: controller.signal }
         );
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

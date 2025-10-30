@@ -2,6 +2,7 @@
 import './Subscription.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import { getUser } from '../lib/userStorage';
+import { API_BASE_URL } from "../config/api";
 
 const Subscription = () => {
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -14,7 +15,7 @@ const Subscription = () => {
 
     async function checkSubscription() {
       try {
-        const res = await fetch(`http://localhost:3001/subscriptions/listener/${user.listenerId}`);
+  const res = await fetch(`${API_BASE_URL}/subscriptions/listener/${user.listenerId}`);
         
         if (res.ok) {
           const data = await res.json();
@@ -46,7 +47,7 @@ const Subscription = () => {
   try {
     if (!isSubscribed) {
       // SUBSCRIBE
-      const res = await fetch('http://localhost:3001/subscriptions', {
+      const res = await fetch(`${API_BASE_URL}/subscriptions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -73,7 +74,7 @@ const Subscription = () => {
 
 } else {
   // Unsubscribe logic
-  const checkRes = await fetch(`http://localhost:3001/subscriptions/listener/${user.listenerId}`);
+  const checkRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${user.listenerId}`);
   if (!checkRes.ok) throw new Error('Failed to find subscription');
   const subData = await checkRes.json();
 
@@ -87,7 +88,7 @@ const Subscription = () => {
   }
 
   // Update the subscription to mark it inactive
-  const res = await fetch(`http://localhost:3001/subscriptions/${subscriptionId}`, {
+  const res = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

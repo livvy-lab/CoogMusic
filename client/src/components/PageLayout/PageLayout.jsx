@@ -5,6 +5,7 @@ import AdDisplay from "../AdDisplay/AdDisplay";
 import { getUser } from "../../lib/userStorage";
 import React, { useState, useEffect } from "react";
 import "./PageLayout.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function PageLayout({ children }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -28,7 +29,7 @@ export default function PageLayout({ children }) {
       if (user.listenerId) {
         try {
           const response = await fetch(
-            `http://localhost:3001/subscriptions/listener/${user.listenerId}`
+            `${API_BASE_URL}/subscriptions/listener/${user.listenerId}`
           );
           
           if (response.ok) {

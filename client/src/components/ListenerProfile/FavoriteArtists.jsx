@@ -1,38 +1,55 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import "./FavoriteArtists.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function FavoriteArtists({ listenerId, onSelect }) {
   const [artists, setArtists] = useState([]);
+  const [favCount, setFavCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let alive = true;
     const stored = JSON.parse(localStorage.getItem("user") || "null");
-    const id = listenerId || stored?.listenerId;
-    if (!id) {
-      setError("No listener ID found");
-      setLoading(false);
-      return;
-    }
+    const id = listenerId || stored?.listenerId || stored?.ListenerID;
+    if (!id) { setError("No listener ID found"); setLoading(false); return; }
+
+    const ctrl = new AbortController();
+
+    const normalize = (a) => {
+      if (!a || typeof a !== "object") return null;
+      const ArtistID = Number(a.ArtistID ?? a.artistId ?? a.id ?? NaN);
+      const ArtistName = a.ArtistName ?? a.artistName ?? a.name ?? "—";
+      const PFP = a.pfpSignedUrl ?? a.pfpUrl ?? a.PFP ?? null;
+      return Number.isFinite(ArtistID) ? { ArtistID, ArtistName, PFP } : null;
+    };
 
     (async () => {
       try {
-        const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
+        const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`, { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
-        const favs = data.favorites?.artists || [];
-
-        // Always show 3 slots: fill empty with null placeholders
-        const filled = [...favs];
+        let favs = Array.isArray(data?.favorites?.artists) ? data.favorites.artists : [];
+        if (!favs.length) {
+          const r2 = await fetch(`${API_BASE_URL}/listeners/${id}/pins/artists`, { signal: ctrl.signal });
+          if (r2.ok) favs = await r2.json();
+        }
+        const norm = favs.map(normalize).filter(Boolean);
+        if (!alive) return;
+        setFavCount(norm.length);
+        const filled = [...norm];
         while (filled.length < 3) filled.push(null);
-        setArtists(filled);
+        setArtists(filled.slice(0, 3));
       } catch (e) {
-        console.error("[FavoriteArtists] fetch error", e);
-        setError(e.message);
+        if (!alive) return;
+        setError(e.message || "Failed to load");
       } finally {
-        setLoading(false);
+        if (alive) setLoading(false);
       }
     })();
+
+    return () => { alive = false; ctrl.abort(); };
   }, [listenerId]);
 
   if (loading) {
@@ -53,32 +70,56 @@ export default function FavoriteArtists({ listenerId, onSelect }) {
     );
   }
 
+  const hasPins = favCount > 0;
+
   return (
     <section className="fa">
       <h2 className="playlistSection__title">Favorite Artists</h2>
       <div className="fa__grid">
-        {artists.map((a, i) => (
-          <button
-            key={a?.ArtistID ?? `placeholder-${i}`}
-            className="fa__item"
-            type="button"
-            onClick={() => a && onSelect?.(a)}
-            aria-label={a?.ArtistName || "Empty"}
-            title={a?.ArtistName || "Empty"}
-            disabled={!a}
-          >
-            <div className="fa__ring">
-              {a?.PFP ? (
-                <img className="fa__avatar" src={a.PFP} alt={a.ArtistName} />
-              ) : (
-                <div className="fa__placeholder" aria-hidden="true">
-                  {a?.ArtistName?.[0] ?? "?"}
+        {hasPins ? (
+          artists.map((a, i) => {
+            if (!a) return (
+              <div key={`empty-${i}`} className="fa__item" aria-label="Empty" title="Empty">
+                <div className="fa__ring">
+                  <div className="fa__placeholder" aria-hidden="true">?</div>
                 </div>
-              )}
+                <span className="fa__name">—</span>
+              </div>
+            );
+            const id = a.ArtistID;
+            const name = a.ArtistName || "—";
+            const pfp = a.PFP || null;
+            const handleClick = (e) => { if (onSelect) onSelect(id, e); };
+            return (
+              <Link
+                key={id}
+                to={`/artist/${id}`}
+                className="fa__item"
+                aria-label={name}
+                title={name}
+                onClick={handleClick}
+              >
+                <div className="fa__ring">
+                  {pfp ? (
+                    <img className="fa__avatar" src={pfp} alt={name} />
+                  ) : (
+                    <div className="fa__placeholder" aria-hidden="true">
+                      {name?.[0]?.toUpperCase() ?? "?"}
+                    </div>
+                  )}
+                </div>
+                <span className="fa__name">{name}</span>
+              </Link>
+            );
+          })
+        ) : (
+          <div className="fa__item" aria-label="No favorites yet" title="No favorites yet">
+            <div className="fa__ring">
+              <div className="fa__placeholder" aria-hidden="true">?</div>
             </div>
-            <span className="fa__name">{a?.ArtistName || "—"}</span>
-          </button>
-        ))}
+            <span className="fa__name">—</span>
+          </div>
+        )}
       </div>
     </section>
   );

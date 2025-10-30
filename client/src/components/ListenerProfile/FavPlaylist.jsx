@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import "./FavPlaylist.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function FavPlaylist({ listenerId }) {
   const [playlist, setPlaylist] = useState(null);
@@ -17,7 +18,7 @@ export default function FavPlaylist({ listenerId }) {
 
     const fetchPlaylist = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/listeners/${id}/profile`);
+  const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`);
         if (!res.ok) {
           const errTxt = await res.text();
           throw new Error(`HTTP ${res.status} ${errTxt}`);

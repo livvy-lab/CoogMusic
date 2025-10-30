@@ -34,6 +34,9 @@ import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 import ArtistAnalytics from "./pages/ArtistAnalytics";
 import ListenerAnalytics from "./pages/ListenerAnalytics";
 
+import AdminReportReview from "./pages/AdminReportReview";
+
+
 export default function App() {
   return (
     <PlayerProvider>
@@ -48,6 +51,9 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/register/select" element={<AccountType />} />
         <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
+
+        {/* Admin Routes */}
+        <Route path="report-review" element={<AdminReportReview />} />
 
         {/* Listener routes */}
         <Route path="/profile" element={<ListenerProfile />} />
@@ -64,6 +70,8 @@ export default function App() {
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/my-ads" element={<MyAds />} />
         <Route path="/listener-analytics" element={<ListenerAnalytics />} />
+        <Route path="/follows" element={<FollowsPage />} />
+
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />
