@@ -19,13 +19,14 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   const currentUser = getUser();
   const currentUserType = currentUser?.accountType?.toLowerCase() || "";
   const currentUserId = currentUser?.listenerId || currentUser?.artistId || currentUser?.accountId;
-  const isOwnProfile = Number(currentUserId) === Number(listenerId);
+
 
   useEffect(() => {
     if (propListenerId != null) {
       setListenerId(propListenerId);
       try {
         const stored = JSON.parse(localStorage.getItem("user") || "null");
+        // only load PFP from storage if it's our own profile
         if (stored?.listenerId && stored.listenerId === propListenerId && stored?.pfpUrl) {
           setPfpUrl(stored.pfpUrl);
         }
@@ -85,8 +86,14 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
         const url = j?.url || "";
         if (!cancel && url) {
           setPfpUrl(url);
-          const stored = JSON.parse(localStorage.getItem("user") || "{}");
-          localStorage.setItem("user", JSON.stringify({ ...stored, pfpUrl: url }));
+          const storedUser = getUser();
+          const storedUserId = storedUser?.listenerId || storedUser?.artistId || storedUser?.accountId;
+          const viewingOwnProfile = Number(storedUserId) === Number(listenerId);
+
+          if (viewingOwnProfile) {
+            const stored = JSON.parse(localStorage.getItem("user") || "{}");
+            localStorage.setItem("user", JSON.stringify({ ...stored, pfpUrl: url }));
+          }
         }
       } catch {}
     })();
@@ -115,6 +122,8 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     })();
     return () => { cancel = true; };
   }, [listenerId]);
+
+  const isOwnProfile = Number(currentUserId) === Number(listenerId);
 
   const checkFollowStatus = async () => {
     if (!listenerId || !currentUserId || isOwnProfile) {
@@ -179,7 +188,13 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   };
 
   const handleReportClick = () => {
-    navigate("/user-report", { state: { reportedId: listenerId } });
+    navigate("/user-report", { 
+      state: { 
+        reportedId: listenerId,
+        reportedType: "Listener",
+        reportedName: `${listener.FirstName} ${listener.LastName}` || "this user"
+      } 
+    });
   };
 
   return (
