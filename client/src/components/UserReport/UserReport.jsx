@@ -14,9 +14,10 @@ const REPORT_TYPES = [
 export default function UserReport() {
   const location = useLocation();
   const reportedId = location.state?.reportedId || "";
+  const reportedType = location.state?.reportedType || "Listener";
   const currentUser = getUser();
 
-  const [listenerName, setListenerName] = useState("");
+  const [entityName, setEntityName] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [reportType, setReportType] = useState("");
   const [reason, setReason] = useState("");
@@ -28,17 +29,27 @@ export default function UserReport() {
     async function fetchName() {
       if (!reportedId) return;
       try {
-        const res = await fetch(`${API_BASE_URL}/listeners/${reportedId}`);
+        let url = "";
+        if (reportedType === "Artist") {
+          url = `${API_BASE_URL}/artists/${reportedId}`;
+        } else {
+          url = `${API_BASE_URL}/listeners/${reportedId}`;
+        }
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
-          setListenerName([data.FirstName, data.LastName].filter(Boolean).join(" "));
+          if (reportedType === "Artist") {
+            setEntityName(data.ArtistName || `artist #${reportedId}`);
+          } else {
+            setEntityName([data.FirstName, data.LastName].filter(Boolean).join(" ") || `listener #${reportedId}`);
+          }
         }
       } catch {
-        setListenerName("");
+        setEntityName(`profile #${reportedId}`);
       }
     }
     fetchName();
-  }, [reportedId]);
+  }, [reportedId, reportedType]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -65,9 +76,9 @@ export default function UserReport() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ListenerID: currentUser.listenerId,
-          EntityType: "Listener", // Assuming you're reporting a listener
+          EntityType: reportedType,
           EntityID: reportedId,
-          Reason: reason.substring(0, 500), // Ensure it fits varchar(500)
+          Reason: reason.substring(0, 500),
           ReportType: reportType,
         }),
       });
@@ -84,7 +95,6 @@ export default function UserReport() {
       setSuccess(true);
       setReason("");
       setReportType("");
-
     } catch (err) {
       setError(err.message);
     } finally {
@@ -98,7 +108,7 @@ export default function UserReport() {
       <div className="user-report-label">
         You are reporting{" "}
         <span className="user-report-label-bold">
-          {listenerName || (reportedId ? `profile #${reportedId}` : "selected item")}
+          {entityName || (reportedId ? `profile #${reportedId}` : "selected item")}
         </span>{" "}
         for:
       </div>

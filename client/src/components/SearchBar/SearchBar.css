@@ -1,25 +1,76 @@
 .cmSearchBar {
+  background: #ad7d9b;
+  border: 5px solid #895674;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 632px;
+  height: 70px;
+  box-sizing: border-box;
+  box-shadow: 0 4px 0 #734561;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  position: relative;
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+}
+
+.cmSearchBar:focus-within {
+  box-shadow: 0 6px 0 #734561;
+  transform: translateY(-1px);
+}
+
+.cmSearchIconBtn {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: #ffe2fb;
+  border: none;
+  border-right: 5px solid #895674;
+  border-radius: 15px 0 0 15px; 
+  width: 73px;
+  height: 100%; 
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #e9d2df;
-  border: 4px solid #895674;
-  border-radius: 999px;
-  width: 100%;
-  max-width: 920px;
-  padding: 6px 14px;
-  box-shadow: 0 4px 0 #734561;
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
-}
-.cmSearchBar:focus-within { box-shadow: 0 6px 0 #734561; transform: translateY(-1px); }
-.cmSearchIcon { color: #895674; margin-right: 8px; flex-shrink: 0; }
-.cmSearchInput {
-  flex: 1;
-  border: none;
+  cursor: pointer;
   outline: none;
-  background: transparent;
-  font-family: "Inter", sans-serif;
-  font-size: 15px;
-  color: #4b2c3d;
+  padding: 0;
+  box-sizing: border-box; 
+  transition: background-color 0.2s ease;
 }
-.cmSearchInput::placeholder { color: #734561; opacity: 0.8; }
+
+.cmSearchIconBtn:hover {
+  background: #fff0fc;
+}
+
+.cmSearchIconImg {
+  width: 34px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.cmSearchInput {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 91px;
+  right: 18px;
+  width: auto;
+  height: 38px;
+  background: #f2f2f2;
+  border: 4px solid #895674;
+  border-radius: 10px;
+  font-family: "Inter", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  color: #4b2c3d;
+  letter-spacing: -0.01em;
+  box-sizing: border-box;
+  outline: none;
+  padding-left: 16px;
+}
+
+.cmSearchInput::placeholder {
+  color: #ca91b4;
+  opacity: 1;
+}

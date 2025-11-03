@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search } from "lucide-react";
+import searchIcon from "../../assets/search-icon.svg";
 import "./SearchBar.css";
 
 export default function SearchBar({ placeholder = "What are you looking for?" }) {
@@ -15,7 +15,9 @@ export default function SearchBar({ placeholder = "What are you looking for?" })
 
   return (
     <form className="cmSearchBar" onSubmit={handleSubmit}>
-      <Search className="cmSearchIcon" size={20} />
+      <button className="cmSearchIconBtn" type="submit">
+        <img src={searchIcon} alt="Search" className="cmSearchIconImg" />
+      </button>
       <input
         type="text"
         className="cmSearchInput"
