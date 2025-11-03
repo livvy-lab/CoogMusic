@@ -1,12 +1,15 @@
 // client/src/components/MusicPlayBar/MusicPlayBar.jsx
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Range, getTrackBackground } from "react-range";
 import { usePlayer } from "../../context/PlayerContext.jsx";
 import "./MusicPlayBar.css";
 
 import skipBackIcon from "../../assets/skip-back-icon.svg";
-import playIcon from "../../assets/play-icon.svg";
-import pauseIcon from "../../assets/pause-icon.svg";
+// note: asset files were named inconsistently (play-icon contains pause bars and vice versa).
+// Swap imports so the variables match their visual meaning: `playIcon` should be the triangle,
+// and `pauseIcon` should be the bars.
+import playIcon from "../../assets/pause-icon.svg";
+import pauseIcon from "../../assets/play-icon.svg";
 import skipFwdIcon from "../../assets/skip-fwd-icon.svg";
 import shuffleIcon from "../../assets/shuffle-icon.svg";
 import repeatIcon from "../../assets/repeat-icon.svg";
@@ -22,9 +25,15 @@ export default function MusicPlayBar() {
     duration,           // seconds
     currentTime,        // seconds
     volume,             // 0..1
-    toggle,             // play/pause
-    seek,               // (seconds) => void
+      toggle,             // play/pause
+      shuffleMode,
+      toggleShuffle,
+      next,
+      prev,
+      seek,               // (seconds) => void
     setVolumePercent,   // (0..1) => void
+      toggleLikeCurrent,
+      audioRef,
   } = usePlayer();
 
   // keep hooks order stable (don’t early return)
@@ -51,6 +60,29 @@ export default function MusicPlayBar() {
     return { background: `linear-gradient(to right, #895674 ${pct}%, #FFE8F5 ${pct}%)` };
   }, [currentTime, duration]);
 
+  // When the current song changes, fetch whether it's liked by this listener
+  useEffect(() => {
+    let mounted = true;
+    async function checkLiked() {
+      setIsLiked(false);
+      if (!current?.SongID) return;
+      const stored = localStorage.getItem('listener');
+      const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
+      try {
+        const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!mounted) return;
+        const found = Array.isArray(data) && data.some((r) => r.SongID === current.SongID);
+        setIsLiked(Boolean(found));
+      } catch (err) {
+        // ignore
+      }
+    }
+    checkLiked();
+    return () => { mounted = false; };
+  }, [current]);
+
   return (
     <div
       className="music-player-bar"
@@ -58,26 +90,32 @@ export default function MusicPlayBar() {
       aria-hidden={hidden ? "true" : "false"}
     >
       <div className="player-controls-left">
-        <button className="control-btn" aria-label="Previous">
+        <button className="control-btn" aria-label="Previous" onClick={() => prev?.()}>
           <img src={skipBackIcon} alt="" />
         </button>
 
-        {/* Your original mapping: show PLAY icon while playing, PAUSE icon when paused */}
-        <button
-          className="control-btn play-pause-btn"
-          onClick={toggle}
-          aria-label={playing ? "Play" : "Pause"}
-        >
-          <img src={playing ? playIcon : pauseIcon} alt="" />
-        </button>
+        {/* Play/pause: show PAUSE icon while playing, PLAY icon when paused */}
+        {(() => {
+          const isPlaying = audioRef?.current ? !audioRef.current.paused && !audioRef.current.ended : playing;
+          return (
+            <button
+              className="control-btn play-pause-btn"
+              onClick={toggle}
+              aria-label={isPlaying ? "Pause" : "Play"}
+            >
+        {/* use the original image assets so the button color/shape stays the same */}
+        <img src={isPlaying ? pauseIcon : playIcon} alt="" />
+            </button>
+          );
+        })()}
 
-        <button className="control-btn" aria-label="Next">
+        <button className="control-btn" aria-label="Next" onClick={() => next?.()}>
           <img src={skipFwdIcon} alt="" />
         </button>
       </div>
 
       <div className="progress-section">
-        <button className="control-btn small-btn" aria-label="Shuffle">
+        <button className={`control-btn small-btn ${shuffleMode ? 'is-active' : ''}`} aria-label="Shuffle" onClick={() => toggleShuffle?.()}>
           <img src={shuffleIcon} alt="" />
         </button>
 
@@ -160,7 +198,34 @@ export default function MusicPlayBar() {
 
         <button
           className={`control-btn small-btn ${isLiked ? "is-active" : ""}`}
-          onClick={() => setIsLiked((v) => !v)}
+          onClick={async () => {
+            // Optimistic UI
+            setIsLiked((v) => !v);
+            try {
+              if (typeof toggleLikeCurrent === 'function') {
+                const res = await toggleLikeCurrent();
+                // if backend returned liked state, ensure UI matches
+                if (res && typeof res.liked === 'boolean') setIsLiked(Boolean(res.liked));
+              } else {
+                // fallback: direct fetch + dispatch
+                const stored = localStorage.getItem('listener');
+                const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
+                if (current?.SongID) {
+                  const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: current.SongID })
+                  });
+                  if (res.ok) {
+                    const data = await res.json();
+                    window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: current.SongID, liked: data.liked } }));
+                    setIsLiked(Boolean(data.liked));
+                  }
+                }
+              }
+            } catch (err) {
+              // if something fails, flip back
+              setIsLiked((v) => !v);
+            }
+          }}
           aria-pressed={isLiked}
           aria-label="Like"
         >
