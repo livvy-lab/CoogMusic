@@ -188,7 +188,11 @@ export default function PlaylistGrid({
         ) : (
           <>
             {showLikedFallback && (
-              <div className="pl pl--liked">
+              <div
+                className="pl pl--liked"
+                onClick={() => navigate('/likedsongs')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
