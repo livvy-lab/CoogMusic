@@ -1,15 +1,60 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/api";
+import { getUser } from "../../lib/userStorage";
 
 export default function CreatePlaylistForm({ listenerId, onCreated }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState(null);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [playlistCount, setPlaylistCount] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      if (!listenerId) return;
+      try {
+        const res = await fetch(`${API_BASE_URL}/subscriptions/listener/${listenerId}`);
+        if (res.ok) {
+          const d = await res.json();
+          if (mounted) setIsSubscribed(Boolean(d.IsActive));
+        } else {
+          if (mounted) setIsSubscribed(false);
+        }
+      } catch (e) {
+        if (mounted) setIsSubscribed(false);
+      }
+
+      try {
+        const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/playlists`);
+        if (r.ok) {
+          const data = await r.json();
+          if (mounted) setPlaylistCount(Array.isArray(data) ? data.length : 0);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+    load();
+    return () => { mounted = false; };
+  }, [listenerId]);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
+
+    // enforce non-subscriber rules: only public playlists and max 10
+    if (!isSubscribed) {
+      if (!isPublic) {
+        setError('Private playlists are available to subscribers only.');
+        return;
+      }
+      if (typeof playlistCount === 'number' && playlistCount >= 10) {
+        setError('Free accounts can create up to 10 playlists. Upgrade to create more.');
+        return;
+      }
+    }
 
     const res = await fetch(`${API_BASE_URL}/playlists`, {
       method: "POST",

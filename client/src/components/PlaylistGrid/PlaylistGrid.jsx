@@ -1,5 +1,6 @@
 import "./PlaylistGrid.css";
 import { useEffect, useState } from "react";
+import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 
@@ -16,6 +17,8 @@ export default function PlaylistGrid({
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const navigate = useNavigate();
+  const currentUser = getUser();
+  const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
 
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this playlist?")) return;
@@ -231,8 +234,8 @@ export default function PlaylistGrid({
                       {!isPinned ? (
                         <button
                           className="pl__pinBtn"
-                          title="Pin to profile"
-                          disabled={pinLoading || !isPublic}
+                          title={(!isPublic && Number(currentUserId) !== Number(p.ListenerID)) ? "Private playlists can only be pinned by the owner" : "Pin to profile"}
+                          disabled={pinLoading || (!isPublic && Number(currentUserId) !== Number(p.ListenerID))}
                           onClick={e => { e.stopPropagation(); pinPlaylist(p.PlaylistID); }}
                         >
                           📌 Pin
@@ -245,6 +248,48 @@ export default function PlaylistGrid({
                           onClick={e => { e.stopPropagation(); unpinPlaylist(); }}
                         >
                           ✖ Unpin
+                        </button>
+                      )}
+
+                      {/* Privacy toggle shown only to playlist owner */}
+                      {Number(currentUserId) === Number(p.ListenerID) && (
+                        <button
+                          className="pl__privacyBtn"
+                          title={isPublic ? 'Make private' : 'Make public'}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              // If attempting to make private, verify subscription
+                              if (isPublic) {
+                                const subRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${currentUserId}`);
+                                if (!subRes.ok) {
+                                  alert('Only subscribers can make playlists private.');
+                                  return;
+                                }
+                                const subData = await subRes.json();
+                                if (!subData?.IsActive) {
+                                  if (window.confirm('Private playlists are for subscribers only. Go to subscription page?')) {
+                                    navigate('/subscription');
+                                  }
+                                  return;
+                                }
+                              }
+
+                              const newPublic = isPublic ? 0 : 1;
+                              const res = await fetch(`${API_BASE_URL}/playlists/${p.PlaylistID}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ IsPublic: newPublic }),
+                              });
+                              const data = await res.json().catch(() => ({}));
+                              if (!res.ok) throw new Error(data.error || 'Failed to update playlist');
+                              setPlaylists(prev => prev.map(x => x.PlaylistID === p.PlaylistID ? { ...x, IsPublic: Number(newPublic) } : x));
+                            } catch (err) {
+                              alert(err.message || 'Could not change privacy');
+                            }
+                          }}
+                        >
+                          {isPublic ? '🔓 Public' : '🔒 Private'}
                         </button>
                       )}
                     </div>
