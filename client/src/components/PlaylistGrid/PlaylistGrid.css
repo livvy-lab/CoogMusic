@@ -152,9 +152,6 @@
 }
 
 .pl__pinBtn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
   font-size: 20px;
   background: transparent;
   border: none;
@@ -197,6 +194,36 @@
 .playlistOptionsBtn:hover {
   color: #a94486;
   transform: scale(1.1);
+}
+
+/* Top-right control row to hold pin + privacy buttons */
+.pl__pinRow {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 10;
+}
+
+/* Privacy toggle button — subtle, matches card colors */
+.pl__privacyBtn {
+  background: var(--rose);
+  border: none;
+  color: var(--plum);
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease, color 0.12s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pl__privacyBtn:hover {
+  transform: scale(1.03);
+  background: #f7d9ea;
 }
 
 

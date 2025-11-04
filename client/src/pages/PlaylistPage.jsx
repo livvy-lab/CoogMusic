@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
-import AddToPlaylistMenu from "../components/Playlist/AddToPlaylistMenu";
+import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
 
 
@@ -14,6 +14,7 @@ export default function PlaylistPage() {
   const { id } = useParams(); // read playlist ID from URL
   const [tracks, setTracks] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
+  const { playList, playSong, playShuffled } = usePlayer();
 
   // fetch playlist metadata
   async function fetchPlaylistInfo() {
@@ -30,8 +31,10 @@ export default function PlaylistPage() {
     if (res.ok) {
       const data = await res.json();
       const formatted = data.map((row) => ({
+        SongID: row.SongID,
         title: row.Title,
         album: row.Album || "Unknown Album",
+        artist: row.ArtistName || row.Artist || "Unknown Artist",
         duration: row.DurationSeconds
           ? `${Math.floor(row.DurationSeconds / 60)}:${String(
               row.DurationSeconds % 60
@@ -51,6 +54,20 @@ export default function PlaylistPage() {
     fetchPlaylistInfo();
     fetchPlaylistTracks();
   }, [id]);
+
+  // Play the whole playlist
+  function handlePlayAll() {
+    if (!tracks || tracks.length === 0) return;
+    const list = tracks.map((t) => ({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }));
+    playList(list, 0);
+  }
+
+  // Shuffle-play the playlist
+  function handleShuffleAll() {
+    if (!tracks || tracks.length === 0) return;
+    const list = tracks.map((t) => ({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }));
+    try { playShuffled?.(list); } catch (e) { playList(list, 0); }
+  }
 
   return (
     <PageLayout>
@@ -75,10 +92,10 @@ export default function PlaylistPage() {
           </div>
 
           <div className="likedControls">
-            <button className="playButton" aria-label="Play">
+            <button className="playButton" aria-label="Play" onClick={handlePlayAll}>
               <Play fill="currentColor" size={28} />
             </button>
-            <button className="shuffleButton" aria-label="Shuffle">
+            <button className="shuffleButton" aria-label="Shuffle" onClick={handleShuffleAll}>
               <Shuffle size={24} />
             </button>
           </div>
@@ -97,20 +114,24 @@ export default function PlaylistPage() {
 
           <div className="tableBody">
             {tracks.map((t, i) => (
-              <div key={i} className="likedRow">
+              <div
+                key={t.SongID || i}
+                className="likedRow"
+                role="button"
+                tabIndex={0}
+                onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
+                onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+              >
                 <div className="col-num">{i + 1}</div>
                 <div className="col-title">
                   <div className="songInfo">
                     <span className="songTitle">{t.title}</span>
-                    <span className="songArtist">{t.album}</span>
+                    <span className="songArtist">{t.artist}</span>
                   </div>
                 </div>
                 <div className="col-album">{t.album}</div>
                 <div className="col-date">{t.date}</div>
-                <div className="col-duration flex items-center gap-2">
-  {t.duration}
-  <AddToPlaylistMenu songId={t.SongID} />
-</div>
+                <div className="col-duration flex items-center gap-2">{t.duration}</div>
 
               </div>
             ))}

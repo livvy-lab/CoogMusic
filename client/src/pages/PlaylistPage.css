@@ -193,4 +193,49 @@
   background: #ffe0ef;
 }
 
+/* ----- Safe, playlist-page-only text placement helpers -----
+   These rules only adjust layout/positioning and explicitly avoid
+   changing colors, backgrounds or global formats so edits won't
+   affect text color or the card appearance.
+------------------------------------------------------------ */
+
+.playlistPage .likedRow {
+  position: relative; /* allow z-indexing of inner text blocks */
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 1fr 80px; /* match header layout */
+  align-items: center;
+}
+
+.playlistPage .col-title {
+  display: flex;
+  align-items: center;
+  overflow: hidden; /* prevent text from overflowing into other columns */
+}
+
+.playlistPage .songInfo {
+  display: flex;
+  flex-direction: column; /* stack title above artist */
+  gap: 4px;
+  justify-content: center;
+  padding-left: 8px; /* nudge texts without changing color or background */
+  background: transparent; /* explicitly transparent so no blending occurs */
+  z-index: 1;
+  mix-blend-mode: normal; /* avoid unexpected color blending */
+}
+
+/* Keep colors inherited from the theme; don't set new colors here */
+.playlistPage .songTitle,
+.playlistPage .songArtist {
+  color: inherit;
+}
+
+/* Undo any large column margins only on playlist page so columns don't shift */
+.playlistPage .col-album { margin-left: 0; }
+.playlistPage .col-date  { margin-left: 0; }
+
+/* Ensure album/date/duration alignments are preserved */
+.playlistPage .col-album { text-align: left; }
+.playlistPage .col-date  { text-align: center; }
+.playlistPage .col-duration { text-align: right; }
+
 

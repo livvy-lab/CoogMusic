@@ -1,5 +1,7 @@
 import "./PlaylistGrid.css";
 import { useEffect, useState } from "react";
+import { getUser } from "../../lib/userStorage";
+import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 
 export default function PlaylistGrid({
@@ -14,6 +16,9 @@ export default function PlaylistGrid({
   const [pinnedId, setPinnedId] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const navigate = useNavigate();
+  const currentUser = getUser();
+  const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
 
   async function handleDelete(id) {
     if (!window.confirm("Are you sure you want to delete this playlist?")) return;
@@ -133,7 +138,7 @@ export default function PlaylistGrid({
     }
   }
 
-  async function unpinPlaylist() {
+  async function unpinPlaylist(playlistId = null) {
     if (!listenerId) return;
     setPinLoading(true);
     try {
@@ -147,13 +152,13 @@ export default function PlaylistGrid({
       );
       const data = await res.json();
       if (res.ok && data.success) {
-        setPinnedId(playlistId);
+        // if playlistId is null we cleared the pin, otherwise set it
+        setPinnedId(playlistId || null);
       } else {
-        alert(data.error || "Failed to pin playlist");
+        alert(data.error || "Failed to update pinned playlist");
       }
-      setPinnedId(null);
     } catch (e) {
-      alert(e.message || "Could not unpin playlist.");
+      alert(e.message || "Could not update pinned playlist.");
     } finally {
       setPinLoading(false);
     }
@@ -186,7 +191,11 @@ export default function PlaylistGrid({
         ) : (
           <>
             {showLikedFallback && (
-              <div className="pl pl--liked">
+              <div
+                className="pl pl--liked"
+                onClick={() => navigate('/likedsongs')}
+                style={{ cursor: 'pointer' }}
+              >
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
@@ -215,14 +224,19 @@ export default function PlaylistGrid({
                 const isPublic = Number(p.IsPublic) === 1;
 
                 return (
-                  <div className={`pl ${isPinned ? "pl--pinned" : ""}`} key={p.PlaylistID}>
+                  <div
+                    className={`pl ${isPinned ? "pl--pinned" : ""}`}
+                    key={p.PlaylistID}
+                    onClick={() => navigate(`/playlist/${p.PlaylistID}`)}
+                    style={{ cursor: "pointer" }}
+                  >
                     <div className="pl__pinRow">
                       {!isPinned ? (
                         <button
                           className="pl__pinBtn"
-                          title="Pin to profile"
-                          disabled={pinLoading || !isPublic}
-                          onClick={() => pinPlaylist(p.PlaylistID)}
+                          title={(!isPublic && Number(currentUserId) !== Number(p.ListenerID)) ? "Private playlists can only be pinned by the owner" : "Pin to profile"}
+                          disabled={pinLoading || (!isPublic && Number(currentUserId) !== Number(p.ListenerID))}
+                          onClick={e => { e.stopPropagation(); pinPlaylist(p.PlaylistID); }}
                         >
                           📌 Pin
                         </button>
@@ -231,9 +245,51 @@ export default function PlaylistGrid({
                           className="pl__pinBtn pl__pinBtn--active"
                           title="Unpin from profile"
                           disabled={pinLoading}
-                          onClick={unpinPlaylist}
+                          onClick={e => { e.stopPropagation(); unpinPlaylist(); }}
                         >
                           ✖ Unpin
+                        </button>
+                      )}
+
+                      {/* Privacy toggle shown only to playlist owner */}
+                      {Number(currentUserId) === Number(p.ListenerID) && (
+                        <button
+                          className="pl__privacyBtn"
+                          title={isPublic ? 'Make private' : 'Make public'}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              // If attempting to make private, verify subscription
+                              if (isPublic) {
+                                const subRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${currentUserId}`);
+                                if (!subRes.ok) {
+                                  alert('Only subscribers can make playlists private.');
+                                  return;
+                                }
+                                const subData = await subRes.json();
+                                if (!subData?.IsActive) {
+                                  if (window.confirm('Private playlists are for subscribers only. Go to subscription page?')) {
+                                    navigate('/subscription');
+                                  }
+                                  return;
+                                }
+                              }
+
+                              const newPublic = isPublic ? 0 : 1;
+                              const res = await fetch(`${API_BASE_URL}/playlists/${p.PlaylistID}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ IsPublic: newPublic }),
+                              });
+                              const data = await res.json().catch(() => ({}));
+                              if (!res.ok) throw new Error(data.error || 'Failed to update playlist');
+                              setPlaylists(prev => prev.map(x => x.PlaylistID === p.PlaylistID ? { ...x, IsPublic: Number(newPublic) } : x));
+                            } catch (err) {
+                              alert(err.message || 'Could not change privacy');
+                            }
+                          }}
+                        >
+                          {isPublic ? '🔓 Public' : '🔒 Private'}
                         </button>
                       )}
                     </div>
