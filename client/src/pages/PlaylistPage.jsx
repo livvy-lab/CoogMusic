@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
+import "./PlaylistRowOverrides.css"; // minimal, playlist-scoped layout tweaks
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
 
@@ -71,7 +72,7 @@ export default function PlaylistPage() {
 
   return (
     <PageLayout>
-      <div className="albumPage">
+      <div className="albumPage playlistPage">
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
             <div className="likedCoverCircle">
