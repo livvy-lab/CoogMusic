@@ -1,5 +1,6 @@
 // client/src/components/Songs/SongActions.jsx
 import { useFavPins } from "../../context/FavoritesPinsContext";
+import AddToPlaylistMenu from "../Playlist/AddToPlaylistMenu";
 import "./SongActions.css";
 
 export default function SongActions({ songId, size = "sm" }) {
@@ -32,6 +33,10 @@ export default function SongActions({ songId, size = "sm" }) {
       >
         {pin ? "📍" : "📌"}
       </button>
+      {/* Add to playlist menu/button */}
+      <div className="songActions__add">
+        <AddToPlaylistMenu songId={songId} compact={true} />
+      </div>
     </div>
   );
 }

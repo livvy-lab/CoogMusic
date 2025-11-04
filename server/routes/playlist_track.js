@@ -74,7 +74,7 @@ export async function handlePlaylistTrackRoutes(req, res) {
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
         try {
-          const { PlaylistID, SongID, TrackNumber, DateSongAdded } = JSON.parse(body);
+          let { PlaylistID, SongID, TrackNumber, DateSongAdded } = JSON.parse(body);
 
           if (!PlaylistID || !SongID) {
             res.writeHead(400, { "Content-Type": "application/json" });
@@ -82,11 +82,24 @@ export async function handlePlaylistTrackRoutes(req, res) {
             return;
           }
 
+          // If TrackNumber wasn't provided, compute the next track number for the playlist
           try {
+            if (TrackNumber === undefined || TrackNumber === null) {
+              const [rows] = await db.query(
+                "SELECT COALESCE(MAX(TrackNumber), 0) AS maxTrack FROM Playlist_Track WHERE PlaylistID = ?",
+                [PlaylistID]
+              );
+              const maxTrack = rows?.[0]?.maxTrack ?? 0;
+              TrackNumber = Number(maxTrack) + 1;
+            }
+
+            // Default DateSongAdded to now if not provided
+            if (!DateSongAdded) DateSongAdded = new Date().toISOString().slice(0, 19).replace('T', ' ');
+
             const [result] = await db.query(
               `INSERT INTO Playlist_Track (PlaylistID, SongID, TrackNumber, DateSongAdded)
                VALUES (?, ?, ?, ?)`,
-              [PlaylistID, SongID, TrackNumber ?? null, DateSongAdded ?? null]
+              [PlaylistID, SongID, TrackNumber, DateSongAdded]
             );
 
             res.writeHead(201, { "Content-Type": "application/json" });
@@ -94,8 +107,8 @@ export async function handlePlaylistTrackRoutes(req, res) {
               JSON.stringify({
                 PlaylistID,
                 SongID,
-                TrackNumber: TrackNumber ?? null,
-                DateSongAdded: DateSongAdded ?? null,
+                TrackNumber: TrackNumber,
+                DateSongAdded: DateSongAdded,
               })
             );
           } catch (err) {
