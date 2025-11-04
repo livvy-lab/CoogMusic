@@ -1,4 +1,3 @@
-// server/utils/files.js
 import formidable from "formidable";
 import os from "os";
 import fs from "fs";
@@ -61,8 +60,15 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
     minFileSize: 1,
     maxFileSize: maxMB * 1024 * 1024,
 
-  // Keep only certain file fields; allow other text fields
-  filter: ({ name }) => name === "audio" || name === "file" || name === "upload" || name === "adFile",
+    // If it's a text field (part.originalFilename is null), keep it
+    // If it is a file, we check its name against the allowed file field names
+    filter: (part) => {
+      if (!part.originalFilename) {
+        return true; // Keep all text fields
+      }
+      const allowedFileNames = ["audio", "file", "upload", "adFile", "image"];
+      return allowedFileNames.includes(part.name);
+    },
 
     // Preserve the original extension; add a timestamp to avoid collisions
     filename: (name, ext, part) => {
@@ -85,11 +91,13 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
       }
 
       // accept common keys: audio / file / upload / adFile
+      // check for 'image' as used in SongForm
       const f =
         pickFirst(filesRaw?.audio) ||
         pickFirst(filesRaw?.file) ||
         pickFirst(filesRaw?.upload) ||
-        pickFirst(filesRaw?.adFile);
+        pickFirst(filesRaw?.adFile) ||
+        pickFirst(filesRaw?.image); // added 'image' for your cover upload
 
       if (!f) return resolve({ fields, files: {} });
 
@@ -103,7 +111,7 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
 
       // Ensure a temp file path exists and is a string
       if (typeof normalized.filepath !== "string" || normalized.filepath.length === 0) {
-        const e = new Error("audio_tempfile_missing");
+        const e = new Error("tempfile_missing"); // Changed key to be more generic
         e.code = "TEMPFILE_MISSING";
         return reject(e);
       }
@@ -125,7 +133,19 @@ export async function parseMultipart(req, { allowed = ["audio/*"], maxMB = 80 } 
         return reject(e);
       }
 
-      resolve({ fields, files: { audio: normalized } });
+      // resolve with the key that was found
+      const resolvedFiles = {};
+      const key = f === pickFirst(filesRaw?.audio) ? "audio" :
+                  f === pickFirst(filesRaw?.image) ? "image" :
+                  f === pickFirst(filesRaw?.file) ? "file" :
+                  f === pickFirst(filesRaw?.upload) ? "upload" :
+                  f === pickFirst(filesRaw?.adFile) ? "adFile" : "unknown";
+
+      if (key !== 'unknown') {
+        resolvedFiles[key] = normalized;
+      }
+
+      resolve({ fields, files: resolvedFiles });
     });
   });
 }

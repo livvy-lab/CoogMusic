@@ -1,23 +1,26 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./SongForm.css";
+import { API_BASE_URL } from "../../config/api";
 
 export default function SongForm() {
-  const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [cover, setCover] = useState(null);
+
+  const [genresList, setGenresList] = useState([]);
+  const [isGenreOpen, setIsGenreOpen] = useState(false);
+
+  const [successMessage, setSuccessMessage] = useState("");
+
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
-    genres: [],
+    genreId: "",
     artists: [],
     artistId: "",
-    explicit: false
   });
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  // Load artistId from localStorage when available (artist-only page is already guarded)
+  // load artist id from localstorage
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
@@ -26,8 +29,25 @@ export default function SongForm() {
     } catch {}
   }, []);
 
-  // Handle audio file selection
+  // fetch genres on mount
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/genres`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setGenresList(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch genres:", err));
+  }, []);
+
+  const selectedGenreName = genresList.find(
+    g => g.GenreID === formData.genreId
+  )?.Name;
+
+  // handle audio file selection
   const handleFileChange = (e) => {
+    setSuccessMessage("");
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
     if (!selectedFile.type.startsWith("audio/")) {
@@ -37,8 +57,9 @@ export default function SongForm() {
     setFile(selectedFile);
   };
 
-  // Handle cover image selection
+  // handle cover image selection
   const handleCoverChange = (e) => {
+    setSuccessMessage("");
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
     if (!selectedFile.type.startsWith("image/")) {
@@ -46,14 +67,30 @@ export default function SongForm() {
       return;
     }
 
-    // Create preview URL for image
     const url = URL.createObjectURL(selectedFile);
     setPreviewUrl(url);
     setCover(selectedFile);
   };
 
+  // reset the form fields and uploaded files
+  const resetForm = () => {
+    setFile(null);
+    setCover(null);
+    setPreviewUrl(null);
+    setFormData(data => ({
+      ...data,
+      title: "",
+      genreId: ""
+    }));
+    setIsGenreOpen(false);
+    document.getElementById("songInput").value = null;
+    document.getElementById("coverInput").value = null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSuccessMessage("");
+
     if (!file) {
       alert("Please select an audio file");
       return;
@@ -62,54 +99,59 @@ export default function SongForm() {
       alert("Missing artist account. Please log in as an artist and try again.");
       return;
     }
+    if (!formData.title) {
+      alert("Please enter a title for the song.");
+      return;
+    }
+    if (!formData.genreId) {
+      alert("Please select a genre for the song.");
+      return;
+    }
     setLoading(true);
 
     try {
-      // First upload the cover image if provided
+      // first upload cover image if provided
       let coverMediaId = null;
       if (cover) {
         const formData = new FormData();
         formData.append("image", cover);
-        const res = await fetch("/media", {
+        const res = await fetch(`${API_BASE_URL}/media`, {
           method: "POST",
           body: formData
         });
-        
+
         if (!res.ok) {
-          throw new Error("Failed to upload cover image");
+          const errData = await res.json().catch(() => ({ error: "Failed to upload cover image" }));
+          throw new Error(`Cover upload failed: ${errData.error}`);
         }
 
         const { mediaId } = await res.json();
         coverMediaId = mediaId;
       }
 
-      // Then upload the song
+      // upload the song file and song data
       const songFormData = new FormData();
-      // Backend expects field name 'audio' (not 'file')
       songFormData.append("audio", file);
       songFormData.append("title", formData.title);
-      songFormData.append("description", formData.description);
-      songFormData.append("genres", JSON.stringify(formData.genres));
+      songFormData.append("artistId", formData.artistId);
+      songFormData.append("genreId", formData.genreId);
       songFormData.append("artists", JSON.stringify(formData.artists));
-      songFormData.append("explicit", formData.explicit);
-      if (formData.artistId) {
-        songFormData.append("artistId", formData.artistId);
-      }
 
-      const uploadRes = await fetch("/upload/song", {
+      const uploadRes = await fetch(`${API_BASE_URL}/upload/song`, {
         method: "POST",
         body: songFormData
       });
 
       if (!uploadRes.ok) {
-        throw new Error("Failed to upload song");
+        const errData = await uploadRes.json().catch(() => ({ error: "Failed to upload song. Server response unreadable." }));
+        throw new Error(errData.error || "Failed to upload song");
       }
 
       const { songId } = await uploadRes.json();
 
-      // If we have a cover, associate it with the song
+      // associate cover with song if any
       if (coverMediaId) {
-        const coverRes = await fetch(`/songs/${songId}/cover`, {
+        const coverRes = await fetch(`${API_BASE_URL}/songs/${songId}/cover`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ mediaId: coverMediaId })
@@ -120,10 +162,12 @@ export default function SongForm() {
         }
       }
 
-      navigate(`/songs/${songId}`);
+      setSuccessMessage(`Successfully uploaded "${formData.title}"!`);
+      resetForm();
+
     } catch (err) {
       console.error("Upload failed:", err);
-      alert("Failed to upload song. Please try again.");
+      alert(`Upload failed: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -132,12 +176,11 @@ export default function SongForm() {
   return (
     <div className="song-form-container">
       <p className="upload-subtitle">Choose an audio file and enter the details below to upload your track</p>
-      
       <form onSubmit={handleSubmit} className="song-form">
         <div className="upload-boxes-row">
-          {/* Audio File Upload */}
+          {/* audio file upload */}
           <div 
-            className="upload-box" 
+            className="upload-box"
             onClick={() => document.getElementById("songInput").click()}
           >
             <div className="upload-icon">
@@ -152,15 +195,16 @@ export default function SongForm() {
             <input
               type="file"
               id="songInput"
+              name="audio"
               accept="audio/*"
               onChange={handleFileChange}
               style={{ display: "none" }}
             />
           </div>
 
-          {/* Cover Image Upload */}
+          {/* cover image upload */}
           <div 
-            className="upload-box" 
+            className="upload-box"
             onClick={() => document.getElementById("coverInput").click()}
           >
             {previewUrl ? (
@@ -174,7 +218,7 @@ export default function SongForm() {
                   </svg>
                 </div>
                 <button type="button" className="select-button">
-                  Select audio picture
+                  Select cover image
                 </button>
               </>
             )}
@@ -182,6 +226,7 @@ export default function SongForm() {
             <input
               type="file"
               id="coverInput"
+              name="image"
               accept="image/*"
               onChange={handleCoverChange}
               style={{ display: "none" }}
@@ -189,43 +234,61 @@ export default function SongForm() {
           </div>
         </div>
 
-        {/* Track Title */}
+        {/* track title input */}
         <div className="form-field">
           <label htmlFor="title">Track Title</label>
           <input
             type="text"
             id="title"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) => {
+              setFormData({ ...formData, title: e.target.value });
+              setSuccessMessage("");
+            }}
             placeholder="Song title"
             required
           />
         </div>
 
-        {/* Description */}
+        {/* genre dropdown */}
         <div className="form-field">
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Write something about your song..."
-            rows={4}
-          />
+          <label htmlFor="genre">Genre</label>
+          <div className="custom-select-container">
+            <div 
+              className="custom-select-trigger"
+              onClick={() => setIsGenreOpen(!isGenreOpen)}
+              tabIndex="0"
+            >
+              {selectedGenreName || "Select Genre"}
+            </div>
+            {isGenreOpen && (
+              <div className="custom-select-options">
+                {genresList.map(genre => (
+                  <div 
+                    key={genre.GenreID}
+                    className={`custom-select-option ${formData.genreId === genre.GenreID ? 'selected' : ''}`}
+                    onClick={() => {
+                      setFormData({ ...formData, genreId: genre.GenreID });
+                      setIsGenreOpen(false);
+                      setSuccessMessage("");
+                    }}
+                  >
+                    {genre.Name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Explicit Content */}
-        <div className="checkbox-field">
-          <input
-            type="checkbox"
-            id="explicit"
-            checked={formData.explicit}
-            onChange={(e) => setFormData({ ...formData, explicit: e.target.checked })}
-          />
-          <label htmlFor="explicit">Explicit Content</label>
-        </div>
+        {/* success message if upload succeeded */}
+        {successMessage && (
+          <div className="upload-success-message">
+            {successMessage}
+          </div>
+        )}
 
-        {/* Upload Button */}
+        {/* upload button */}
         <button type="submit" className="upload-submit-button" disabled={loading}>
           {loading ? "Uploading..." : "Upload"}
         </button>

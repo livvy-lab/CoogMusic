@@ -1,7 +1,8 @@
+import fs from "fs";
+import path from "path";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { randomUUID } from "crypto";
-import path from "path";
 import db from "../db.js";
 import { parseMultipart } from "../utils/files.js";
 
@@ -226,6 +227,11 @@ export async function handleMediaRoutes(req, res) {
       });
       return;
     }
+
+    // fallback
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Media route not found" }));
+
   } catch (e) {
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({
