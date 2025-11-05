@@ -12,6 +12,7 @@ function todayOffset(days = 0) {
 
 const sortOptions = [
   { label: "Date Listened", value: "ListenedDate" },
+  { label: "Streams", value: "streams" },
   { label: "Song Title", value: "songTitle" },
   { label: "Artist", value: "artist" },
   { label: "Album", value: "album" },
@@ -24,9 +25,11 @@ export default function ListenerAnalytics() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totals: [], listens: [], albums: [], artists: [], genres: [] });
 
+  const [isInitLoading, setIsInitLoading] = useState(true);
+
   const [pendingStartDate, setPendingStartDate] = useState(todayOffset(-6));
   const [pendingEndDate, setPendingEndDate] = useState(todayOffset(0));
-  const [pendingSortBy, setPendingSortBy] = useState("ListenedDate");
+  const [pendingSortBy, setPendingSortBy] = useState("ListenedDate"); // Kept default
   const [pendingSortOrder, setPendingSortOrder] = useState("desc");
   const [pendingSongSearch, setPendingSongSearch] = useState("");
   const [pendingFilterAlbum, setPendingFilterAlbum] = useState("");
@@ -35,7 +38,7 @@ export default function ListenerAnalytics() {
 
   const [appliedStartDate, setAppliedStartDate] = useState(todayOffset(-6));
   const [appliedEndDate, setAppliedEndDate] = useState(todayOffset(0));
-  const [appliedSortBy, setAppliedSortBy] = useState("ListenedDate");
+  const [appliedSortBy, setAppliedSortBy] = useState("ListenedDate"); // Kept default
   const [appliedSortOrder, setAppliedSortOrder] = useState("desc");
   const [appliedSongSearch, setAppliedSongSearch] = useState("");
   const [appliedFilterAlbum, setAppliedFilterAlbum] = useState("");
@@ -55,6 +58,28 @@ export default function ListenerAnalytics() {
 
   useEffect(() => {
     if (!listenerId) return;
+    
+    setIsInitLoading(true);
+    fetch(`${API_BASE_URL}/analytics/listener/${listenerId}/init`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.firstListenDate) {
+          const firstDate = data.firstListenDate.slice(0, 10);
+          setPendingStartDate(firstDate);
+          setAppliedStartDate(firstDate);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch first listen date, using default.", err);
+      })
+      .finally(() => {
+        setIsInitLoading(false);
+      });
+  }, [listenerId]);
+
+  useEffect(() => {
+    if (!listenerId || isInitLoading) return;
+
     setLoading(true);
     const params = new URLSearchParams({
       startDate: appliedStartDate,
@@ -74,6 +99,7 @@ export default function ListenerAnalytics() {
       });
   }, [
     listenerId,
+    isInitLoading,
     appliedStartDate, appliedEndDate,
     appliedSortBy, appliedSortOrder,
     appliedSongSearch, appliedFilterAlbum, appliedFilterArtist, appliedFilterGenre
@@ -81,7 +107,7 @@ export default function ListenerAnalytics() {
 
   const filteredListens = stats.listens ?? [];
 
-  if (loading) return (
+  if (loading || isInitLoading) return (
     <PageLayout>
       <div className="listener-analytics-container">
         <div className="laa-loading">Loading...</div>
@@ -168,6 +194,7 @@ export default function ListenerAnalytics() {
                 <th>Artist</th>
                 <th>Album</th>
                 <th>Genre</th>
+                <th>Streamed</th>
                 <th>Liked</th>
               </tr>
             </thead>
@@ -179,6 +206,7 @@ export default function ListenerAnalytics() {
                   <td>{row.artist}</td>
                   <td>{row.album}</td>
                   <td>{row.genre}</td>
+                  <td>{row.streams}</td>
                   <td>{row.liked ? "✓" : ""}</td>
                 </tr>
               )}
