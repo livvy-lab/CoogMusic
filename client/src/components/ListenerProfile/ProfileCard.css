@@ -11,6 +11,7 @@
   gap: 32px;
   box-shadow: 0 5px 0 #6e4760;
   transition: box-shadow .25s ease, transform .25s ease;
+  position: relative;
 }
 
 .pc:hover {
@@ -213,4 +214,23 @@
 }
 .pc__reportBtn:hover {
   background: #be477a;
+}
+
+
+.pc__achievements {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+
+.pc__badgeImg {
+  width: 85px;
+  height: 85px;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+
+  transition: transform 0.2s ease-in-out;
+  cursor: help;
+  object-fit: contain;
 }

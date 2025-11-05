@@ -41,6 +41,7 @@ import { handleSearchRoutes } from "./routes/search.js";
 import { handleArtistAnalyticsRoutes } from "./routes/artist_analytics.js";
 import { handleListenerAnalyticsRoutes } from "./routes/listener_analytics.js";
 import { handleAdminAnalyticsRoutes } from "./routes/admin_analytics.js";
+import { handleAchievements } from "./routes/achievements.js";
 
 const PORT = process.env.PORT || 3001;
 
@@ -132,7 +133,12 @@ const server = http.createServer(async (req, res) => {
     if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
     if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
     if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
-
+    
+    if (pathname.startsWith("/achievements/listener/")) {
+      req.url = pathname.replace("/achievements", "");
+      await handleAchievements(req, res);
+      return;
+    }
     // ───────────────────────────────────────────────
     // Plays + Login
     // ───────────────────────────────────────────────

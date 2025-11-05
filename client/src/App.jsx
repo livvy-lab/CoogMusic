@@ -29,6 +29,7 @@ import MyAds from "./pages/MyAds";
 
 import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
+import { AchievementProvider } from "./context/AchievementContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 
 import ArtistAnalytics from "./pages/ArtistAnalytics";
@@ -39,65 +40,67 @@ import AdminReportReview from "./pages/AdminReportReview";
 
 export default function App() {
   return (
-    <PlayerProvider>
-      <FavoritesPinsProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Redirect root to login */}
-            <Route path="/" element={<Navigate to="/login" replace />} />
+    <AchievementProvider>
+      <PlayerProvider>
+        <FavoritesPinsProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* Redirect root to login */}
+              <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* Auth */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/register/select" element={<AccountType />} />
-        <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
+              {/* Auth */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/register/select" element={<AccountType />} />
+              <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
 
-        {/* Admin Routes */}
-        <Route path="report-review" element={<AdminReportReview />} />
+              {/* Admin Routes */}
+              <Route path="report-review" element={<AdminReportReview />} />
 
-        {/* Listener routes */}
-        <Route path="/profile" element={<ListenerProfile />} />
-        <Route path="/home" element={<ListenerHome />} />
-        <Route path="/user-report" element={<UserReport />} />
-        <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
-        <Route path="/me/playlists" element={<MyPlaylistsPage />} />
-        <Route path="/playlist/:id" element={<PlaylistPage />} />
-        <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
-        <Route path="/subscription" element={<Subscription />} />
-        <Route path="/listeners/:id/follows" element={<FollowsPage />} />
-        <Route path="/buy-ads" element={<BuyAds />} />
-        <Route path="/edit-profile" element={<EditProfile />} />
-        <Route path="/playlists" element={<Playlists />} />
-        <Route path="/my-ads" element={<MyAds />} />
-        <Route path="/listener-analytics" element={<ListenerAnalytics />} />
-        <Route path="/follows" element={<FollowsPage />} />
+              {/* Listener routes */}
+              <Route path="/profile" element={<ListenerProfile />} />
+              <Route path="/home" element={<ListenerHome />} />
+              <Route path="/user-report" element={<UserReport />} />
+              <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
+              <Route path="/me/playlists" element={<MyPlaylistsPage />} />
+              <Route path="/playlist/:id" element={<PlaylistPage />} />
+              <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
+              <Route path="/subscription" element={<Subscription />} />
+              <Route path="/listeners/:id/follows" element={<FollowsPage />} />
+              <Route path="/buy-ads" element={<BuyAds />} />
+              <Route path="/edit-profile" element={<EditProfile />} />
+              <Route path="/playlists" element={<Playlists />} />
+              <Route path="/my-ads" element={<MyAds />} />
+              <Route path="/listener-analytics" element={<ListenerAnalytics />} />
+              <Route path="/follows" element={<FollowsPage />} />
 
 
-          {/* Artist routes */}
-          <Route path="/artist/:artistId" element={<ArtistView />} />
-          <Route path="/upload" element={<Navigate to="/upload/song" replace />} />
-          <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
-          <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
-          <Route path="/artist-analytics" element={<ArtistAnalytics />} />
+              {/* Artist routes */}
+              <Route path="/artist/:artistId" element={<ArtistView />} />
+              <Route path="/upload" element={<Navigate to="/upload/song" replace />} />
+              <Route path="/upload/song" element={<RequireArtist><UploadSong /></RequireArtist>} />
+              <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
+              <Route path="/artist-analytics" element={<ArtistAnalytics />} />
 
-            {/* Public listener profile (search links point to /listeners/:id) */}
-            <Route path="/listeners/:id" element={<ListenerPublic />} />
+                {/* Public listener profile (search links point to /listeners/:id) */}
+                <Route path="/listeners/:id" element={<ListenerPublic />} />
 
-            {/* Song routes */}
-            <Route path="/song" element={<Song />} />
-            <Route path="/genres/:genreId" element={<Song />} />
-            <Route path="/genre/:genreId" element={<Song />} />
+                {/* Song routes */}
+                <Route path="/song" element={<Song />} />
+                <Route path="/genres/:genreId" element={<Song />} />
+                <Route path="/genre/:genreId" element={<Song />} />
 
-          {/* Search routes */}
-          <Route path="/search" element={<SearchResults />} />
+              {/* Search routes */}
+              <Route path="/search" element={<SearchResults />} />
 
-          {/* Catch-all */}
-          <Route path="*" element={<Navigate to="/home" replace />} />
-        </Routes>
-      </BrowserRouter>
-
-        <MusicPlayBar />
-      </FavoritesPinsProvider>
-    </PlayerProvider>
+              {/* Catch-all */}
+              <Route path="*" element={<Navigate to="/home" replace />} />
+            </Routes>
+          </BrowserRouter>
+        
+          <MusicPlayBar />
+        </FavoritesPinsProvider>
+      </PlayerProvider>
+    </AchievementProvider>
   );
 }

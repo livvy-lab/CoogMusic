@@ -1,8 +1,9 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { API_BASE_URL } from "../config/api";
+import { useAchievement } from "./AchievementContext";
 
 // player context
-const Ctx = createContext(null);
+const PlayerContext = createContext(null);
 
 // load listener id from localStorage
 function getListenerId() {
@@ -14,6 +15,7 @@ function getListenerId() {
 
 export function PlayerProvider({ children }) {
   const audioRef = useRef(null);
+  const { showAchievement } = useAchievement();
 
   const [current, setCurrent] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -40,13 +42,27 @@ export function PlayerProvider({ children }) {
       if (msPlayed <= 0) return;
       if (postedRef.current) return;
       postedRef.current = true;
-      await fetch(`${API_BASE_URL}/plays`, {
+      const response = await fetch(`${API_BASE_URL}/plays`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ songId, listenerId, msPlayed }),
       });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data = await response.json();
+
       console.log(`Successfully posted play for song ${songId}: ${msPlayed}ms`);
-    } catch {/* ignore */ }
+
+      // Achievement POPUP integration
+      if (data.newAchievement) {
+        console.log("API returned newAchievement:", data.newAchievement); // debugging
+        showAchievement(data.newAchievement);
+      }
+    } catch (err) {
+      console.error("Error posting play:", err);
+    }
   }
 
   // set audio volume
@@ -66,10 +82,10 @@ export function PlayerProvider({ children }) {
     function onPlay() { setPlaying(true); }
     function onPause() {
       setPlaying(false);
-      postPlayIfPossible();
+      postPlayIfPossible(); // check for achievements
     }
     function onEnd() {
-      postPlayIfPossible();
+      postPlayIfPossible(); // check for achievements
       if (queue && queue.length > 0 && currentIndex >= 0 && currentIndex < queue.length - 1) {
         const next = currentIndex + 1;
         setCurrentIndex(next);
@@ -198,7 +214,6 @@ export function PlayerProvider({ children }) {
       setPlaying(true);
     } else {
       a.pause();
-      // postPlayIfPossible is called by pause event handler
     }
   }
 
@@ -258,7 +273,7 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // change audio volume (percent)
+  // Audio volume
   function setVolumePercent(p) {
     const v = Math.max(0, Math.min(1, p));
     setVolume(v);
@@ -266,7 +281,7 @@ export function PlayerProvider({ children }) {
     if (a) a.volume = v;
   }
 
-  // memoized value for context
+  // Memoized value, for stable context
   const value = useMemo(
     () => ({
       current,
@@ -294,14 +309,14 @@ export function PlayerProvider({ children }) {
   );
 
   return (
-    <Ctx.Provider value={value}>
+    <PlayerContext.Provider value={value}>
       {children}
       <audio ref={audioRef} preload="metadata" />
-    </Ctx.Provider>
+    </PlayerContext.Provider>
   );
 }
 
 // hook to use player context
 export function usePlayer() {
-  return useContext(Ctx);
+  return useContext(PlayerContext);
 }
