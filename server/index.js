@@ -100,7 +100,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
     if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
 
-    if (pathname === "/media" || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
+    if (pathname.startsWith("/media") || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
       await handleMediaRoutes(req, res);
       return;
     }
@@ -135,10 +135,10 @@ const server = http.createServer(async (req, res) => {
     if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
     
     if (pathname.startsWith("/achievements/listener/")) {
-      req.url = pathname.replace("/achievements", "");
-      await handleAchievements(req, res);
-      return;
-    }
+      req.url = pathname.replace("/achievements", "");
+      await handleAchievements(req, res);
+      return;
+    }
     // ───────────────────────────────────────────────
     // Plays + Login
     // ───────────────────────────────────────────────
@@ -153,7 +153,7 @@ const server = http.createServer(async (req, res) => {
       pathname.startsWith("/likes") ||
       pathname.startsWith("/pin") || // legacy song pin
       /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
-      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)            // ✅ add this
+      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)
     ) {
       await handleLikesPins(req, res);
       return;

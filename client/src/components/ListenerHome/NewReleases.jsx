@@ -6,8 +6,39 @@ import { useFavPins } from "../../context/FavoritesPinsContext";
 import SongActions from "../Songs/SongActions";
 import { API_BASE_URL } from "../../config/api";
 
+// cache to store the fetched URLs
+const imageUrlCache = new Map();
+
+async function getSecureImageUrl(mediaId) {
+  if (!mediaId) {
+    return null;
+  }
+
+  if (imageUrlCache.has(mediaId)) {
+    return imageUrlCache.get(mediaId);
+  }
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/media/${mediaId}/signed-url`);
+    if (!res.ok) {
+      return null;
+    }
+    const data = await res.json();
+    if (data.url) {
+      imageUrlCache.set(mediaId, data.url);
+      return data.url;
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to fetch signed URL for media", mediaId);
+    return null;
+  }
+}
+
+
 export default function NewReleases({ title = "New releases" }) {
   const [songs, setSongs] = useState([]);
+  const [songsWithUrls, setSongsWithUrls] = useState([]);
   const [loading, setLoading] = useState(true);
   const railRef = useRef(null);
   const { playSong } = usePlayer();
@@ -24,26 +55,46 @@ export default function NewReleases({ title = "New releases" }) {
   useEffect(() => {
     (async () => {
       try {
-  const res = await fetch(`${API_BASE_URL}/songs/latest?limit=10`);
+        setLoading(true);
+        const res = await fetch(`${API_BASE_URL}/songs/latest?limit=10`);
         const data = await res.json();
         setSongs(Array.isArray(data) ? data : []);
       } catch {
         setSongs([]);
-      } finally {
-        setLoading(false);
       }
     })();
   }, []);
 
   useEffect(() => {
+    if (songs.length === 0) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchImageUrls = async () => {
+      const updatedSongs = await Promise.all(
+        songs.map(async (song) => {
+          const imageUrl = await getSecureImageUrl(song.cover_media_id);
+          return { ...song, coverArtUrl: imageUrl };
+        })
+      );
+      
+      setSongsWithUrls(updatedSongs);
+      setLoading(false);
+    };
+
+    fetchImageUrls();
+  }, [songs]);
+
+  useEffect(() => {
     const ids = (songs || []).map(s => s.SongID).filter(Boolean);
     setVisibleIds(ids);
-  }, [songs]);
+  }, [songs]); 
 
   async function resolveUrl(song) {
     if (song?.url) return song.url;
     try {
-  const r = await fetch(`${API_BASE_URL}/songs/${encodeURIComponent(song.SongID)}/stream`);
+      const r = await fetch(`${API_BASE_URL}/songs/${encodeURIComponent(song.SongID)}/stream`);
       if (!r.ok) return null;
       const j = await r.json();
       return j?.url ?? null;
@@ -65,12 +116,13 @@ export default function NewReleases({ title = "New releases" }) {
   }
 
   const totalSlots = 10;
-  const realCards = songs.map((s) => ({
+  const realCards = songsWithUrls.map((s) => ({
     key: String(s.SongID ?? s.songId ?? `${s.Title}-${s.ArtistID ?? s.artistId ?? Math.random()}`),
     song: s,
     img:
-      s.coverUrl ||
-      `https://placehold.co/600x600/AF578A/ffffff?text=${encodeURIComponent(s.Title || "Song")}`,
+      (s.coverArtUrl && s.coverArtUrl !== "null")
+        ? s.coverArtUrl
+        : `https://placehold.co/600x600/AF578A/ffffff?text=${encodeURIComponent(s.Title || "Song")}`,
     alt: s.Title || "Song",
     title: s.Title || "Untitled",
     artistName: s.ArtistName || s.artistName || s.Artist || "Unknown Artist",

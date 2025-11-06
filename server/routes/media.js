@@ -228,6 +228,50 @@ export async function handleMediaRoutes(req, res) {
       return;
     }
 
+    if (/^\/media\/\d+\/signed-url$/.test(pathname) && method === "GET") {
+      const id = Number(pathname.split("/")[2]);
+      
+      const [rows] = await db.query(
+        `SELECT bucket, s3_key, storage_provider, url AS localUrl FROM Media WHERE MediaID = ?`,
+        [id]
+      );
+
+      if (!rows.length) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Media not found" }));
+        return;
+      }
+
+      const row = rows[0];
+
+      // handle local fallback
+      if (row.storage_provider === 'local') {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ url: row.localUrl })); // Send the local path
+        return;
+      }
+
+      // handle S3
+      if (row.storage_provider === 'aws-s3') {
+        if (!row.bucket || !row.s3_key) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Media has no S3 info" }));
+          return;
+        }
+        const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
+        const url = await getSignedUrl(s3, cmd, { expiresIn: 900 }); // 15-minute link
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ url: url }));
+        return;
+      }
+      
+      // fallback for unknown provider
+      res.writeHead(4404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Media has no valid URL" }));
+      return;
+    }
+
     // fallback
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Media route not found" }));
