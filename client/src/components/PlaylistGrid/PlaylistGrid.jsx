@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
+import EditPlaylistCoverModal from "../Playlist/EditPlaylistCoverModal";
 
 export default function PlaylistGrid({
   listenerId,
@@ -11,11 +12,13 @@ export default function PlaylistGrid({
   authorName = "you",
 }) {
   const [playlists, setPlaylists] = useState([]);
+  const [covers, setCovers] = useState({});
   const [likedCount, setLikedCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pinnedId, setPinnedId] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [openCoverModalFor, setOpenCoverModalFor] = useState(null);
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
@@ -119,6 +122,78 @@ export default function PlaylistGrid({
     };
   }, [listenerId, showPrivate, showLikedFallback]);
 
+  // Update playlist entry when cover changed by modal
+  function handleCoverUpdated(updated) {
+    setPlaylists(prev => prev.map(p => (p.PlaylistID === updated.PlaylistID ? { ...p, cover_media_id: updated.cover_media_id } : p)));
+    // if we resolved the media URL earlier, clear it so effect can re-resolve
+    setCovers(prev => {
+      const next = { ...prev };
+      if (updated.cover_media_id == null) {
+        // remove any entries that pointed to previous id for this playlist
+        return next;
+      }
+      return next;
+    });
+    setOpenCoverModalFor(null);
+  }
+
+  // Listen for playlistCreated or playlistCoverUpdated events to update UI immediately
+  useEffect(() => {
+    function onCreated(e) {
+      const pl = e?.detail;
+      if (!pl || !pl.PlaylistID) return;
+      setPlaylists(prev => [pl, ...prev]);
+    }
+
+    function onCoverUpdated(e) {
+      const d = e?.detail;
+      if (!d || !d.PlaylistID) return;
+      setPlaylists(prev => prev.map(p => p.PlaylistID === d.PlaylistID ? { ...p, cover_media_id: d.cover_media_id } : p));
+      // clear caches for media so it will be resolved
+      if (d.cover_media_id) {
+        setCovers(prev => { const next = { ...prev }; delete next[d.cover_media_id]; return next; });
+      }
+    }
+
+    window.addEventListener('playlistCreated', onCreated);
+    window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    return () => {
+      window.removeEventListener('playlistCreated', onCreated);
+      window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+    };
+  }, []);
+
+  // Resolve any cover_media_id → URL
+  useEffect(() => {
+    let aborted = false;
+    (async () => {
+      try {
+        const needed = [...new Set((playlists || []).map(p => p.cover_media_id).filter(Boolean))]
+          .filter(id => !(id in covers));
+        if (!needed.length) return;
+        const entries = await Promise.all(
+          needed.map(async (id) => {
+            try {
+              const r = await fetch(`${API_BASE_URL}/media/${id}`);
+              if (!r.ok) return [id, null];
+              const j = await r.json();
+              return [id, j?.url || null];
+            } catch { return [id, null]; }
+          })
+        );
+        if (aborted) return;
+        setCovers(prev => {
+          const next = { ...prev };
+          for (const [id, url] of entries) next[id] = url;
+          return next;
+        });
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { aborted = true; };
+  }, [playlists]);
+
   async function pinPlaylist(playlistId) {
     if (!listenerId || !playlistId) return;
     setPinLoading(true);
@@ -219,7 +294,7 @@ export default function PlaylistGrid({
               playlists.map(p => {
                 const tracks = Number(p.TrackCount) || 0;
                 const title = p.Name ?? "Untitled Playlist";
-                const coverUrl = p.CoverURL || "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
+                const coverUrl = p.CoverURL || (p.cover_media_id ? (covers[p.cover_media_id] || "https://placehold.co/600x600/FFE8F5/895674?text=Playlist") : "https://placehold.co/600x600/FFE8F5/895674?text=Playlist");
                 const isPinned = pinnedId === p.PlaylistID;
                 const isPublic = Number(p.IsPublic) === 1;
 
@@ -310,6 +385,9 @@ export default function PlaylistGrid({
                           <button className="dropdownItem" onClick={() => handleEdit(p.PlaylistID)}>
                             ✏️ Edit
                           </button>
+                          <button className="dropdownItem" onClick={(e) => { e.stopPropagation(); setOpenCoverModalFor(p); setOpenMenuId(null); }}>
+                            🖼 Change cover
+                          </button>
                           <button className="dropdownItem delete" onClick={() => handleDelete(p.PlaylistID)}>
                             🗑️ Delete
                           </button>
@@ -342,6 +420,9 @@ export default function PlaylistGrid({
           </>
         )}
       </div>
+      {openCoverModalFor && (
+        <EditPlaylistCoverModal playlist={openCoverModalFor} onClose={() => setOpenCoverModalFor(null)} onUpdated={handleCoverUpdated} />
+      )}
     </section>
   );
 }
