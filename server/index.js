@@ -42,7 +42,7 @@ import { handleArtistAnalyticsRoutes } from "./routes/artist_analytics.js";
 import { handleListenerAnalyticsRoutes } from "./routes/listener_analytics.js";
 import { handleAdminAnalyticsRoutes } from "./routes/admin_analytics.js";
 import { handleAchievements } from "./routes/achievements.js";
-
+import { handleSoftDeleteRoutes } from "./routes/soft_delete.js";
 const PORT = process.env.PORT || 3001;
 
 const ALLOWED_ORIGINS = (
@@ -103,6 +103,11 @@ const server = http.createServer(async (req, res) => {
     // Route media endpoints (upload + media lookup + song/album cover association)
     if (pathname.startsWith("/media") || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
       await handleMediaRoutes(req, res);
+      return;
+    }
+
+    if (pathname.startsWith("/api/soft_delete")) {
+      await handleSoftDeleteRoutes(req, res);
       return;
     }
 
