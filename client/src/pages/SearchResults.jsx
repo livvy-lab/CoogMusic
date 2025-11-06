@@ -158,9 +158,18 @@ function Row({ r, to, playSong }) {
         width: 56, height: 56,
         background: "#e9d2df",
         borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
-        display: "grid", placeItems: "center", fontWeight: 700
+        display: "grid", placeItems: "center", fontWeight: 700,
+        overflow: "hidden",
       }}>
-        {r.type?.[0]?.toUpperCase() || "?"}
+        {r.pfpUrl ? (
+          <img 
+            src={r.pfpUrl} 
+            alt={r.title} 
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          r.type?.[0]?.toUpperCase() || "?"
+        )}
       </div>
       <div style={{ display: "grid", alignContent: "center" }}>
         <div style={{ fontWeight: 700 }}>{r.title}</div>
@@ -221,9 +230,18 @@ function BigCard({ r, to, playSong }) {
       width: 96, height: 96,
       background: "#e9d2df",
       borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
-      display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24
+      display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24,
+      overflow: "hidden",
     }}>
-      {r.type?.[0]?.toUpperCase() || "?"}
+      {r.pfpUrl ? (
+        <img 
+          src={r.pfpUrl} 
+          alt={r.title} 
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        r.type?.[0]?.toUpperCase() || "?"
+      )}
     </div>
   );
 

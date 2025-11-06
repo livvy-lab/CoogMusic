@@ -1,12 +1,15 @@
 import PageLayout from "../components/PageLayout/PageLayout";
 import SongForm from "../components/ArtistUpload/SongForm";
-import "../pages/ArtistView.css";
+import "../components/ArtistUpload/SongForm.css";
 
 export default function UploadSong() {
   return (
     <PageLayout>
-      <div style={{ padding: '40px 24px', maxWidth: 720, margin: "0 auto" }}>
-        <h1 style={{ margin: 0, marginBottom: 24, fontSize: 32, fontWeight: 600, color: '#2D2D2D' }}>Upload Music</h1>
+      {/* page title */}
+      <h1 className="upload-page-title">Upload Music</h1>
+
+      {/* main upload container */}
+      <div className="upload-page-container">
         <SongForm />
       </div>
     </PageLayout>

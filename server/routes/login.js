@@ -89,6 +89,7 @@ export async function handleLogin(req, res) {
       accountType,
       listenerId: isListener ? listenerRows[0].ListenerID : null,
       artistId: isArtist ? artistRows[0].ArtistID : null,
+      adminId: isAdmin ? adminRows[0].AdminID : null,
       name: isListener ? `${listenerRows[0].FirstName} ${listenerRows[0].LastName}`.trim() : null,
     };
 

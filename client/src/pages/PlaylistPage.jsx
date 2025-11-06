@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
+import "./PlaylistRowOverrides.css"; // minimal, playlist-scoped layout tweaks
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
 
@@ -14,6 +15,7 @@ export default function PlaylistPage() {
   const { id } = useParams(); // read playlist ID from URL
   const [tracks, setTracks] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
+  const [coverUrl, setCoverUrl] = useState(null);
   const { playList, playSong, playShuffled } = usePlayer();
 
   // fetch playlist metadata
@@ -22,6 +24,20 @@ export default function PlaylistPage() {
     if (res.ok) {
       const data = await res.json();
       setPlaylistInfo(data);
+      // resolve cover media id to a usable URL if present
+      if (data?.cover_media_id) {
+        try {
+          const m = await fetch(`${API_BASE_URL}/media/${data.cover_media_id}`);
+          if (m.ok) {
+            const mj = await m.json();
+            setCoverUrl(mj?.url || null);
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setCoverUrl(null);
+      }
     }
   }
 
@@ -55,6 +71,32 @@ export default function PlaylistPage() {
     fetchPlaylistTracks();
   }, [id]);
 
+  // Listen for cover updates made elsewhere and refresh header if needed
+  useEffect(() => {
+    function onCoverUpdated(e) {
+      const d = e?.detail;
+      if (!d || !playlistInfo) return;
+      if (Number(d.PlaylistID) !== Number(playlistInfo.PlaylistID)) return;
+      if (!d.cover_media_id) {
+        setCoverUrl(null);
+        setPlaylistInfo(prev => prev ? { ...prev, cover_media_id: null } : prev);
+        return;
+      }
+      (async () => {
+        try {
+          const m = await fetch(`${API_BASE_URL}/media/${d.cover_media_id}`);
+          if (!m.ok) return;
+          const mj = await m.json();
+          setCoverUrl(mj?.url || null);
+          setPlaylistInfo(prev => prev ? { ...prev, cover_media_id: d.cover_media_id } : prev);
+        } catch (e) {}
+      })();
+    }
+
+    window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    return () => window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+  }, [playlistInfo]);
+
   // Play the whole playlist
   function handlePlayAll() {
     if (!tracks || tracks.length === 0) return;
@@ -71,11 +113,18 @@ export default function PlaylistPage() {
 
   return (
     <PageLayout>
-      <div className="albumPage">
+      <div className="albumPage playlistPage">
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
             <div className="likedCoverCircle">
-              <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              {playlistInfo?.IsLikedSongs ? (
+                <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              ) : (
+                // show cover image when available; otherwise leave the gradient background
+                coverUrl ? (
+                  <img src={coverUrl} alt="Playlist Cover" className="playlistCoverImg" />
+                ) : null
+              )}
             </div>
 
             <div className="likedHeaderText">

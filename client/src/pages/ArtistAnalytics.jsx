@@ -23,6 +23,7 @@ export default function ArtistAnalytics() {
   const artistId = getUser()?.artistId;
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ totals: [], albums: [], songs: [] });
+  const [isInitLoading, setIsInitLoading] = useState(true);
 
   const [pendingStartDate, setPendingStartDate] = useState(todayOffset(-6));
   const [pendingEndDate, setPendingEndDate] = useState(todayOffset(0));
@@ -47,8 +48,31 @@ export default function ArtistAnalytics() {
     setAppliedSearchTitle(pendingSearchTitle);
   };
 
+  // runs once to get the default start date
   useEffect(() => {
     if (!artistId) return;
+    
+    setIsInitLoading(true); // start loading
+    fetch(`${API_BASE_URL}/analytics/artist/${artistId}/init`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.firstReleaseDate) {
+          const firstDate = data.firstReleaseDate.slice(0, 10);
+          setPendingStartDate(firstDate);
+          setAppliedStartDate(firstDate);
+        }
+      })
+      .catch(err => {
+        console.error("Failed to fetch first release date, using default.", err);
+      })
+      .finally(() => {
+        setIsInitLoading(false);
+      });
+  }, [artistId]);
+
+  useEffect(() => {
+    if (!artistId || isInitLoading) return;
+
     setLoading(true);
     const params = new URLSearchParams({
       startDate: appliedStartDate,
@@ -66,6 +90,7 @@ export default function ArtistAnalytics() {
       });
   }, [
     artistId,
+    isInitLoading,
     appliedStartDate,
     appliedEndDate,
     appliedSortBy,
@@ -76,7 +101,7 @@ export default function ArtistAnalytics() {
 
   const filteredSongs = stats.songs ?? [];
 
-  if (loading) return (
+  if (loading || isInitLoading) return (
     <PageLayout>
       <div className="artist-analytics-container">
         <div className="aa-loading">Loading...</div>

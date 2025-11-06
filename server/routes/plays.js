@@ -1,4 +1,3 @@
-// server/routes/play.js
 import db from "../db.js";
 
 const STREAM_MS_THRESHOLD = 0; // e.g., 30000 in prod
@@ -56,7 +55,7 @@ export async function handlePlayRoutes(req, res) {
             [listenerId, songId, msPlayed]
           );
 
-          // Listen_History row (EventID will auto-increment after schema fix)
+          // Listen history
           const durationSec = Math.max(0, Math.floor(msPlayed / 1000));
           await db.query(
             `INSERT INTO Listen_History (ListenerID, SongID, ListenedDate, Duration, IsDeleted)
@@ -64,7 +63,25 @@ export async function handlePlayRoutes(req, res) {
             [listenerId, songId, durationSec]
           );
 
-          // Threshold-aware stream count
+          let newAchievement = null;
+
+          // this query finds achievements awarded in the last few seconds by the trigger.
+          const [[achRow]] = await db.query(
+            `SELECT l.AchievementID, a.Name, a.IconURL, a.Description
+               FROM Listener_Achievement l
+               JOIN Achievement a ON l.AchievementID = a.AchievementID
+              WHERE l.ListenerID = ?
+                AND l.AchievementID = 1
+                AND l.DateEarned >= (NOW() - INTERVAL 10 SECOND)
+              ORDER BY l.DateEarned DESC
+              LIMIT 1`,
+            [listenerId]
+          );
+          if (achRow) {
+            newAchievement = achRow;
+          }
+
+          // get stream count for this track
           const [[row]] = await db.query(
             `SELECT COUNT(*) AS Streams
                FROM Play
@@ -83,6 +100,7 @@ export async function handlePlayRoutes(req, res) {
             listenerId,
             msPlayed,
             streams: Number(row?.Streams || 0),
+            newAchievement, // only set if trigger just inserted this achievement
           }));
         } catch (e) {
           if (db.rollback) await db.rollback();

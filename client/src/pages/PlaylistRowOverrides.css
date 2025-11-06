@@ -1,0 +1,72 @@
+/* Minimal overrides scoped to the playlist page only.
+   This file intentionally changes ONLY layout (padding/flow) and
+   does NOT change colors, font sizes, or backgrounds.
+   Import this file from `PlaylistPage.jsx` AFTER `LikedPage.css`.
+*/
+
+.playlistPage .col-title {
+  /* ensure title column is a flex container for stacked content */
+  display: flex;
+  align-items: center;
+  overflow: visible; /* allow wrapped title to grow vertically */
+  justify-self: start; /* force left alignment inside the grid cell */
+  padding-left: 150px; /* small left offset so text isn't flush to the card edge */
+}
+
+.playlistPage .songInfo {
+  display: flex;
+  flex-direction: column; /* stack title above artist */
+  gap: 4px;
+  justify-content: center;
+  padding-left: 0; /* align left on playlist page */
+  align-items: flex-start; /* left-align stacked text */
+  background: transparent; /* explicit to avoid blending */
+  mix-blend-mode: normal; /* avoid visual blending artifacts */
+}
+
+/* Give the title column more space on the playlist page only */
+.playlistPage .likedRow {
+  grid-template-columns: 40px 2fr 1fr 1fr 60px !important;
+}
+
+/* Allow the song title to wrap to multiple lines so it can hold more text */
+.playlistPage .songTitle {
+  white-space: normal !important;
+  word-break: break-word;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  text-align: left; /* ensure title is left aligned */
+  width: 100%;
+}
+
+.playlistPage .songArtist {
+  text-align: left; /* ensure artist under title is left aligned */
+}
+
+/* Keep typography inherited from existing styles to avoid size/color changes */
+.playlistPage .songTitle,
+.playlistPage .songArtist {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+}
+
+/* Defensive: remove heavy margins that might have been added globally */
+.playlistPage .col-album { margin-left: 0 !important; }
+.playlistPage .col-date  { margin-left: 0 !important; }
+
+.playlistPage .col-album { justify-self: start; padding-left: -120px; }
+
+/* Optional small tweak: reduce gap between title + artist safely */
+.playlistPage .songInfo { gap: 2px; }
+
+/* Make playlist header cover image fill the square and crop nicely */
+.playlistPage .playlistCoverImg,
+.playlistView .playlistCoverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px; /* match likedCoverCircle rounded corners */
+}

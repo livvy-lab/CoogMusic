@@ -27,6 +27,7 @@ export default function Login() {
           accountType: data.accountType,
           listenerId: data.listenerId,
           artistId: data.artistId,
+          adminId: data.adminId,
           name: data.name
         };
         setUser(user);

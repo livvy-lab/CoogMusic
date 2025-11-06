@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUser } from "../../lib/userStorage";
 import { API_BASE_URL } from "../../config/api";
+import { AchievementProvider } from "../../context/AchievementContext";
 import "./ProfileCard.css";
 
 export default function ProfileCard({ listenerId: propListenerId = null, publicView = false }) {
@@ -14,12 +15,12 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   const [error, setError] = useState(null);
   const [pfpUrl, setPfpUrl] = useState("");
   const [isFollowing, setIsFollowing] = useState(false);
+  const [achievements, setAchievements] = useState([]);
 
   // Get current user info
   const currentUser = getUser();
   const currentUserType = currentUser?.accountType?.toLowerCase() || "";
   const currentUserId = currentUser?.listenerId || currentUser?.artistId || currentUser?.accountId;
-
 
   useEffect(() => {
     if (propListenerId != null) {
@@ -51,19 +52,43 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
     }
   }, [propListenerId]);
 
+  const refreshAchievements = useCallback(async () => {
+    if (!listenerId) return;
+    try {
+      const achievementsRes = await fetch(`${API_BASE_URL}/achievements/listener/${listenerId}`);
+      if (achievementsRes.ok) {
+        const achievementsData = await achievementsRes.json();
+        setAchievements(achievementsData || []);
+      }
+    } catch (e) {
+      console.error("Failed to refresh achievements", e);
+    }
+  }, [listenerId]);
+
   useEffect(() => {
     if (!listenerId) return;
     let cancel = false;
     (async () => {
       try {
         setLoading(true);
-        const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`);
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const j = await r.json();
+
+        const profilePromise = fetch(`${API_BASE_URL}/listeners/${listenerId}/profile`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)));
+        const achievementsPromise = fetch(`${API_BASE_URL}/achievements/listener/${listenerId}`)
+          .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)));
+        const [profileData, achievementsData] = await Promise.all([
+          profilePromise,
+          achievementsPromise
+        ]);
+
         if (!cancel) {
-          setData(j);
-          const legacy = j?.listener?.PFP;
+          // set profile data
+          setData(profileData);
+          const legacy = profileData?.listener?.PFP;
           if (legacy && !pfpUrl) setPfpUrl(legacy);
+
+          // set achievements data
+          setAchievements(achievementsData || []);
         }
       } catch (e) {
         console.error("[ProfileCard] fetch error", e);
@@ -198,70 +223,85 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
   };
 
   return (
-    <section className="pc">
-      <div className="pc__avatarWrap">
-        {pfpUrl ? (
-          <img className="pc__avatarImg" src={pfpUrl} alt="Profile" />
-        ) : (
-          <div className="pc__avatarPlaceholder" />
-        )}
-      </div>
-      <div className="pc__details">
-        <div className="pc__headingRow">
-          <h2 className="pc__heading">
-            About {listener.FirstName} {listener.LastName}
-          </h2>
-          {
-            !isOwnProfile && (
-              <>
-                <button
-                  className={`pc__followBtn${isFollowing ? " following" : ""}`}
-                  onClick={handleFollowToggle}
-                  style={{ marginLeft: 18 }}
-                >
-                  {isFollowing ? "Following" : "+ Follow"}
-                </button>
-                <button
-                  className="pc__reportBtn"
-                  onClick={handleReportClick}
-                  style={{ marginLeft: 12 }}
-                >
-                  Report
-                </button>
-              </>
-            )
-          }
+    <AchievementProvider refreshAchievements={refreshAchievements}>
+      <section className="pc">
+        <div className="pc__avatarWrap">
+          {pfpUrl ? (
+            <img className="pc__avatarImg" src={pfpUrl} alt="Profile" />
+          ) : (
+            <div className="pc__avatarPlaceholder" />
+          )}
         </div>
-        <div className="pc__meta">
-          <span>Major: {listener.Major || "—"}</span>
-          <span>Minor: {listener.Minor || "—"}</span>
+        <div className="pc__details">
+          <div className="pc__headingRow">
+            <h2 className="pc__heading">
+              About {listener.FirstName} {listener.LastName}
+            </h2>
+
+            <div className="pc__achievements">
+              {achievements.filter(badge => badge.DisplayOnProfile === 1).map((badge) => (
+                <img 
+                  key={badge.AchievementID}
+                  src={badge.IconURL}
+                  alt={badge.Name}
+                  title={`${badge.Name}: ${badge.Description}`}
+                  className="pc__badgeImg"
+                />
+              ))}
+            </div>
+
+            {
+              !isOwnProfile && (
+                <>
+                  <button
+                    className={`pc__followBtn${isFollowing ? " following" : ""}`}
+                    onClick={handleFollowToggle}
+                    style={{ marginLeft: 18 }}
+                  >
+                    {isFollowing ? "Following" : "+ Follow"}
+                  </button>
+                  <button
+                    className="pc__reportBtn"
+                    onClick={handleReportClick}
+                    style={{ marginLeft: 12 }}
+                  >
+                    Report
+                  </button>
+                </>
+              )
+            }
+          </div>
+          <div className="pc__meta">
+            <span>Major: {listener.Major || "—"}</span>
+            <span>Minor: {listener.Minor || "—"}</span>
+          </div>
+          <p className="pc__bio">{listener.Bio || "No bio available."}</p>
+          <div className="pc__stats">
+            <button
+              onClick={() => navigate(`/listeners/${listenerId}/follows?tab=followers`)}
+              aria-label="View followers"
+              title="View followers"
+            >
+              {counts.followers} followers
+            </button>
+            <button
+              onClick={() => navigate(`/listeners/${listenerId}/follows?tab=following`)}
+              aria-label="View following"
+              title="View following"
+            >
+              {counts.following} following
+            </button>
+            <button
+              onClick={() => navigate(`/listeners/${listenerId}/playlists`)}
+              aria-label="View public playlists"
+              title="View public playlists"
+            >
+              {countLoading ? "…" : playlistsPublic} playlists
+            </button>
+          </div>
         </div>
-        <p className="pc__bio">{listener.Bio || "No bio available."}</p>
-        <div className="pc__stats">
-          <button
-            onClick={() => navigate(`/listeners/${listenerId}/follows?tab=followers`)}
-            aria-label="View followers"
-            title="View followers"
-          >
-            {counts.followers} followers
-          </button>
-          <button
-            onClick={() => navigate(`/listeners/${listenerId}/follows?tab=following`)}
-            aria-label="View following"
-            title="View following"
-          >
-            {counts.following} following
-          </button>
-          <button
-            onClick={() => navigate(`/listeners/${listenerId}/playlists`)}
-            aria-label="View public playlists"
-            title="View public playlists"
-          >
-            {countLoading ? "…" : playlistsPublic} playlists
-          </button>
-        </div>
-      </div>
-      <div className="pc__songs">🎵 {counts.songs} songs</div>
-    </section>
+        <div className="pc__songs">🎵 {counts.songs} songs</div>
+      </section>
+    </AchievementProvider>
   );
 }

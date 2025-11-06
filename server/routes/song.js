@@ -70,7 +70,9 @@ export async function handleSongRoutes(req, res) {
 
       const [rows] = await db.query(
         `
-        SELECT ${SELECT_WITH_STREAMS}
+        SELECT 
+          ${SELECT_WITH_STREAMS}, 
+          s.cover_media_id
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
         LEFT JOIN Play p
@@ -78,7 +80,14 @@ export async function handleSongRoutes(req, res) {
          AND p.IsDeleted = 0
          AND p.MsPlayed >= ?
         WHERE s.IsDeleted = 0
-        GROUP BY s.SongID
+        GROUP BY 
+          s.SongID, 
+          s.Title, 
+          s.DurationSeconds, 
+          s.ReleaseDate, 
+          s.GenreID, 
+          g.Name, 
+          s.cover_media_id
         ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
         LIMIT ?
         `,
@@ -89,6 +98,7 @@ export async function handleSongRoutes(req, res) {
       res.end(JSON.stringify(rows));
       return;
     }
+    // ================ END MODIFIED BLOCK ================
 
     if (pathname === "/songs" && method === "GET") {
       const genreId = query?.genreId ? Number(query.genreId) : null;
@@ -96,15 +106,15 @@ export async function handleSongRoutes(req, res) {
       if (genreId) {
         const [rows] = await db.query(
           `
-          SELECT ${SELECT_WITH_STREAMS}
+          SELECT ${SELECT_WITH_STREAMS}, s.cover_media_id
           FROM Song s
-          JOIN Genre g ON g.GenreID = s.GenreID
+          LEFT JOIN Genre g ON g.GenreID = s.GenreID
           LEFT JOIN Play p
             ON p.SongID = s.SongID
            AND p.IsDeleted = 0
            AND p.MsPlayed >= ?
           WHERE s.IsDeleted = 0 AND s.GenreID = ?
-          GROUP BY s.SongID
+          GROUP BY s.SongID, s.cover_media_id
           ORDER BY s.ReleaseDate DESC, s.SongID DESC
           `,
           [STREAM_MS_THRESHOLD, genreId]
@@ -115,7 +125,7 @@ export async function handleSongRoutes(req, res) {
       } else {
         const [rows] = await db.query(
           `
-          SELECT ${SELECT_WITH_STREAMS}
+          SELECT ${SELECT_WITH_STREAMS}, s.cover_media_id
           FROM Song s
           LEFT JOIN Genre g ON g.GenreID = s.GenreID
           LEFT JOIN Play p
@@ -123,7 +133,7 @@ export async function handleSongRoutes(req, res) {
            AND p.IsDeleted = 0
            AND p.MsPlayed >= ?
           WHERE s.IsDeleted = 0
-          GROUP BY s.SongID
+          GROUP BY s.SongID, s.cover_media_id
           ORDER BY s.ReleaseDate DESC, s.SongID DESC
           `,
           [STREAM_MS_THRESHOLD]
@@ -137,7 +147,7 @@ export async function handleSongRoutes(req, res) {
     if (pathname === "/songs/with_streams" && method === "GET") {
       const [rows] = await db.query(
         `
-        SELECT ${SELECT_WITH_STREAMS}
+        SELECT ${SELECT_WITH_STREAMS}, s.cover_media_id
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
         LEFT JOIN Play p
@@ -145,7 +155,7 @@ export async function handleSongRoutes(req, res) {
          AND p.IsDeleted = 0
          AND p.MsPlayed >= ?
         WHERE s.IsDeleted = 0
-        GROUP BY s.SongID
+        GROUP BY s.SongID, s.cover_media_id
         ORDER BY s.SongID DESC
         `,
         [STREAM_MS_THRESHOLD]
@@ -159,12 +169,12 @@ export async function handleSongRoutes(req, res) {
       const id = Number(pathname.split("/")[2]);
       const [rows] = await db.query(
         `
-        SELECT ${SELECT_CORE}, m.url AS AudioURL
+        SELECT ${SELECT_CORE}, m.url AS AudioURL, s.cover_media_id
         FROM Song s
         LEFT JOIN Genre g ON g.GenreID = s.GenreID
         LEFT JOIN Media m ON m.MediaID = s.audio_media_id
         WHERE s.SongID = ? AND s.IsDeleted = 0
-        GROUP BY s.SongID
+        GROUP BY s.SongID, m.url, s.cover_media_id
         `,
         [id]
       );
@@ -199,7 +209,7 @@ export async function handleSongRoutes(req, res) {
         FROM Song s
         JOIN Media m ON m.MediaID = s.audio_media_id
         WHERE s.SongID = ? AND s.IsDeleted = 0
-        GROUP BY s.SongID
+        GROUP BY s.SongID, m.bucket, m.s3_key, m.mime
         LIMIT 1
         `,
         [id]

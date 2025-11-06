@@ -1,5 +1,6 @@
 import db from "../db.js";
 import { parse } from "url";
+import { handleListenerFavoriteArtist } from "./listener_favorite_artist.js";
 
 export async function handleListenerRoutes(req, res) {
   const { pathname } = parse(req.url, true);
@@ -91,7 +92,7 @@ export async function handleListenerRoutes(req, res) {
       const usedDate = DateCreated || new Date();
       const [result] = await db.query(
         `INSERT INTO Listener
-           (FirstName, LastName, DateCreated, PFP, Bio, Major, Minor, IsDeleted, PinnedSongID, PinnedPlaylistID)
+            (FirstName, LastName, DateCreated, PFP, Bio, Major, Minor, IsDeleted, PinnedSongID, PinnedPlaylistID)
          VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
         [
           FirstName,
@@ -261,6 +262,51 @@ export async function handleListenerRoutes(req, res) {
       return;
     }
 
+    // set achievement to display on profile
+    if (pathname.match(/^\/listeners\/(\d+)\/display-achievement$/) && method === "POST") {
+      const listenerId = pathname.split("/")[2];
+      
+      let body = "";
+      for await (const chunk of req) body += chunk;
+      const { achievementId } = JSON.parse(body || "{}");
+
+      if (!listenerId || !achievementId) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Missing listener or achievement ID" }));
+        return;
+      }
+
+      const connection = await db.getConnection();
+      try {
+        await connection.beginTransaction();
+
+        // clear any achievement this user already has displayed
+        await connection.query(
+          "UPDATE Listener_Achievement SET DisplayOnProfile = 0 WHERE ListenerID = ?",
+          [listenerId]
+        );
+
+        // set the new achievement to be displayed
+        await connection.query(
+          "UPDATE Listener_Achievement SET DisplayOnProfile = 1 WHERE ListenerID = ? AND AchievementID = ?",
+          [listenerId, achievementId]
+        );
+
+        await connection.commit();
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ success: true, message: "Display achievement updated." }));
+
+      } catch (err) {
+        await connection.rollback();
+        console.error("Error updating display achievement:", err);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Server error" }));
+      } finally {
+        connection.release();
+      }
+      return; 
+    }
+
     // ✅ DELETE /listeners/:id → soft delete
     if (pathname.startsWith("/listeners/") && method === "DELETE") {
       const id = pathname.split("/")[2];
@@ -284,7 +330,7 @@ export async function handleListenerRoutes(req, res) {
 
     // ✅ Delegate favorite artists subroute
     if (pathname.startsWith("/listeners/") && pathname.endsWith("/favorite-artists")) {
-      await handleFavoriteArtists(req, res);
+      await handleListenerFavoriteArtist(req, res);
       return;
     }
 
