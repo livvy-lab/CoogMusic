@@ -82,6 +82,18 @@ async function getUserByIdAndType(id, type) {
 export async function handleFollowsRoutes(req, res) {
   const url = parse(req.url, true);
 
+  // Set CORS headers for all requests
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   try {
     if (req.method === "GET" && url.pathname === "/follows/relationship") {
       const { followerId, followerType, followingId, followingType } = url.query;

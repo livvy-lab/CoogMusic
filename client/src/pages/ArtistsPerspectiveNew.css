@@ -1,0 +1,250 @@
+/* Artist Dashboard - Figma Design */
+.artist-dashboard {
+  padding: 32px 48px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.welcome-title {
+  font-size: 32px;
+  font-weight: 600;
+  color: #4B2C3D;
+  margin-bottom: 32px;
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: #F7ECF2;
+  border: 1px solid #BDA0AE;
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat-label {
+  font-size: 16px;
+  font-weight: 500;
+  color: #612C4B;
+}
+
+.stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #4B2C3D;
+}
+
+/* Quick Actions */
+.quick-actions {
+  margin-bottom: 40px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #4B2C3D;
+  margin-bottom: 16px;
+}
+
+.actions-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.action-btn {
+  background: #F7ECF2;
+  border: 1px solid #BDA0AE;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  font-weight: 500;
+  color: #4B2C3D;
+}
+
+.action-btn:hover {
+  background: #EFDBE8;
+  border-color: #895674;
+  transform: translateY(-2px);
+}
+
+.action-btn img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+/* Top Songs */
+.top-songs {
+  margin-bottom: 40px;
+}
+
+.songs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.song-row {
+  background: #F7ECF2;
+  border: 1px solid #BDA0AE;
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.song-row:hover {
+  background: #EFDBE8;
+  border-color: #895674;
+  transform: translateX(4px);
+}
+
+.song-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.song-heart {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.song-artwork {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.artwork-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #E9D2DF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.song-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.song-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4B2C3D;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.song-artist {
+  font-size: 14px;
+  color: #8E3F65;
+}
+
+.song-right {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-shrink: 0;
+}
+
+.song-date {
+  font-size: 14px;
+  color: #612C4B;
+  min-width: 100px;
+  text-align: right;
+}
+
+.song-plays {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4B2C3D;
+  min-width: 60px;
+  text-align: right;
+}
+
+.no-songs {
+  padding: 40px;
+  text-align: center;
+  color: #8E3F65;
+  font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-grid,
+  .actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .song-right {
+    gap: 16px;
+  }
+
+  .song-date {
+    min-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  .artist-dashboard {
+    padding: 24px;
+  }
+
+  .song-left {
+    gap: 12px;
+  }
+
+  .song-date {
+    display: none;
+  }
+}
