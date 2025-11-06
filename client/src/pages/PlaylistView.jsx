@@ -11,6 +11,7 @@ export default function PlaylistView({ isLikedSongs = false }) {
   const [tracks, setTracks] = useState([]);
   const [playlistName, setPlaylistName] = useState("");
   const [playlistOwner, setPlaylistOwner] = useState("");
+  const [coverUrl, setCoverUrl] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const storedListener = localStorage.getItem("listener");
@@ -98,8 +99,59 @@ export default function PlaylistView({ isLikedSongs = false }) {
       }
     }
 
+    // fetch tracks first
     fetchData();
+
+    // if not liked songs, also fetch playlist metadata (name/cover)
+    if (!isLikedSongs && id) {
+      (async () => {
+        try {
+          const r = await fetch(`${API_BASE_URL}/playlists/${id}`);
+          if (!r.ok) return;
+          const j = await r.json();
+          if (j?.Name) setPlaylistName(j.Name);
+          // if playlist has cover_media_id, resolve it
+          if (j?.cover_media_id) {
+            try {
+              const m = await fetch(`${API_BASE_URL}/media/${j.cover_media_id}`);
+              if (m.ok) {
+                const mj = await m.json();
+                setCoverUrl(mj?.url || null);
+              }
+            } catch (e) {}
+          }
+        } catch (e) {
+          // ignore
+        }
+      })();
+    }
   }, [id, isLikedSongs, listenerId]);
+
+  // Listen for cover updates and refresh cover URL if this playlist changed
+  useEffect(() => {
+    function onCoverUpdated(e) {
+      const d = e?.detail;
+      if (!d) return;
+      // only react if event applies to this playlist route
+      if (!id) return;
+      if (Number(d.PlaylistID) !== Number(id)) return;
+      if (!d.cover_media_id) {
+        setCoverUrl(null);
+        return;
+      }
+      (async () => {
+        try {
+          const m = await fetch(`${API_BASE_URL}/media/${d.cover_media_id}`);
+          if (!m.ok) return;
+          const mj = await m.json();
+          setCoverUrl(mj?.url || null);
+        } catch (e) {}
+      })();
+    }
+
+    window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    return () => window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+  }, [id]);
 
   if (loading) {
     return (
@@ -122,7 +174,7 @@ export default function PlaylistView({ isLikedSongs = false }) {
                 <Heart size={120} fill="#fff" color="#fff" strokeWidth={1.5} />
               ) : (
                 <img
-                  src="/default-cover.png"
+                  src={coverUrl || "/default-cover.png"}
                   alt="Playlist Cover"
                   className="playlistCoverImg"
                 />

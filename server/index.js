@@ -100,6 +100,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
     if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
 
+    // Route media endpoints (upload + media lookup + song/album cover association)
     if (pathname.startsWith("/media") || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
       await handleMediaRoutes(req, res);
       return;

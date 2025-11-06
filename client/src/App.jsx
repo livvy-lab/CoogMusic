@@ -31,6 +31,7 @@ import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
 import { AchievementProvider } from "./context/AchievementContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
+import Toasts from "./components/Toasts/Toasts";
 
 import ArtistAnalytics from "./pages/ArtistAnalytics";
 import ListenerAnalytics from "./pages/ListenerAnalytics";
@@ -97,6 +98,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>
+          <Toasts />
         
           <MusicPlayBar />
         </FavoritesPinsProvider>
