@@ -39,18 +39,23 @@ export default function PlaylistGrid({
     const playlist = playlists.find(p => p.PlaylistID === id);
     const newName = prompt(`Rename playlist "${playlist?.Name || "Untitled"}":`, playlist?.Name || "");
     if (!newName || newName === playlist?.Name) return;
-
-  fetch(`${API_BASE_URL}/playlists/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ Name: newName }),
-    })
-      .then(res => res.json())
-      .then(() => {
-        setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
-        setOpenMenuId(null);
-      })
-      .catch(() => {});
+  // server expects PUT for updates; only update local state on success and notify other listeners
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/playlists/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Name: newName }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Failed to rename playlist');
+      setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
+      setOpenMenuId(null);
+      try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: id, Name: newName } })); } catch (e) {}
+    } catch (err) {
+      alert(err.message || 'Could not rename playlist');
+    }
+  })();
   }
 
   useEffect(() => {
@@ -390,13 +395,13 @@ export default function PlaylistGrid({
 
                       {openMenuId === p.PlaylistID && (
                         <div className="playlistDropdown">
-                          <button className="dropdownItem" onClick={() => handleEdit(p.PlaylistID)}>
+                          <button className="dropdownItem" onClick={(e) => { e.stopPropagation(); handleEdit(p.PlaylistID); }}>
                             ✏️ Edit
                           </button>
                           <button className="dropdownItem" onClick={(e) => { e.stopPropagation(); setOpenCoverModalFor(p); setOpenMenuId(null); }}>
                             🖼 Change cover
                           </button>
-                          <button className="dropdownItem delete" onClick={() => handleDelete(p.PlaylistID)}>
+                          <button className="dropdownItem delete" onClick={(e) => { e.stopPropagation(); handleDelete(p.PlaylistID); }}>
                             🗑️ Delete
                           </button>
                         </div>
