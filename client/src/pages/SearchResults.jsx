@@ -9,7 +9,16 @@ const linkFor = {
   song: (r) => "#",
   artist: (r) => `/artist/${r.id}`,
   album: (r) => "#",
-  playlist: (r) => `/playlist/${r.id}`,
+  // If the playlist object represents the special "Liked Songs" collection,
+  // route to the dedicated liked songs page. Fall back to the regular
+  // /playlist/:id route for normal playlists.
+  playlist: (r) => {
+    // backend may mark this with IsLikedSongs or similar; also accept a title match
+    if (r?.IsLikedSongs || r?.isLikedSongs || r?.is_liked_songs || (r?.title || "").toLowerCase() === "liked songs") {
+      return `/likedsongs`;
+    }
+    return `/playlist/${r.id}`;
+  },
   listener: (r) => `/listeners/${r.id}`,
 };
 
