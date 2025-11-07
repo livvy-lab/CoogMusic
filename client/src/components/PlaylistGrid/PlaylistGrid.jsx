@@ -100,6 +100,7 @@ export default function PlaylistGrid({
         const res = await fetch(`${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}/liked_songs`);
         if (res.ok) {
           const d = await res.json();
+          try { console.debug("PlaylistGrid: fetched liked_songs for listener", listenerId, "count", Array.isArray(d) ? d.length : 'bad', d?.slice?.(0,5)); } catch (e) {}
           if (!aborted) setLikedCount(Array.isArray(d) ? d.length : 0);
           return;
         }
@@ -180,6 +181,7 @@ export default function PlaylistGrid({
     }
 
     function onLikedChanged() {
+      try { console.debug('PlaylistGrid: likedChanged event received', listenerId); } catch (e) {}
       // Always refresh the authoritative list when any liked state changes
       refresh();
     }

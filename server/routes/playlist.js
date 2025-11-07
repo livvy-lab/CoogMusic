@@ -205,6 +205,40 @@ export async function handlePlaylistRoutes(req, res) {
             return;
           }
 
+          // Enforce free-account limits: non-subscribers may only create public playlists
+          // and are limited to 10 public playlists. Check subscription status.
+          if (ListenerID) {
+            const [subRows] = await db.query(
+              `SELECT * FROM Subscription WHERE ListenerID = ? AND IsActive = 1 AND IsDeleted = 0`,
+              [ListenerID]
+            );
+            const isSubscribed = Array.isArray(subRows) && subRows.length > 0;
+            // debug: log subscription and incoming listener
+            console.log(`POST /playlists: ListenerID=${ListenerID}, isSubscribed=${isSubscribed}`);
+
+            if (!isSubscribed) {
+              // Non-subscribers may not create private playlists
+              if (!Number(IsPublic)) {
+                res.writeHead(403, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Private playlists are for subscribers only" }));
+                return;
+              }
+
+              // Count existing public playlists for this listener (exclude deleted and liked-songs)
+              const [existing] = await db.query(
+                `SELECT COUNT(*) as cnt FROM Playlist WHERE ListenerID = ? AND IsDeleted = 0 AND (IsLikedSongs IS NULL OR IsLikedSongs = 0) AND IsPublic = 1`,
+                [ListenerID]
+              );
+              const publicCount = (existing && existing[0] && existing[0].cnt) ? Number(existing[0].cnt) : 0;
+              console.log(`POST /playlists: ListenerID=${ListenerID} publicCount=${publicCount}`);
+              if (publicCount >= 10) {
+                res.writeHead(403, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "Free accounts can create up to 10 public playlists. Upgrade to create more." }));
+                return;
+              }
+            }
+          }
+
           const [result] = await db.query(
             `INSERT INTO Playlist
               (ListenerID, ArtistID, Name, Description, IsPublic, IsDeleted, IsLikedSongs, cover_media_id)

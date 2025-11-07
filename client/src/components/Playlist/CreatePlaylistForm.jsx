@@ -33,7 +33,9 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/playlists`);
         if (r.ok) {
           const data = await r.json();
-          if (mounted) setPlaylistCount(Array.isArray(data) ? data.length : 0);
+          // count only public playlists for the free-account limit
+          const publicCount = Array.isArray(data) ? data.filter(p => Number(p.IsPublic) === 1).length : 0;
+          if (mounted) setPlaylistCount(publicCount);
         }
       } catch (e) {
         // ignore
@@ -122,6 +124,12 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
       }
 
       onCreated?.(newPlaylist);
+      // update local public playlist count so the UI enforces the limit immediately
+      try {
+        if (newPlaylist && (newPlaylist.IsPublic === undefined || Number(newPlaylist.IsPublic) === 1)) {
+          setPlaylistCount(prev => (typeof prev === 'number' ? prev + 1 : prev));
+        }
+      } catch (e) {}
       setName("");
       setDescription("");
       setIsPublic(true);

@@ -33,7 +33,9 @@ export function FavoritesPinsProvider({ children }) {
   }
 
   function setVisibleIds(ids) {
-    visibleIdsRef.current = Array.from(new Set((ids || []).filter(Boolean)));
+    const normalized = Array.from(new Set((ids || []).filter(Boolean).map(x => Number(x)).filter(n => Number.isFinite(n) && n > 0)));
+    try { console.debug('FavoritesPins: setVisibleIds called with', normalized); } catch (e) {}
+    visibleIdsRef.current = normalized;
     hydrate(visibleIdsRef.current);
   }
 
@@ -44,25 +46,32 @@ export function FavoritesPinsProvider({ children }) {
     if (!listenerId) return;
 
     const sid = Number(songId);
-    const has = favoriteIds.has(sid);
-    setFavoriteIds(prev => {
-      const next = new Set(prev);
-      has ? next.delete(sid) : next.add(sid);
-      return next;
-    });
-
-    // fire-and-forget server update, but return the new favorite state
-    fetch(`${API_BASE_URL}/likes`, {
-      method: has ? "DELETE" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listenerId, songId: sid }),
-    }).catch(() => {});
+    if (!Number.isFinite(sid) || sid <= 0) return;
 
     try {
-      window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: sid, liked: !has } }));
-    } catch (e) {}
+      // Use the same server toggle endpoint the player uses so we get authoritative liked state
+      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songId: sid }),
+      });
+      if (!res.ok) throw new Error('toggle-failed');
+      const data = await res.json();
 
-    return !has;
+      // update local Set based on authoritative response
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        if (data && data.liked) next.add(sid); else next.delete(sid);
+        return next;
+      });
+
+      try { window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: sid, liked: !!data.liked } })); } catch (e) {}
+      return !!data.liked;
+    } catch (err) {
+      // on error, don't change local set; rethrow or return undefined
+      console.error('toggleFavorite error', err);
+      return null;
+    }
   }
 
   async function togglePin(songId) {

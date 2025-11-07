@@ -19,12 +19,14 @@ export default function SongActions({ songId, size = "sm" }) {
   const fav = hasValidId ? favoriteIds.has(sid) : false;
   const pin = hasValidId ? (pinnedSongId === sid) : false;
 
+  try { console.debug('SongActions render', { songId: sid, hasValidId, fav, favoriteIdsSize: favoriteIds?.size }); } catch (e) {}
+
   return (
     <div className={`songActions songActions--${size}`}>
       <button
         className={`songActions__btn ${fav ? "is-on" : ""}`}
         aria-pressed={fav}
-        onClick={(e) => { e.stopPropagation(); if (hasValidId) toggleFavorite(sid); }}
+        onClick={(e) => { e.stopPropagation(); if (hasValidId) { try { toggleFavorite(sid); } catch (err) {} } }}
         title={hasValidId ? (fav ? "Unfavorite" : "Favorite") : "Unavailable"}
         disabled={!hasValidId}
       >
