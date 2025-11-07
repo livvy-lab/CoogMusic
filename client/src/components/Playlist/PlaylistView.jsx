@@ -166,7 +166,7 @@ return (
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">{playlistName}</h1>
               <p className="likedUser">
-                {playlistOwner} • {tracks.length} songs
+                {playlistOwner} • {tracks.length} track{tracks.length === 1 ? "" : "s"}
               </p>
             </div>
           </div>
@@ -198,7 +198,7 @@ return (
 
           <div className="tableBody">
             {tracks.length === 0 ? (
-              <p className="noTracks">No songs found.</p>
+              <p className="noTracks">No tracks found.</p>
             ) : (
               tracks.map((t, i) => (
                 <div key={t.SongID || i} className="likedRow">

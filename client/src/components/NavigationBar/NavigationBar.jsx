@@ -51,7 +51,7 @@ export default function NavigationBar() {
 
         <nav className="navSection">
           <div className="navTitle">Library</div>
-          <Link className="navLink" to="/likedsongs">🤍 Favorite Songs</Link>
+          <Link className="navLink" to="/likedsongs">🤍 Favorite Tracks</Link>
           <Link className="navLink" to="/me/playlists">🎧 Playlists</Link>
         </nav>
 

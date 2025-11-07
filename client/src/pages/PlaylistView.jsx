@@ -185,7 +185,7 @@ export default function PlaylistView({ isLikedSongs = false }) {
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">{playlistName}</h1>
               <p className="likedUser">
-                {playlistOwner} • {tracks.length} songs
+                {playlistOwner} • {tracks.length} track{tracks.length === 1 ? "" : "s"}
               </p>
             </div>
           </div>
@@ -221,7 +221,7 @@ export default function PlaylistView({ isLikedSongs = false }) {
 
           <div className="tableBody">
             {tracks.length === 0 ? (
-              <p className="noTracks">No songs found.</p>
+              <p className="noTracks">No tracks found.</p>
             ) : (
               tracks.map((t, i) => (
                 <div

@@ -20,11 +20,15 @@ export function FavoritesPinsProvider({ children }) {
         ...(idsParam.length ? { ids: idsParam.join(",") } : {}),
       });
 
-  const r = await fetch(`${API_BASE_URL}/songs/status?${qs.toString()}`);
+      const r = await fetch(`${API_BASE_URL}/songs/status?${qs.toString()}`);
       if (!r.ok) return;
-      const j = await r.json();
-      setFavoriteIds(new Set(j.favorites || []));
-      setPinnedSongId(j.pinnedSongId ?? null);
+  const j = await r.json();
+  // debug: log favorites payload shape when running locally (can remove later)
+  try { console.debug("Favorites hydrate payload:", j?.favorites); } catch (e) {}
+  // normalize favorites to numbers to avoid string/number mismatch
+  const favs = Array.isArray(j.favorites) ? j.favorites.map(x => Number(x)).filter(Boolean) : [];
+      setFavoriteIds(new Set(favs));
+      setPinnedSongId(j.pinnedSongId ? Number(j.pinnedSongId) : null);
     } catch {}
   }
 
@@ -39,18 +43,26 @@ export function FavoritesPinsProvider({ children }) {
     const listenerId = u?.listenerId ?? u?.ListenerID;
     if (!listenerId) return;
 
-    const has = favoriteIds.has(songId);
+    const sid = Number(songId);
+    const has = favoriteIds.has(sid);
     setFavoriteIds(prev => {
       const next = new Set(prev);
-      has ? next.delete(songId) : next.add(songId);
+      has ? next.delete(sid) : next.add(sid);
       return next;
     });
 
-  fetch(`${API_BASE_URL}/likes`, {
+    // fire-and-forget server update, but return the new favorite state
+    fetch(`${API_BASE_URL}/likes`, {
       method: has ? "DELETE" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listenerId, songId }),
+      body: JSON.stringify({ listenerId, songId: sid }),
     }).catch(() => {});
+
+    try {
+      window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: sid, liked: !has } }));
+    } catch (e) {}
+
+    return !has;
   }
 
   async function togglePin(songId) {

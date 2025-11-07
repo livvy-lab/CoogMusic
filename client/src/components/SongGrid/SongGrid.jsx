@@ -44,7 +44,8 @@ export default function SongGrid() {
 
   // ✅ hydrate visible IDs for context status (favorites/pins)
   useEffect(() => {
-    setVisibleIds(songs.map(s => s.SongID).filter(Boolean));
+    // normalize to numbers so provider hydrate sees numeric IDs
+    setVisibleIds(songs.map(s => Number(s.SongID)).filter(id => Number.isFinite(id) && id > 0));
   }, [songs, setVisibleIds]);
 
   async function handlePlay(song) {

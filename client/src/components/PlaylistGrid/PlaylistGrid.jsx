@@ -96,29 +96,17 @@ export default function PlaylistGrid({
       if (!showLikedFallback) return;
 
       try {
-        const res1 = await fetch(
-          `${API_BASE_URL}/liked_songs/count?listenerId=${encodeURIComponent(listenerId)}`
-        );
-        if (res1.ok) {
-          const d = await res1.json();
-          if (!aborted) setLikedCount(Number(d.count) || 0);
+        // server exposes liked songs as GET /listeners/:id/liked_songs
+        const res = await fetch(`${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}/liked_songs`);
+        if (res.ok) {
+          const d = await res.json();
+          if (!aborted) setLikedCount(Array.isArray(d) ? d.length : 0);
           return;
         }
       } catch {}
 
-      try {
-        const res2 = await fetch(
-          `${API_BASE_URL}/liked_songs?listenerId=${encodeURIComponent(listenerId)}`
-        );
-        if (res2.ok) {
-          const d2 = await res2.json();
-          if (!aborted) setLikedCount(Array.isArray(d2) ? d2.length : 0);
-        } else {
-          if (!aborted) setLikedCount(0);
-        }
-      } catch {
-        if (!aborted) setLikedCount(0);
-      }
+      // on failure, ensure we at least show 0
+      if (!aborted) setLikedCount(0);
     }
 
     load();
@@ -175,6 +163,33 @@ export default function PlaylistGrid({
       window.removeEventListener('playlistUpdated', onUpdated);
     };
   }, []);
+
+  // Keep likedCount authoritative by re-fetching when liked state changes elsewhere
+  useEffect(() => {
+    if (!showLikedFallback) return;
+    let aborted = false;
+    async function refresh() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}/liked_songs`);
+        if (!res.ok) { if (!aborted) setLikedCount(0); return; }
+        const d = await res.json();
+        if (!aborted) setLikedCount(Array.isArray(d) ? d.length : 0);
+      } catch (e) {
+        if (!aborted) setLikedCount(0);
+      }
+    }
+
+    function onLikedChanged() {
+      // Always refresh the authoritative list when any liked state changes
+      refresh();
+    }
+
+    window.addEventListener('likedChanged', onLikedChanged);
+    return () => {
+      window.removeEventListener('likedChanged', onLikedChanged);
+      aborted = true;
+    };
+  }, [listenerId, showLikedFallback]);
 
   // Resolve any cover_media_id → URL
   useEffect(() => {
@@ -287,7 +302,7 @@ export default function PlaylistGrid({
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
-                    {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
+                    {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "track" : "tracks"}
                   </span>
                 </div>
                 <div className="pl__coverWrap">
@@ -298,7 +313,7 @@ export default function PlaylistGrid({
                   by <span className="pl__author">{authorName}</span>
                 </div>
                 <div className="pl__tracks">
-                  {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
+                  {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "track" : "tracks"}
                 </div>
               </div>
             )}

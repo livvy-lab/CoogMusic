@@ -87,7 +87,7 @@ export default function NewReleases({ title = "New releases" }) {
   }, [songs]);
 
   useEffect(() => {
-    const ids = (songs || []).map(s => s.SongID).filter(Boolean);
+    const ids = (songs || []).map(s => Number(s.SongID)).filter(id => Number.isFinite(id) && id > 0);
     setVisibleIds(ids);
   }, [songs]); 
 

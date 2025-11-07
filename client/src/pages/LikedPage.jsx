@@ -4,12 +4,13 @@ import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css";
 import { API_BASE_URL } from "../config/api";
+import { getUser } from "../lib/userStorage";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
-  // derive listener id from localStorage like other pages; fallback to test account
-  const storedListener = localStorage.getItem("listener");
-  const listenerId = storedListener ? JSON.parse(storedListener).ListenerID : 6;
+  // derive listener id from same helper other components use
+  const user = getUser();
+  const listenerId = user?.listenerId ?? user?.ListenerID ?? 6;
 
   const { playList, playSong, playShuffled } = usePlayer();
 
@@ -112,16 +113,16 @@ export default function LikedPage() {
         {/* Header */}
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
-            <div className="likedCoverCircle">
-              <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
-            </div>
+              <div className="likedCoverCircle">
+                <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              </div>
             <div className="likedHeaderText">
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">Liked Songs</h1>
               <p className="likedUser">
                 {tracks.length
-                  ? `${tracks.length} song${tracks.length > 1 ? "s" : ""}`
-                  : "No songs"}
+                  ? `${tracks.length} track${tracks.length > 1 ? "s" : ""}`
+                  : "No tracks"}
               </p>
             </div>
           </div>
