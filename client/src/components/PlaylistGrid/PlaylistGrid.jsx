@@ -155,11 +155,19 @@ export default function PlaylistGrid({
       }
     }
 
+    function onUpdated(e) {
+      const d = e?.detail;
+      if (!d || !d.PlaylistID) return;
+      setPlaylists(prev => prev.map(p => p.PlaylistID === d.PlaylistID ? { ...p, ...d } : p));
+    }
+
     window.addEventListener('playlistCreated', onCreated);
     window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    window.addEventListener('playlistUpdated', onUpdated);
     return () => {
       window.removeEventListener('playlistCreated', onCreated);
       window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+      window.removeEventListener('playlistUpdated', onUpdated);
     };
   }, []);
 

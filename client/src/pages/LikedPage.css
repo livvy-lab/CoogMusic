@@ -25,10 +25,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #ffe8f5;
+  /* slightly adjusted pink to harmonize with purple accents */
+  background: #ffe6f5;
   border: 5px solid #895674;
   box-shadow: 0 5px 0 #6e4760;
 }
+/* allow absolutely positioned controls inside the header */
+.albumCard.headerCard { position: relative; }
 .albumCard.headerCard {
   min-height: 180px;  /* ↓ Makes the box shorter */
   padding: 20px 0px; /* ↓ Less inner space vertically */
@@ -124,6 +127,23 @@
 .shuffleButton { background: #f5d9e8; color: #782355; }
 .playButton:hover, .shuffleButton:hover { transform: translateY(-2px); box-shadow: 0 5px 0 #6e4760; }
 .playButton:active, .shuffleButton:active { transform: translateY(0); box-shadow: 0 3px 0 #6e4760; }
+
+/* small edit button near shuffle/play */
+.playlistEditBtn {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  width: 44px; height: 44px; border-radius: 10px;
+  /* match the header background so the button blends with the card */
+  background: #ffe6f5;
+  border: 2px solid #895674; /* purple border */
+  cursor: pointer;
+  display: grid; place-items: center; font-size: 14px; z-index: 30;
+  color: #782355; /* default icon color fallback */
+}
+.playlistEditBtn:hover { transform: translateY(-2px); box-shadow: 0 4px 0 #6e4760; }
+.playlistEditBtn:focus { outline: 3px solid rgba(137,86,116,0.12); }
+.playlistEditBtn svg { display: block; }
 
 /* List card */
 .listCard {

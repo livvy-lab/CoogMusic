@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Play, Shuffle, Clock3, Heart } from "lucide-react";
+import { Play, Shuffle, Clock3, Heart, Pencil } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
 import "./PlaylistRowOverrides.css"; // minimal, playlist-scoped layout tweaks
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
+import EditPlaylistModal from "../components/Playlist/EditPlaylistModal";
 
 
 
@@ -17,6 +18,7 @@ export default function PlaylistPage() {
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
   const { playList, playSong, playShuffled } = usePlayer();
+  const [editing, setEditing] = useState(false);
 
   // fetch playlist metadata
   async function fetchPlaylistInfo() {
@@ -147,8 +149,29 @@ export default function PlaylistPage() {
             <button className="shuffleButton" aria-label="Shuffle" onClick={handleShuffleAll}>
               <Shuffle size={24} />
             </button>
+            {/* Edit button: shows modal to rename playlist, change cover and remove songs */}
+            <button className="playlistEditBtn" aria-label="Edit playlist" onClick={() => setEditing(true)} title="Edit playlist">
+              <Pencil size={22} color="#782355" strokeWidth={1.6} />
+            </button>
           </div>
         </section>
+
+        {editing && playlistInfo && (
+          <EditPlaylistModal
+            playlist={playlistInfo}
+            tracks={tracks}
+            onClose={() => setEditing(false)}
+            onUpdated={(updatedPlaylist, updatedTracks) => {
+              // update local state
+              setPlaylistInfo(prev => prev ? { ...prev, ...updatedPlaylist } : prev);
+              if (Array.isArray(updatedTracks)) setTracks(updatedTracks);
+              // notify other components (playlist grid) about the update
+              try {
+                window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { ...updatedPlaylist } }));
+              } catch (e) {}
+            }}
+          />
+        )}
 
         <section className="albumCard listCard">
           <div className="likedTableHeader">
