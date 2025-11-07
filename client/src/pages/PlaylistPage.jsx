@@ -168,8 +168,19 @@ export default function PlaylistPage() {
                 className="likedRow"
                 role="button"
                 tabIndex={0}
-                onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
-                onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                onClick={() => {
+                  // set full playlist queue so player next/prev work
+                  try {
+                    const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                    if (list.length > 0) { playList(list, i); return; }
+                  } catch (e) {}
+                  playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') {
+                  const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                  if (list.length > 0) { playList(list, i); return; }
+                  playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                } }}
               >
                 <div className="col-num">{i + 1}</div>
                 <div className="col-title">

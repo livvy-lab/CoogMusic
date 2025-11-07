@@ -141,7 +141,22 @@ export function PlayerProvider({ children }) {
         url: song?.url || "",
         mime: "audio/mpeg",
       });
-      setPlaying(true);
+      // If the caller provided a direct URL, attach it to the audio element and play.
+      try {
+        const a = audioRef.current;
+        const fallbackUrl = song?.url;
+        if (a && fallbackUrl) {
+          a.src = fallbackUrl;
+          await a.play().catch(() => { });
+          setPlaying(true);
+        } else {
+          // nothing to play, but mark playing state so UI updates. The UI will show current info.
+          setPlaying(false);
+        }
+      } catch (e) {
+        console.error('Error playing fallback URL:', e);
+        setPlaying(false);
+      }
     }
   }
 

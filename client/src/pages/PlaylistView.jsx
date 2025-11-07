@@ -227,10 +227,28 @@ export default function PlaylistView({ isLikedSongs = false }) {
                 <div
                   key={t.SongID || i}
                   className="likedRow"
-                  onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
                   role="button"
                   tabIndex={0}
-                  onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                  onClick={() => {
+                    // When clicking a row inside a playlist (or liked songs), set the full queue
+                    // so next/prev buttons work as expected.
+                    try {
+                      const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                      if (list.length > 0) {
+                        // use playList so queue and currentIndex are set
+                        playList(list, i);
+                        return;
+                      }
+                    } catch (err) {
+                      // fallback to playing single song
+                    }
+                    playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                  }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') {
+                    const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                    if (list.length > 0) { playList(list, i); return; }
+                    playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                  }}}
                 >
                   <div className="col-num">{i + 1}</div>
                   <div className="col-heart">
