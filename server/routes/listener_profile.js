@@ -79,11 +79,12 @@ export async function handleListenerProfile(req, res) {
     }
 
     // 4) Pinned playlist (guard + IsDeleted)
+    // Include cover_media_id so the client can resolve a cover URL via /media/:id
     let pinnedPlaylist = null;
     if (listener.PinnedPlaylistID) {
       try {
         const [pp] = await db.query(
-          `SELECT p.PlaylistID, p.Name AS Name, p.Description
+          `SELECT p.PlaylistID, p.Name AS Name, p.Description, p.cover_media_id
              FROM Playlist p
             WHERE p.PlaylistID = ? AND p.IsDeleted = 0`,
           [listener.PinnedPlaylistID]

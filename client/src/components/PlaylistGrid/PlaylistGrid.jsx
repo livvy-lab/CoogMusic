@@ -80,7 +80,7 @@ export default function PlaylistGrid({
         );
         if (resPinned.ok) {
           const pinned = await resPinned.json();
-          if (!aborted) setPinnedId(pinned?.PlaylistID ?? null);
+              if (!aborted) setPinnedId(pinned?.PinnedPlaylistID ?? null);
         }
 
         const visible = (Array.isArray(data) ? data : []).filter(
@@ -228,7 +228,7 @@ export default function PlaylistGrid({
     if (!listenerId || !playlistId) return;
     setPinLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/pins/playlist`, {
+      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playlistId }),
@@ -243,24 +243,32 @@ export default function PlaylistGrid({
     }
   }
 
+  // Clears the pinned playlist for the listener. If playlistId is provided, it will set that
+  // playlist as pinned by calling the POST /pins/playlist endpoint (use pinPlaylist for that).
   async function unpinPlaylist(playlistId = null) {
     if (!listenerId) return;
     setPinLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/listeners/${listenerId}/pinned-playlist`,
-        {
-          method: "PATCH",
+      if (playlistId) {
+        // If caller passed a playlistId, treat as pin operation (backwards compatible)
+        const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ playlistId }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok && data.success) {
-        // if playlistId is null we cleared the pin, otherwise set it
-        setPinnedId(playlistId || null);
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+        setPinnedId(playlistId);
       } else {
-        alert(data.error || "Failed to update pinned playlist");
+        // Clear the pinned playlist using the dedicated DELETE endpoint
+        const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.error || "Failed to clear pinned playlist");
+        }
+        setPinnedId(null);
       }
     } catch (e) {
       alert(e.message || "Could not update pinned playlist.");
