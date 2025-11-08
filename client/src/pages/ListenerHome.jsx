@@ -2,6 +2,7 @@ import RecommendedSongs from "../components/ListenerHome/RecommendedSongs";
 import NewReleases from "../components/ListenerHome/NewReleases";
 import Genres from "../components/ListenerHome/Genres";
 import PageLayout from "../components/PageLayout/PageLayout";
+import AdBanner from "../components/ListenerHome/AdBanner"
 import "./ListenerHome.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import React, {useState, useRef, useEffect} from 'react';
@@ -27,7 +28,7 @@ export default function ListenerHome() {
   return (
     <PageLayout>
       <div className="listenerHome">
-
+        <AdBanner/>
         <RecommendedSongs />
         <NewReleases title="New releases" items={demoReleases} />
         <Genres />

@@ -18,7 +18,6 @@ export default function Discography({ artistId: artistIdProp }) {
     scrollRef.current.scrollBy({ left: amt, behavior: "smooth" });
   };
 
-  // helper: detect any abort flavor (AbortError, Safari code 20, custom reason)
   const isAbort = (err) =>
     err?.name === "AbortError" ||
     err?.code === 20 ||
@@ -61,7 +60,6 @@ export default function Discography({ artistId: artistIdProp }) {
             id: r.AlbumID || r.SongID,
             title: r.AlbumTitle || r.Title || "Untitled",
             releaseDate: r.ReleaseDate,
-            plays: Number(r.Streams ?? r.streams ?? 0),
             trackCount: r.TrackCount,
           }))
           .sort((a, b) => {
@@ -74,7 +72,6 @@ export default function Discography({ artistId: artistIdProp }) {
         setReleases(merged);
       } catch (err) {
         if (isAbort(err) || !alive) {
-          // ignore silent aborts
         } else {
           console.error("Discography fetch error:", err);
           if (alive) setError("Could not load discography.");
@@ -113,12 +110,14 @@ export default function Discography({ artistId: artistIdProp }) {
           <span className="nr__year">
             {r.releaseDate ? new Date(r.releaseDate).getFullYear() : "—"}
           </span>
-          {" · "}
-          <span className="nr__tracks">
-            {r.trackCount
-              ? `${r.trackCount} ${r.trackCount === 1 ? "track" : "tracks"}`
-              : `${r.plays.toLocaleString()} ${r.plays === 1 ? "play" : "plays"}`}
-          </span>
+          {typeof r.trackCount === "number" && r.trackCount > 0 && (
+            <>
+              {" · "}
+              <span className="nr__tracks">
+                {r.trackCount} {r.trackCount === 1 ? "track" : "tracks"}
+              </span>
+            </>
+          )}
         </p>
       </div>
     ));
@@ -133,8 +132,12 @@ export default function Discography({ artistId: artistIdProp }) {
       </div>
 
       <div className="nr__controls">
-        <button onClick={() => scroll("left")} aria-label="Scroll left">‹</button>
-        <button onClick={() => scroll("right")} aria-label="Scroll right">›</button>
+        <button onClick={() => scroll("left")} aria-label="Scroll left">
+          ‹
+        </button>
+        <button onClick={() => scroll("right")} aria-label="Scroll right">
+          ›
+        </button>
       </div>
     </section>
   );

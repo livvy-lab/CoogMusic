@@ -21,7 +21,9 @@ function PlaceholderCard() {
       </div>
       <div className="artistCard__info">
         <h1 className="artistCard__name">Unknown Artist</h1>
-        <div className="artistCard__followers">This artist hasn’t started creating yet.</div>
+        <div className="artistCard__followers">
+          This artist hasn’t started creating yet.
+        </div>
       </div>
       <div className="artistCard__songs">♪ 0 songs</div>
     </div>
@@ -33,11 +35,8 @@ export default function ArtistCard({ artistId }) {
   const [favorited, setFavorited] = useState(false);
   const [state, setState] = useState({ loading: false, notFound: false });
   const [pending, setPending] = useState(false);
-
-  // Follow/report logic
   const [isFollowing, setIsFollowing] = useState(false);
   const [followPending, setFollowPending] = useState(false);
-
   const navigate = useNavigate();
 
   const currentUser = getUser();
@@ -72,10 +71,9 @@ export default function ArtistCard({ artistId }) {
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/artists/${artistId}/profile`,
-          { signal: ctrl.signal }
-        );
+        const res = await fetch(`${API_BASE_URL}/artists/${artistId}/profile`, {
+          signal: ctrl.signal,
+        });
         if (res.status === 404) {
           setArtist(null);
           setState({ loading: false, notFound: true });
@@ -199,17 +197,19 @@ export default function ArtistCard({ artistId }) {
   }
 
   function handleReportClick() {
-  navigate("/user-report", {
-    state: {
-      reportedId: artistId,
-      reportedType: "Artist",
-      reportedName: artist?.ArtistName || "",
-    },
-  });
-}
+    navigate("/user-report", {
+      state: {
+        reportedId: artistId,
+        reportedType: "Artist",
+        reportedName: artist?.ArtistName || "",
+      },
+    });
+  }
 
   if (state.loading) return <div className="artistCard">Loading…</div>;
   if (state.notFound) return <PlaceholderCard />;
+
+  const isVerified = Boolean(artist?.IsVerified);
 
   return (
     <div className="artistCard">
@@ -225,12 +225,26 @@ export default function ArtistCard({ artistId }) {
           />
         </div>
       </div>
+
       <div className="artistCard__info">
-        <h1 className="artistCard__name">{artist?.ArtistName || "Unknown Artist"}</h1>
+        <div className="artistCard__nameRow">
+          {isVerified && (
+            <span
+              className="artistCard__verifiedBadge"
+              aria-label="Verified artist"
+            >
+              ✓
+            </span>
+          )}
+          <h1 className="artistCard__name">
+            {artist?.ArtistName || "Unknown Artist"}
+          </h1>
+        </div>
+
         <div className="artistCard__followers">
           {Number(artist?.FollowerCount || 0).toLocaleString()} followers
         </div>
-        {/* Follow/Report Buttons */}
+
         {!isOwnProfile && (
           <div style={{ marginTop: 12 }}>
             <button
@@ -253,7 +267,11 @@ export default function ArtistCard({ artistId }) {
           </div>
         )}
       </div>
-      <div className="artistCard__songs">♪ {artist?.SongCount || 0} songs</div>
+
+      <div className="artistCard__songs">
+        ♪ {artist?.SongCount || 0} songs
+      </div>
+
       <button
         type="button"
         className={`artistCard__fav${favorited ? " is-active" : ""}`}
@@ -263,8 +281,15 @@ export default function ArtistCard({ artistId }) {
         disabled={pending || !listenerId}
         style={{ marginTop: 10 }}
       >
-        <svg viewBox="0 0 24 24" className="artistCard__favIcon" xmlns="http://www.w3.org/2000/svg">
-          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z" fill="currentColor" />
+        <svg
+          viewBox="0 0 24 24"
+          className="artistCard__favIcon"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.62L12 2 9.19 8.62 2 9.24l5.46 4.73L5.82 21z"
+            fill="currentColor"
+          />
         </svg>
       </button>
     </div>

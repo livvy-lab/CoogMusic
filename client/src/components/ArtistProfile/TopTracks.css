@@ -1,122 +1,64 @@
-.tt {
-  width: min(96%, 1280px);
-  margin: 0 auto;
+.adGrid {
+  width: min(96%, 1000px);
+  margin: 32px auto 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--gap);
+  justify-items: center;
 }
 
-/* Section Title */
-.tt__title {
-  margin: 0 0 10px 0;
-  font-size: clamp(28px, 3vw, 32px);
-  font-weight: 800;
-  color: #782355;
-}
-
-/* Card Container */
-.tt__card {
-  background: #f9eaf3;
-  border: 5px solid #895674;
+.adCard {
+  border: 4px solid var(--stroke);
   border-radius: 20px;
-  box-shadow: 0 5px 0 #6e4760;
-  padding: 14px 10px;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Scrollable Track List */
-.tt__list {
-  margin: 0;
-  padding: 8px;
-  list-style: none;
-  max-height: clamp(160px, 34vh, 220px);
-  overflow-y: auto;
-  display: grid;
-  gap: 18px;
-}
-
-/* Scrollbar Styling */
-.tt__list::-webkit-scrollbar {
-  width: 8px;
-}
-.tt__list::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 8px;
-}
-.tt__list::-webkit-scrollbar-thumb {
-  background: #ad7d9b;
-  border-radius: 8px;
-}
-.tt__list {
-  scrollbar-width: thin;
-  scrollbar-color: #ad7d9b transparent;
-}
-
-/* Track Row Base */
-.tt__row {
-  display: grid;
-  grid-template-columns: 56px 1fr auto;
-  align-items: center;
-  gap: 16px;
-  border-radius: 16px;
-  padding: 14px 16px;
-  transition: background 0.25s ease, transform 0.2s ease;
-}
-
-/* Alternating Colors */
-.tt__row:nth-child(odd) {
-  background: rgba(173, 125, 155, 0.35); /* 35% opacity */
-}
-.tt__row:nth-child(even) {
-  background: rgba(173, 125, 155, 0.1);  /* 10% opacity */
-}
-
-/* Hover Effect — slightly darker */
-.tt__row:hover {
-  background: rgba(173, 125, 155, 0.55); /* darker hover tone */
-  transform: translateY(-2px);
-}
-
-/* Track Thumbnail Placeholder */
-.tt__art {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: #5b2f46;
-  box-shadow: inset 0 0 0 4px rgba(137, 86, 116, 0.35);
-}
-
-/* Track Name */
-.tt__name {
-  font-weight: 700;
-  color: #6e4760;
-  font-size: clamp(16px, 1.6vw, 20px);
-}
-
-/* Track Duration / plays */
-.tt__dur {
-  font-weight: 800;
-  color: #a87c96;
-  font-size: clamp(16px, 1.6vw, 20px);
-}
-
-/* Empty state styled to match the card */
-.tt__empty {
+  box-shadow: 0 6px 0 var(--shadow);
+  background: var(--bg);
+  width: 100%;
+  max-width: 260px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  min-height: 160px;
-  font-size: 22px;
-  font-weight: 700;
-  color: #895674;
-  background: #f9eaf3;
-  border: 5px solid #895674;
-  border-radius: 20px;
-  box-shadow: 0 5px 0 #6e4760;
-  letter-spacing: 0.5px;
   text-align: center;
-  animation: ttEmptyFadeIn 0.25s ease;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
-@keyframes ttEmptyFadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
+.adCard:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.25);
+}
+
+.adCard__img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #f8d0e0;
+}
+
+.adCard__meta {
+  padding: 10px 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.adCard__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--stroke);
+  opacity: 0.8;
+}
+
+.adCard__title {
+  margin: 0;
+  font-weight: 800;
+  font-size: clamp(14px, 1.3vw, 16px);
+  color: var(--accent);
+}
+
+.adCard__length {
+  font-size: clamp(11px, 1vw, 13px);
+  color: var(--ink);
+  opacity: 0.9;
 }
