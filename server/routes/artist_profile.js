@@ -1,9 +1,9 @@
 // server/routes/artist_profile.js
 import db from "../db.js";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 0;
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
 
 // S3 client (env vars must be set)
 const s3 = new S3Client({

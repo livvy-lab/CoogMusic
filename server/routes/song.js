@@ -4,7 +4,7 @@ import { parse } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 0;
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,

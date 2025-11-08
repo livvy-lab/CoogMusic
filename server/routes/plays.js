@@ -1,6 +1,6 @@
 import db from "../db.js";
 
-const STREAM_MS_THRESHOLD = 0; // e.g., 30000 in prod
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
 
 export async function handlePlayRoutes(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
