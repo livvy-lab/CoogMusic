@@ -84,9 +84,10 @@ export default function ArtistsPerspective() {
 
     async function fetchMonthlyListeners(artistId, signal) {
       try {
-        // For now, use a placeholder calculation (you can implement a specific endpoint later)
-        // This could be unique listeners in the last 30 days
-        setMonthlyListeners(2000); // Placeholder - implement actual endpoint if needed
+        const res = await fetch(`${API_BASE_URL}/plays/artist-monthly-listeners?artistId=${artistId}`, { signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        setMonthlyListeners(data.monthlyListeners || 0);
       } catch (err) {
         if (err.name !== 'AbortError') console.error('Failed to load monthly listeners', err);
       }
@@ -184,8 +185,11 @@ export default function ArtistsPerspective() {
                   <div className="song-left">
                     <img src={heartIcon} alt="" className="song-heart" />
                     <div className="song-artwork">
-                      {/* Placeholder for song artwork */}
-                      <div className="artwork-placeholder">🎵</div>
+                      {song.CoverURL ? (
+                        <img src={song.CoverURL} alt={song.Title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <div className="artwork-placeholder">🎵</div>
+                      )}
                     </div>
                     <div className="song-info">
                       <div className="song-title">{song.Title}</div>

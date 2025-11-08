@@ -234,7 +234,15 @@ export default function MusicPlayBar() {
       </div>
 
       <div className="player-controls-right">
-        <div className="album-art" />
+        <div className="album-art">
+          {current?.CoverURL ? (
+            <img src={current.CoverURL} alt={current.Title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          ) : (
+            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#333', color: '#999', fontSize: '24px' }}>
+              🎵
+            </div>
+          )}
+        </div>
         <div className="meta">
           <div className="title">{current?.Title || "Untitled"}</div>
           <div className="artist">{current?.ArtistName || "Unknown Artist"}</div>

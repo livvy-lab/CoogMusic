@@ -157,6 +157,10 @@
   border-radius: 8px;
   overflow: hidden;
   flex-shrink: 0;
+  background: #E9D2DF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .artwork-placeholder {

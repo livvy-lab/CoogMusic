@@ -205,11 +205,16 @@ export async function handleSongRoutes(req, res) {
                  ),
                  'Unknown Artist'
                ) AS ArtistName,
-               m.bucket, m.s3_key, m.mime
+               m.bucket, m.s3_key, m.mime,
+               s.cover_media_id,
+               cm.bucket AS CoverBucket,
+               cm.s3_key AS CoverS3Key,
+               cm.url AS CoverURL
         FROM Song s
         JOIN Media m ON m.MediaID = s.audio_media_id
+        LEFT JOIN Media cm ON cm.MediaID = s.cover_media_id
         WHERE s.SongID = ? AND s.IsDeleted = 0
-        GROUP BY s.SongID, m.bucket, m.s3_key, m.mime
+        GROUP BY s.SongID, m.bucket, m.s3_key, m.mime, s.cover_media_id, cm.bucket, cm.s3_key, cm.url
         LIMIT 1
         `,
         [id]
@@ -225,6 +230,23 @@ export async function handleSongRoutes(req, res) {
       const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
       const url = await getSignedUrl(s3, cmd, { expiresIn: 900 });
 
+      // Generate signed URL for cover image if available
+      let coverUrl = null;
+      if (row.CoverBucket && row.CoverS3Key) {
+        try {
+          coverUrl = await getSignedUrl(
+            s3,
+            new GetObjectCommand({ Bucket: row.CoverBucket, Key: row.CoverS3Key }),
+            { expiresIn: 3600 }
+          );
+        } catch (err) {
+          console.error("Error generating signed URL for cover:", err);
+          coverUrl = row.CoverURL || null;
+        }
+      } else {
+        coverUrl = row.CoverURL || null;
+      }
+
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({
         songId: row.SongID,
@@ -232,7 +254,8 @@ export async function handleSongRoutes(req, res) {
         artistName: row.ArtistName,
         url,
         mime: row.mime,
-        expiresIn: 900
+        expiresIn: 900,
+        coverUrl
       }));
       return;
     }

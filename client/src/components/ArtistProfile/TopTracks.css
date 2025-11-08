@@ -82,6 +82,10 @@
   border-radius: 16px;
   background: #5b2f46;
   box-shadow: inset 0 0 0 4px rgba(137, 86, 116, 0.35);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Track Name */

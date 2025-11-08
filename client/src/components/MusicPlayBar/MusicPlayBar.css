@@ -113,6 +113,11 @@
     height: 59px;
     border-radius: 6px;
     border: 1.5px solid #895674;
+    overflow: hidden;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* progress bar slider styling*/

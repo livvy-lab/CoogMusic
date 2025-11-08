@@ -66,7 +66,11 @@ export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp
               );
               return (
                 <li key={t.SongID ?? i} className="tt__row">
-                  <span className="tt__art" aria-hidden="true" />
+                  <span className="tt__art" aria-hidden="true">
+                    {t.CoverURL ? (
+                      <img src={t.CoverURL} alt={t.Title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} />
+                    ) : null}
+                  </span>
                   <span className="tt__name">{t.Title}</span>
                   <span className="tt__dur">
                     {plays.toLocaleString()} {plays === 1 ? "play" : "plays"}

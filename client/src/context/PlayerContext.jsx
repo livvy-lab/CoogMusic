@@ -125,6 +125,7 @@ export function PlayerProvider({ children }) {
         ArtistName: data.artistName,
         url: data.url,
         mime: data.mime,
+        CoverURL: data.coverUrl || null,
       });
       const a = audioRef.current;
       if (a) {
@@ -140,6 +141,7 @@ export function PlayerProvider({ children }) {
         ArtistName: song?.ArtistName || "Unknown Artist",
         url: song?.url || "",
         mime: "audio/mpeg",
+        CoverURL: song?.CoverURL || null,
       });
       // If the caller provided a direct URL, attach it to the audio element and play.
       try {
