@@ -42,7 +42,6 @@ export default function ArtistCard({ artistId }) {
   // follow/report logic
   const [isFollowing, setIsFollowing] = useState(false);
   const [followPending, setFollowPending] = useState(false);
-
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId =
@@ -78,10 +77,9 @@ export default function ArtistCard({ artistId }) {
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/artists/${artistId}/profile`,
-          { signal: ctrl.signal }
-        );
+        const res = await fetch(`${API_BASE_URL}/artists/${artistId}/profile`, {
+          signal: ctrl.signal,
+        });
         if (res.status === 404) {
           setArtist(null);
           setState({ loading: false, notFound: true });
@@ -225,6 +223,8 @@ export default function ArtistCard({ artistId }) {
   if (state.loading) return <div className="artistCard">Loading…</div>;
   if (state.notFound) return <PlaceholderCard />;
 
+  const isVerified = Boolean(artist?.IsVerified);
+
   return (
     <div className="artistCard">
       <div className="artistCard__avatarWrap">
@@ -239,6 +239,7 @@ export default function ArtistCard({ artistId }) {
           />
         </div>
       </div>
+
       <div className="artistCard__info">
         {/* heading row wrapper */}
         <div className="artistCard__headingRow">
