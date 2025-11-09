@@ -4,6 +4,7 @@ import "./Auth.css";
 import { setUser } from "../lib/userStorage";
 import Loading from "../components/LoadingLayout/Loading";
 import { API_BASE_URL } from "../config/api";
+import FloatingCats from "../components/CoogIcon/FloatingCats";
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -15,8 +16,8 @@ export default function Login() {
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ username, password })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       });
       const data = await response.json();
 
@@ -28,7 +29,7 @@ export default function Login() {
           listenerId: data.listenerId,
           artistId: data.artistId,
           adminId: data.adminId,
-          name: data.name
+          name: data.name,
         };
         setUser(user);
         if (data.accountType === "artist") {
@@ -47,6 +48,7 @@ export default function Login() {
 
   return (
     <Loading>
+      <FloatingCats />
       <div className="authCard">
         <div className="authTitleBlock">
           <div className="authTitle">Welcome</div>
