@@ -4,11 +4,15 @@ import "./Auth.css";
 import { setUser } from "../lib/userStorage";
 import Loading from "../components/LoadingLayout/Loading";
 import { API_BASE_URL } from "../config/api";
-import FloatingCats from "../components/CoogIcon/FloatingCats";
+import FloatingCats from "../components/CoogIcon/FloatingCats"; 
+import ShowPasswordIcon from "../assets/show-password.svg";
+import HidePasswordIcon from "../assets/hide-password.svg";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); 
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -49,6 +53,7 @@ export default function Login() {
   return (
     <Loading>
       <FloatingCats />
+      
       <div className="authCard">
         <div className="authTitleBlock">
           <div className="authTitle">Welcome</div>
@@ -62,13 +67,28 @@ export default function Login() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
           />
-          <input
-            className="authInput"
-            placeholder="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
+
+          <div className="authInputContainer">
+            <input
+              className="authInput"
+              placeholder="password"
+              type={showPassword ? "text" : "password"} 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button 
+              type="button" 
+              className="authShowPassBtn"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              <img 
+                src={showPassword ? HidePasswordIcon : ShowPasswordIcon} 
+                alt="Toggle password visibility" 
+              />
+            </button>
+          </div>
+
           <button className="authBtn authBtnPlay" type="submit">
             <span className="playIcon" />
           </button>
