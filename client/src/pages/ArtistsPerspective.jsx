@@ -62,10 +62,13 @@ export default function ArtistsPerspective() {
 
     async function fetchTotalStreams(artistId, signal) {
       try {
-  const res = await fetch(`${API_BASE_URL}/plays/artist-streams?artistId=${artistId}`, { signal });
+        // Use the same analytics endpoint as the analytics page
+        const res = await fetch(`${API_BASE_URL}/analytics/artist/${artistId}/summary`, { signal });
         if (!res.ok) return;
         const data = await res.json();
-        setTotalStreams(data.totalStreams || 0);
+        // Extract total streams from the totals array
+        const streamsData = data.totals?.find(t => t.label === "Total Streams");
+        setTotalStreams(streamsData?.value || 0);
       } catch (err) {
         if (err.name !== 'AbortError') console.error('Failed to load stream count', err);
       }
