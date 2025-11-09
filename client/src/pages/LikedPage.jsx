@@ -88,6 +88,15 @@ export default function LikedPage() {
 
   useEffect(() => {
     fetchLikedSongs();
+  }, [listenerId]);
+
+  // Refetch when navigating back to this page
+  useEffect(() => {
+    const handleFocus = () => fetchLikedSongs();
+    window.addEventListener('focus', handleFocus);
+    // Also fetch when component mounts/remounts (navigation)
+    fetchLikedSongs();
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // update list when likes change elsewhere (music bar)
@@ -105,7 +114,7 @@ export default function LikedPage() {
     }
     window.addEventListener('likedChanged', onLikedChanged);
     return () => window.removeEventListener('likedChanged', onLikedChanged);
-  }, []);
+  }, [listenerId]);
 
   return (
     <PageLayout>
