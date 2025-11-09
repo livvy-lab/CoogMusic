@@ -41,6 +41,14 @@ const Subscription = () => {
     return;
   }
 
+  // Show confirmation dialog when unsubscribing
+  if (isSubscribed) {
+    const confirmed = window.confirm('Are you sure you want to unsubscribe?');
+    if (!confirmed) {
+      return; // User cancelled, don't proceed
+    }
+  }
+
   setLoading(true);
   setError(null);
 
@@ -139,10 +147,11 @@ const Subscription = () => {
               </div>
             </div>
             <button
-              className={`plan-button ${!isSubscribed ? 'current' : 'current-inactive'}`}
+              className={`plan-button ${!isSubscribed ? 'current' : 'revert-free'}`}
+              onClick={isSubscribed ? handleSubscriptionToggle : undefined}
               disabled={loading}
             >
-              Current Plan
+              {isSubscribed ? 'Revert back to free version' : 'Current Plan'}
             </button>
           </div>
 
@@ -164,11 +173,11 @@ const Subscription = () => {
               </div>
             </div>
             <button
-              className={`plan-button ${isSubscribed ? 'subscribed' : 'subscribe'}`}
+              className={`plan-button ${isSubscribed ? 'subscribed-light' : 'subscribe-toggle'}`}
               onClick={handleSubscriptionToggle}
               disabled={loading}
             >
-              {loading ? 'Processing...' : isSubscribed ? 'Subscribed' : 'Subscribe'}
+              {loading ? 'Processing...' : isSubscribed ? 'Unsubscribe' : 'Subscribe'}
             </button>
           </div>
         </div>

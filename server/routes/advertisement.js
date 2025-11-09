@@ -38,7 +38,7 @@ async function getSignedAdUrl(canonicalUrl) {
 }
 
 export async function handleAdRoutes(req, res) {
-  const { pathname } = parse(req.url, true);
+  const { pathname, query } = parse(req.url, true);
   const method = req.method;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -78,7 +78,18 @@ export async function handleAdRoutes(req, res) {
 
     // GET all advertisements (include signed URLs where applicable)
     if (pathname === "/advertisements" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Advertisement WHERE IsDeleted = 0");
+      const artistId = query && query.artistId ? Number(query.artistId) : null;
+      let rows;
+      if (Number.isFinite(artistId)) {
+        const [r] = await db.query(
+          "SELECT * FROM Advertisement WHERE IsDeleted = 0 AND ArtistID = ?",
+          [artistId]
+        );
+        rows = r;
+      } else {
+        const [r] = await db.query("SELECT * FROM Advertisement WHERE IsDeleted = 0");
+        rows = r;
+      }
       const withUrls = await Promise.all(
         rows.map(async (r) => {
           const ad = { ...r };
@@ -117,7 +128,7 @@ export async function handleAdRoutes(req, res) {
       let body = "";
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
-        const { AdName, AdLength, AdFile } = JSON.parse(body);
+        const { AdName, AdLength, AdFile, ArtistID } = JSON.parse(body);
 
         if (!AdName || !AdLength || !AdFile) {
           res.writeHead(400, { "Content-Type": "application/json" });
@@ -125,10 +136,17 @@ export async function handleAdRoutes(req, res) {
           return;
         }
 
-        const [result] = await db.query(
-          "INSERT INTO Advertisement (AdName, AdLength, AdFile) VALUES (?, ?, ?)",
-          [AdName, AdLength, AdFile]
-        );
+        // Optional ArtistID support if provided by caller
+        let sql = "INSERT INTO Advertisement (AdName, AdLength, AdFile";
+        let placeholders = ") VALUES (?, ?, ?";
+        const params = [AdName, AdLength, AdFile];
+        if (Number.isFinite(Number(ArtistID))) {
+          sql += ", ArtistID";
+          placeholders += ", ?";
+          params.push(Number(ArtistID));
+        }
+        sql += placeholders + ")";
+        const [result] = await db.query(sql, params);
 
         res.writeHead(201, { "Content-Type": "application/json" });
         res.end(
@@ -137,6 +155,7 @@ export async function handleAdRoutes(req, res) {
             AdName,
             AdLength,
             AdFile,
+            ArtistID: Number.isFinite(Number(ArtistID)) ? Number(ArtistID) : undefined,
           })
         );
       });

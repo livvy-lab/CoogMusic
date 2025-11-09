@@ -176,13 +176,31 @@ export async function handleUploadRoutes(req, res) {
         });
       }
 
-      // Persist to Advertisement table: AdName, AdFile (canonical), IsDeleted=0
+      // Persist to Advertisement table: AdName, AdFile (canonical), ArtistID, IsDeleted=0
       let adId = null;
       try {
         const adName = title || path.basename(key);
+
+        // Resolve ArtistID from the uploading accountId
+        const accountId = Number(fields.accountId ?? fields.accountID ?? fields.AccountID);
+        let artistId = null;
+        if (Number.isFinite(accountId) && accountId > 0) {
+          try {
+            const [aRows] = await db.query(
+              "SELECT ArtistID FROM Artist WHERE AccountID = ? AND IsDeleted = 0 LIMIT 1",
+              [accountId]
+            );
+            artistId = aRows?.[0]?.ArtistID ?? null;
+          } catch {}
+        }
+
+        if (!artistId) {
+          throw new Error("artist_not_found_for_account");
+        }
+
         const [ins] = await db.query(
-          "INSERT INTO Advertisement (AdName, AdFile, IsDeleted) VALUES (?, ?, 0)",
-          [adName, put.canonical]
+          "INSERT INTO Advertisement (AdName, AdFile, ArtistID, IsDeleted) VALUES (?, ?, ?, 0)",
+          [adName, put.canonical, artistId]
         );
         adId = ins.insertId ?? null;
       } catch (dbErr) {
