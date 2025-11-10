@@ -52,10 +52,10 @@ export async function handleLikesPins(req, res) {
       let favorites = [];
       if (ids.length) {
   // Diagnostic: print all liked songs for this listener
-  const [allRows] = await db.query('SELECT * FROM Liked_Song WHERE ListenerID = ?', [listenerId]);
+  const [allRows] = await db.query('SELECT * FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1', [listenerId]);
   console.log('[LIKES_PINS] All liked songs for listener', listenerId, allRows);
 
-  const sql = `SELECT SongID FROM Liked_Song WHERE ListenerID = ? AND SongID IN (${ids.map(() => "?").join(",")})`;
+  const sql = `SELECT SongID FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1 AND SongID IN (${ids.map(() => "?").join(",")})`;
   const params = [listenerId, ...ids];
   console.log("[LIKES_PINS] /songs/status SQL:", sql);
   console.log("[LIKES_PINS] /songs/status params:", params);
