@@ -36,6 +36,7 @@ async function getSecureImageUrl(mediaId) {
 }
 
 
+
 export default function NewReleases({ title = "New releases" }) {
   const [songs, setSongs] = useState([]);
   const [songsWithUrls, setSongsWithUrls] = useState([]);
@@ -44,6 +45,8 @@ export default function NewReleases({ title = "New releases" }) {
   const { playSong } = usePlayer();
   const favCtx = useFavPins() || {};
   const setVisibleIds = favCtx.setVisibleIds ?? (() => {});
+  // Persist lastIdsRef across renders
+  const lastIdsRef = useRef([]);
 
   const scrollByPage = (dir) => {
     const rail = railRef.current;
@@ -86,10 +89,16 @@ export default function NewReleases({ title = "New releases" }) {
     fetchImageUrls();
   }, [songs]);
 
+  // Only call setVisibleIds if the IDs actually change
   useEffect(() => {
     const ids = (songs || []).map(s => Number(s.SongID)).filter(id => Number.isFinite(id) && id > 0);
-    setVisibleIds(ids);
-  }, [songs]); 
+    const idsStr = ids.join(",");
+    const lastStr = lastIdsRef.current.join(",");
+    if (idsStr !== lastStr) {
+      setVisibleIds(ids);
+      lastIdsRef.current = ids;
+    }
+  }, [songs, setVisibleIds]);
 
   async function resolveUrl(song) {
     if (song?.url) return song.url;

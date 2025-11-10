@@ -62,7 +62,7 @@ export default function App() {
               <Route path="/profile" element={<ListenerProfile />} />
               <Route path="/home" element={<ListenerHome />} />
               <Route path="/user-report" element={<UserReport />} />
-              <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
+              <Route path="/likedsongs" element={<LikedSong />} />
               <Route path="/me/playlists" element={<MyPlaylistsPage />} />
               <Route path="/playlist/:id" element={<PlaylistPage />} />
               <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />

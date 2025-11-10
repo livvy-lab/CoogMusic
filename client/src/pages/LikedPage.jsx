@@ -17,11 +17,13 @@ export default function LikedPage() {
   // --- Fetch liked songs
   async function fetchLikedSongs() {
     try {
+      console.log(`🎵 [LikedPage] Fetching liked songs for listenerId: ${listenerId}`);
   const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs`);
+      console.log(`🎵 [LikedPage] Response status:`, res.status);
       if (!res.ok) throw new Error("Failed to fetch liked songs");
       const data = await res.json();
 
-      console.log("✅ Raw liked songs data:", data);
+      console.log("✅ [LikedPage] Raw liked songs data:", data);
 
       // Format results for UI
       const formatted = data.map((row) => ({
@@ -44,9 +46,9 @@ export default function LikedPage() {
       // sort newest first
       formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
       setTracks(formatted);
-      console.log("🎵 Formatted tracks:", formatted);
+      console.log("🎵 [LikedPage] Formatted tracks:", formatted);
     } catch (err) {
-      console.error("❌ Error fetching liked songs:", err);
+      console.error("❌ [LikedPage] Error fetching liked songs:", err);
     }
   }
 
@@ -88,6 +90,15 @@ export default function LikedPage() {
 
   useEffect(() => {
     fetchLikedSongs();
+  }, [listenerId]);
+
+  // Refetch when navigating back to this page
+  useEffect(() => {
+    const handleFocus = () => fetchLikedSongs();
+    window.addEventListener('focus', handleFocus);
+    // Also fetch when component mounts/remounts (navigation)
+    fetchLikedSongs();
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // update list when likes change elsewhere (music bar)
@@ -105,7 +116,7 @@ export default function LikedPage() {
     }
     window.addEventListener('likedChanged', onLikedChanged);
     return () => window.removeEventListener('likedChanged', onLikedChanged);
-  }, []);
+  }, [listenerId]);
 
   return (
     <PageLayout>

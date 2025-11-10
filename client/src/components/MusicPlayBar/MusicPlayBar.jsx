@@ -2,6 +2,7 @@
 import React, { useMemo, useRef, useState, useEffect } from "react";
 import { Range, getTrackBackground } from "react-range";
 import { usePlayer } from "../../context/PlayerContext.jsx";
+import { useFavPins } from "../../context/FavoritesPinsContext";
 import "./MusicPlayBar.css";
 
 import skipBackIcon from "../../assets/skip-back-icon.svg";
@@ -36,14 +37,21 @@ export default function MusicPlayBar() {
       audioRef,
   } = usePlayer();
 
-  // keep hooks order stable (don’t early return)
+  // Use FavoritesPinsContext for like state
+  const favCtx = useFavPins() || {};
+  const favoriteIds = favCtx.favoriteIds || new Set();
+  const toggleFavorite = favCtx.toggleFavorite || (() => {});
+
+  // keep hooks order stable (don't early return)
   const [isSeeking, setIsSeeking] = useState(false);
   const [isRepeating, setIsRepeating] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
   const [volOpen, setVolOpen] = useState(false);
   const volumeRef = useRef(null);
 
   const hidden = !current;
+  
+  // Check if current song is liked based on FavoritesPinsContext
+  const isLiked = current?.SongID ? favoriteIds.has(Number(current.SongID)) : false;
 
   const fmt = (t) => {
     if (!t || Number.isNaN(t)) return "0:00";
@@ -60,28 +68,12 @@ export default function MusicPlayBar() {
     return { background: `linear-gradient(to right, #895674 ${pct}%, #FFE8F5 ${pct}%)` };
   }, [currentTime, duration]);
 
-  // When the current song changes, fetch whether it's liked by this listener
+  // Hydrate likes when current song changes
   useEffect(() => {
-    let mounted = true;
-    async function checkLiked() {
-      setIsLiked(false);
-      if (!current?.SongID) return;
-      const stored = localStorage.getItem('listener');
-      const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
-      try {
-        const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs`);
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!mounted) return;
-        const found = Array.isArray(data) && data.some((r) => r.SongID === current.SongID);
-        setIsLiked(Boolean(found));
-      } catch (err) {
-        // ignore
-      }
+    if (current?.SongID && favCtx.setVisibleIds) {
+      favCtx.setVisibleIds([Number(current.SongID)]);
     }
-    checkLiked();
-    return () => { mounted = false; };
-  }, [current]);
+  }, [current?.SongID]);
 
   return (
     <div
@@ -199,31 +191,8 @@ export default function MusicPlayBar() {
         <button
           className={`control-btn small-btn ${isLiked ? "is-active" : ""}`}
           onClick={async () => {
-            // Optimistic UI
-            setIsLiked((v) => !v);
-            try {
-              if (typeof toggleLikeCurrent === 'function') {
-                const res = await toggleLikeCurrent();
-                // if backend returned liked state, ensure UI matches
-                if (res && typeof res.liked === 'boolean') setIsLiked(Boolean(res.liked));
-              } else {
-                // fallback: direct fetch + dispatch
-                const stored = localStorage.getItem('listener');
-                const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
-                if (current?.SongID) {
-                  const res = await fetch(`http://localhost:3001/listeners/${listenerId}/liked_songs/toggle`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ songId: current.SongID })
-                  });
-                  if (res.ok) {
-                    const data = await res.json();
-                    window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: current.SongID, liked: data.liked } }));
-                    setIsLiked(Boolean(data.liked));
-                  }
-                }
-              }
-            } catch (err) {
-              // if something fails, flip back
-              setIsLiked((v) => !v);
+            if (current?.SongID) {
+              await toggleFavorite(Number(current.SongID));
             }
           }}
           aria-pressed={isLiked}

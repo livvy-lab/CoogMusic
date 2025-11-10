@@ -23,6 +23,7 @@ export async function handleLikedSongRoutes(req, res) {
     // =======================================================
     if (/^\/listeners\/\d+\/liked_songs$/.test(pathname) && method === "GET") {
       const listenerId = Number(pathname.split("/")[2]);
+      console.log(`🎵 [LIKED_SONG] GET request for listenerId: ${listenerId}`);
 
 const [rows] = await db.query(`
   SELECT
@@ -39,13 +40,12 @@ const [rows] = await db.query(`
   LEFT JOIN Album al ON at.AlbumID = al.AlbumID
   LEFT JOIN Song_Artist sa ON s.SongID = sa.SongID
   LEFT JOIN Artist ar ON sa.ArtistID = ar.ArtistID
-  WHERE ls.ListenerID = ?
+  WHERE ls.ListenerID = ? AND ls.IsLiked = 1
   GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, al.Title, ls.LikedDate
   ORDER BY ls.LikedDate DESC;
 `, [listenerId]);
 
-
-
+      console.log(`✅ [LIKED_SONG] Query returned ${rows.length} rows:`, rows);
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
@@ -58,43 +58,64 @@ const [rows] = await db.query(`
     // =======================================================
     if (/^\/listeners\/\d+\/liked_songs\/toggle$/.test(pathname) && method === "POST") {
       const listenerId = Number(pathname.split("/")[2]);
+      console.log(`🎵 [LIKED_SONG] Toggle request - ListenerID: ${listenerId}, Path: ${pathname}`);
       let body = "";
 
       req.on("data", (chunk) => (body += chunk));
       req.on("end", async () => {
         try {
           const { songId } = JSON.parse(body || "{}");
+          console.log(`🎵 [LIKED_SONG] SongID: ${songId}`);
           if (!songId) {
+            console.log("❌ [LIKED_SONG] Missing songId in request body");
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: "Missing songId" }));
             return;
           }
 
-          // Check if song already liked
+          // Check if record exists
+          console.log(`🔍 [LIKED_SONG] Checking if record exists: ListenerID=${listenerId}, SongID=${songId}`);
           const [exists] = await db.query(
-            "SELECT * FROM Liked_Song WHERE ListenerID = ? AND SongID = ?",
+            "SELECT IsLiked FROM Liked_Song WHERE ListenerID = ? AND SongID = ?",
             [listenerId, songId]
           );
+          console.log(`🔍 [LIKED_SONG] Exists check result:`, exists);
 
           if (exists.length > 0) {
-            // Unlike (delete)
-            await db.query(
-              "DELETE FROM Liked_Song WHERE ListenerID = ? AND SongID = ?",
-              [listenerId, songId]
-            );
+            // Record exists - toggle IsLiked value
+            const currentIsLiked = exists[0].IsLiked;
+            const newIsLiked = currentIsLiked === 1 ? 0 : 1;
+            console.log(`🔄 [LIKED_SONG] Toggling IsLiked from ${currentIsLiked} to ${newIsLiked}`);
+            try {
+              const result = await db.query(
+                "UPDATE Liked_Song SET IsLiked = ?, LikedDate = CURDATE() WHERE ListenerID = ? AND SongID = ?",
+                [newIsLiked, listenerId, songId]
+              );
+              console.log(`✅ [LIKED_SONG] Successfully toggled IsLiked to ${newIsLiked}, affected rows:`, result[0]?.affectedRows);
+            } catch (updateErr) {
+              console.error(`❌ [LIKED_SONG] UPDATE error:`, updateErr);
+              throw updateErr;
+            }
             res.writeHead(200, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ liked: false }));
+            res.end(JSON.stringify({ liked: newIsLiked === 1 }));
           } else {
-            // Like (insert)
-            await db.query(
-              "INSERT INTO Liked_Song (ListenerID, SongID, LikedDate) VALUES (?, ?, CURDATE())",
-              [listenerId, songId]
-            );
+            // Record doesn't exist - insert with IsLiked = 1
+            console.log(`➕ [LIKED_SONG] Inserting new record - ListenerID=${listenerId}, SongID=${songId}, IsLiked=1`);
+            try {
+              const result = await db.query(
+                "INSERT INTO Liked_Song (ListenerID, SongID, LikedDate, IsLiked) VALUES (?, ?, CURDATE(), 1)",
+                [listenerId, songId]
+              );
+              console.log(`✅ [LIKED_SONG] Successfully inserted record with IsLiked=1, insertId:`, result[0]?.insertId);
+            } catch (insertErr) {
+              console.error(`❌ [LIKED_SONG] INSERT error:`, insertErr);
+              throw insertErr;
+            }
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ liked: true }));
           }
         } catch (err) {
-          console.error("❌ Error toggling liked song:", err.message);
+          console.error("❌ [LIKED_SONG] Error toggling liked song:", err);
           res.writeHead(500, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: err.message }));
         }
