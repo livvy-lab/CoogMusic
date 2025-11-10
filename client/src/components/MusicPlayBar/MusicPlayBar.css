@@ -89,6 +89,7 @@
     filter: brightness(100%) saturate(100%);
 }
 
+/* default active state filter for general icons (not heart) */
 .small-btn.is-active img {
     filter: 
         invert(25%) 
@@ -99,6 +100,44 @@
         contrast(100%)
         !important;
     border-radius: 4px; 
+}
+
+/* Heart button: exact brand color when liked */
+.small-btn.heart-btn { 
+    width: 28px; 
+    height: 28px; 
+    position: relative;
+}
+
+.small-btn.heart-btn img { 
+    width: 28px; 
+    height: 28px; 
+    display: block; 
+}
+
+/* When liked, overlay the color using a pseudo-element so the icon stays same size */
+.small-btn.heart-btn.is-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 28px;
+    height: 28px;
+    background-color: #612C4B; /* requested color */
+    -webkit-mask-image: url("../../assets/heart-icon.svg");
+            mask-image: url("../../assets/heart-icon.svg");
+    -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+            mask-position: center;
+    -webkit-mask-size: 28px 28px; /* explicit size to match icon */
+            mask-size: 28px 28px;
+    pointer-events: none;
+}
+
+/* Keep the original image visible but slightly behind the colored overlay */
+.small-btn.heart-btn.is-active img { 
+    opacity: 0; /* hide original to only show colored version */
 }
 
 .time-stamp {
