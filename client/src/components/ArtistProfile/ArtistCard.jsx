@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import "./ArtistCard.css";
-import { API_BASE_URL } from "../../config/api";
-
-function getUser() {
-  try {
-    return JSON.parse(localStorage.getItem("user") || "null");
-  } catch {
-    return null;
-  }
-}
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 function PlaceholderCard() {
   return (
@@ -34,27 +25,12 @@ export default function ArtistCard({ artistId }) {
   const [artist, setArtist] = useState(null);
   const [favorited, setFavorited] = useState(false);
   const [state, setState] = useState({ loading: false, notFound: false });
-  const [pending, setPending] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-  const [followPending, setFollowPending] = useState(false);
-  const navigate = useNavigate();
-
-  const currentUser = getUser();
-  const currentUserId =
-    currentUser?.listenerId || currentUser?.artistId || currentUser?.accountId;
-  const currentUserType =
-    currentUser?.accountType?.charAt(0).toUpperCase() +
-      (currentUser?.accountType?.slice(1) ?? "") || "";
-  const isOwnProfile =
-    Number(currentUserId) === Number(artistId) && currentUserType === "Artist";
 
   const listenerId = useMemo(() => {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
       return u?.listenerId ?? u?.ListenerID ?? null;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }, []);
 
   useEffect(() => {
@@ -71,16 +47,10 @@ export default function ArtistCard({ artistId }) {
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const res = await fetch(`${API_BASE_URL}/artists/${artistId}/profile`, {
-          signal: ctrl.signal,
-        });
-        if (res.status === 404) {
-          setArtist(null);
-          setState({ loading: false, notFound: true });
-          return;
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        const r = await fetch(`${API_BASE}/artists/${artistId}/profile`, { signal: ctrl.signal });
+        if (r.status === 404) { setArtist(null); setState({ loading: false, notFound: true }); return; }
+        if (!r.ok) throw new Error();
+        const data = await r.json();
         setArtist(data);
         setState({ loading: false, notFound: false });
       } catch {
@@ -96,114 +66,29 @@ export default function ArtistCard({ artistId }) {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch(
-          `${API_BASE_URL}/listeners/${listenerId}/pins/artists`
-        );
+        const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`);
         if (!r.ok) return;
         const pins = await r.json();
         if (!alive) return;
-        setFavorited(pins.some((p) => Number(p.ArtistID) === Number(artistId)));
+        setFavorited(pins.some(p => Number(p.ArtistID) === Number(artistId)));
       } catch {}
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [listenerId, artistId]);
 
   async function togglePin() {
-    if (!listenerId || !artistId || pending) return;
-    setPending(true);
-    try {
-      if (!favorited) {
-        const r = await fetch(
-          `${API_BASE_URL}/listeners/${listenerId}/pins/artists`,
-          {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ artistId: Number(artistId) }),
-          }
-        );
-        if (r.ok) setFavorited(true);
-      } else {
-        const r = await fetch(
-          `${API_BASE_URL}/listeners/${listenerId}/pins/artists/${artistId}`,
-          { method: "DELETE" }
-        );
-        if (r.ok) setFavorited(false);
-      }
-    } finally {
-      setPending(false);
+    if (!listenerId || !artistId) return;
+    if (!favorited) {
+      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ artistId: Number(artistId) })
+      });
+      if (r.ok) setFavorited(true);
+    } else {
+      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists/${artistId}`, { method: "DELETE" });
+      if (r.ok) setFavorited(false);
     }
-  }
-
-  useEffect(() => {
-    async function checkFollow() {
-      if (!artistId || !currentUserId || isOwnProfile) {
-        setIsFollowing(false);
-        return;
-      }
-      try {
-        const res = await fetch(
-          `${API_BASE_URL}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType}&followingId=${artistId}&followingType=Artist`
-        );
-        if (!res.ok) {
-          setIsFollowing(false);
-          return;
-        }
-        const data = await res.json();
-        setIsFollowing(Boolean(data.isFollowing));
-      } catch {
-        setIsFollowing(false);
-      }
-    }
-    checkFollow();
-  }, [artistId, currentUserId, currentUserType, isOwnProfile]);
-
-  async function handleFollowToggle() {
-    if (!currentUserId || isOwnProfile || followPending) return;
-    setFollowPending(true);
-    try {
-      if (isFollowing) {
-        await fetch(`${API_BASE_URL}/follows`, {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            FollowerID: currentUserId,
-            FollowerType: currentUserType,
-            FollowingID: artistId,
-            FollowingType: "Artist",
-          }),
-        });
-      } else {
-        await fetch(`${API_BASE_URL}/follows`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            FollowerID: currentUserId,
-            FollowerType: currentUserType,
-            FollowingID: artistId,
-            FollowingType: "Artist",
-          }),
-        });
-      }
-      const res = await fetch(
-        `${API_BASE_URL}/follows/relationship?followerId=${currentUserId}&followerType=${currentUserType}&followingId=${artistId}&followingType=Artist`
-      );
-      const data = await res.json();
-      setIsFollowing(Boolean(data.isFollowing));
-    } finally {
-      setFollowPending(false);
-    }
-  }
-
-  function handleReportClick() {
-    navigate("/user-report", {
-      state: {
-        reportedId: artistId,
-        reportedType: "Artist",
-        reportedName: artist?.ArtistName || "",
-      },
-    });
   }
 
   if (state.loading) return <div className="artistCard">Loading…</div>;
@@ -278,8 +163,6 @@ export default function ArtistCard({ artistId }) {
         onClick={togglePin}
         aria-label={favorited ? "Unpin artist" : "Pin artist"}
         title={favorited ? "Unpin" : "Pin to profile"}
-        disabled={pending || !listenerId}
-        style={{ marginTop: 10 }}
       >
         <svg
           viewBox="0 0 24 24"

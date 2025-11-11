@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import { usePlayer } from "../../context/PlayerContext";
-import { API_BASE_URL } from "../../config/api";
 import "./JamCard.css";
 
+const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 const FALLBACK_COVER = "https://placehold.co/600x600/FFDDEE/895674?text=Album+Art";
 
 export default function JamCard({ listenerId }) {
@@ -31,7 +31,7 @@ export default function JamCard({ listenerId }) {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`);
+        const res = await fetch(`${API_BASE}/listeners/${id}/profile`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         setSong(data?.favorites?.pinnedSong || null);
@@ -44,34 +44,27 @@ export default function JamCard({ listenerId }) {
     })();
   }, [listenerId, pinnedSongId]);
 
-  const handlePlayClick = () => {
+  function onPlayClick() {
     if (!song) return;
-    if (current?.SongID === song.SongID) {
-      toggle();
-    } else {
-      playSong(song);
-    }
-  };
+    if (isShowingPause) toggle();
+    else playSong(song);
+  }
 
   const title = "Current Jam";
-  const cover =
-    song?.CoverURL ||
-    song?.CoverUrl ||
-    song?.coverUrl ||
-    FALLBACK_COVER;
+  const cover = song?.CoverURL || FALLBACK_COVER;
   const track = loading
     ? "Loading…"
     : error
     ? "Error"
     : song
-    ? song.Title || song.title || "Untitled"
+    ? song.Title || "Untitled"
     : "None pinned yet";
   const artist = loading
     ? ""
     : error
     ? error
     : song
-    ? song.Artists || song.ArtistName || song.artistName || "Unknown Artist"
+    ? song.Artists || "Unknown Artist"
     : "Pin a song to show it here!";
 
   return (
@@ -92,7 +85,7 @@ export default function JamCard({ listenerId }) {
       <div className="jam__controls">
         <button
           className="jam__control jam__play"
-          onClick={handlePlayClick}
+          onClick={onPlayClick}
           aria-label={isShowingPause ? "Pause" : "Play"}
           disabled={!song || !!error || loading}
         >

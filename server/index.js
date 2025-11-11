@@ -35,7 +35,7 @@ import { handleUploadRoutes } from "./routes/upload.js";
 import { handlePfpRoutes } from "./routes/pfp.js";
 import { handleSetListenerAvatar } from "./routes/avatar.js";
 import { handleSetArtistAvatar } from "./routes/avatar_artist.js";
-import { handleLikesPins} from "./routes/likes_pins.js";
+import { handleLikesPins } from "./routes/likes_pins.js"; // ✅ unified likes & pins
 import { handleMediaRoutes } from "./routes/media.js";
 import { handleSearchRoutes } from "./routes/search.js";
 import { handleArtistAnalyticsRoutes } from "./routes/artist_analytics.js";
@@ -75,100 +75,95 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  try {
-    if (pathname === "/healthz") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true }));
-      return;
-    }
+  try {
+    // ───────────────────────────────────────────────
+    // Serve static uploads
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/uploads/")) {
+      const filePath = path.join(path.resolve("."), "server", pathname.replace("/uploads/", "uploads/"));
+      if (fs.existsSync(filePath)) {
+        const stream = fs.createReadStream(filePath);
+        res.writeHead(200);
+        stream.pipe(res);
+        return;
+      }
+      res.writeHead(404);
+      res.end();
+      return;
+    }
 
-    if (pathname.startsWith("/uploads/")) {
-      const filePath = path.join(path.resolve("."), "server", pathname.replace("/uploads/", "uploads/"));
-      if (fs.existsSync(filePath)) {
-        const stream = fs.createReadStream(filePath);
-        res.writeHead(200);
-        stream.pipe(res);
-        return;
-      }
-      res.writeHead(404);
-      res.end();
-      return;
-    }
+    // ───────────────────────────────────────────────
+    // Uploads & Media endpoints
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
+    if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
 
-    // ───────────────────────────────────────────────
-    // Uploads & Media endpoints
-    // ───────────────────────────────────────────────
-    if (pathname.startsWith("/upload/")) { await handleUploadRoutes(req, res); return; }
-    if (pathname.startsWith("/pfp")) { await handlePfpRoutes(req, res); return; }
+    if (pathname === "/media" || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
+      await handleMediaRoutes(req, res);
+      return;
+    }
 
-    // Route media endpoints (upload + media lookup + song/album cover association)
-    if (pathname.startsWith("/media") || /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)) {
-      await handleMediaRoutes(req, res);
-      return;
-    }
+    // ───────────────────────────────────────────────
+    // Avatar endpoints
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
+      const id = pathname.split("/")[2];
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_listener_id" }));
+        return;
+      }
+      await handleSetListenerAvatar(req, res, Number(id));
+      return;
+    }
 
-    if (pathname.startsWith("/api/soft_delete")) {
-      await handleSoftDeleteRoutes(req, res);
-      return;
-    }
+    if (pathname.startsWith("/artists/") && pathname.endsWith("/avatar")) {
+      const id = pathname.split("/")[2];
+      if (!/^\d+$/.test(id)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "invalid_artist_id" }));
+        return;
+      }
+      await handleSetArtistAvatar(req, res, Number(id));
+      return;
+    }
 
-    if (pathname.startsWith("/listeners/") && pathname.endsWith("/avatar")) {
-      const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "invalid_listener_id" }));
-        return;
-      }
-      await handleSetListenerAvatar(req, res, Number(id));
-      return;
-    }
+    // ───────────────────────────────────────────────
+    // Listener + Artist profile routes
+    // ───────────────────────────────────────────────
+    if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
+    if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
+    if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
 
-    if (pathname.startsWith("/artists/") && pathname.endsWith("/avatar")) {
-      const id = pathname.split("/")[2];
-      if (!/^\d+$/.test(id)) {
-        res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "invalid_artist_id" }));
-        return;
-      }
-      await handleSetArtistAvatar(req, res, Number(id));
-      return;
-    }
+    // ───────────────────────────────────────────────
+    // Plays + Login
+    // ───────────────────────────────────────────────
+    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
+    if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
 
-    // ───────────────────────────────────────────────
-    // Listener + Artist profile routes
-    // ───────────────────────────────────────────────
-    if (/^\/listeners\/\d+\/profile$/.test(pathname)) { await handleListenerProfile(req, res); return; }
-    if (/^\/listeners\/\d+\/favorite-artists(?:\/.*)?$/.test(pathname)) { await handleListenerFavoriteArtist(req, res); return; }
-    if (/^\/artists\/\d+\/(profile|about|top-tracks|discography)$/.test(pathname)) { await handleArtistProfileRoutes(req, res); return; }
-    
-    if (pathname.startsWith("/achievements/listener/")) {
-      req.url = pathname.replace("/achievements", "");
-      await handleAchievements(req, res);
-     return;
-    }
-    // ───────────────────────────────────────────────
-    // Plays + Login
-    // ───────────────────────────────────────────────
-    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
-    if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
+    // ───────────────────────────────────────────────
+    // Likes + Pins (songs + artists join table)
+    // ───────────────────────────────────────────────
+    if (
+      pathname.startsWith("/songs/status") ||
+      pathname.startsWith("/likes") ||
+      pathname.startsWith("/pin") || // legacy song pin
+      /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
+      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)            // ✅ add this
+    ) {
+      await handleLikesPins(req, res);
+      return;
+    }
+    
 
-    // ───────────────────────────────────────────────
-    // Likes + Pins (songs + artists join table)
-    // ───────────────────────────────────────────────
-    if (
-      pathname.startsWith("/songs/status") ||
-      pathname.startsWith("/likes") ||
-      pathname.startsWith("/pin") || // legacy song pin
-      /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
-      /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)
-    ) {
-      await handleLikesPins(req, res);
-      return;
-    }
-    
+    // ───────────────────────────────────────────────
+    // Search
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/search")) { await handleSearchRoutes(req, res); return; }
 
-    if (pathname.startsWith("/search")) { await handleSearchRoutes(req, res); return; }
-
+    // ───────────────────────────────────────────────
+    // Resource routers
+    // ───────────────────────────────────────────────
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
     if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
@@ -198,17 +193,17 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/analytics/admin")) { await handleAdminAnalyticsRoutes(req, res); return; }
     if (pathname === "/users/recent") { await handleRecentUsersRoutes(req, res); return; }
 
-    // ───────────────────────────────────────────────
-    // Fallback
-    // ───────────────────────────────────────────────
-    res.writeHead(404, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Endpoint not found" }));
+    // ───────────────────────────────────────────────
+    // Fallback
+    // ───────────────────────────────────────────────
+    res.writeHead(404, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Endpoint not found" }));
 
-  } catch (e) {
-    console.error("Server error:", e);
-    res.writeHead(500, { "Content-Type": "application/json" });
-    res.end(JSON.stringify({ error: "Server error" }));
-  }
+  } catch (e) {
+    console.error("Server error:", e);
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({ error: "Server error" }));
+  }
 });
 
-server.listen(PORT, "0.0.0.0", () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
