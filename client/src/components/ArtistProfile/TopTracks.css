@@ -40,6 +40,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .adCard__label {

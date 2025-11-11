@@ -1,6 +1,6 @@
 import db from "../db.js";
 
-const STREAM_MS_THRESHOLD = 0; // e.g., 30000 in prod
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
 
 export async function handlePlayRoutes(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -155,6 +155,33 @@ export async function handlePlayRoutes(req, res) {
       );
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ artistId, totalStreams: Number(row?.TotalStreams || 0) }));
+      return;
+    }
+
+    // GET /plays/artist-monthly-listeners?artistId=###
+    if (pathname === "/plays/artist-monthly-listeners" && method === "GET") {
+      const artistId = Number(url.searchParams.get("artistId"));
+      if (!Number.isFinite(artistId)) {
+        res.writeHead(400, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "artistId query param is required" }));
+        return;
+      }
+      const [[row]] = await db.query(
+        `SELECT COUNT(DISTINCT p.ListenerID) AS MonthlyListeners
+           FROM Play p
+           JOIN Song s ON s.SongID = p.SongID
+           JOIN Song_Artist sa ON sa.SongID = s.SongID
+          WHERE sa.ArtistID = ?
+            AND p.IsDeleted = 0
+            AND s.IsDeleted = 0
+            AND COALESCE(sa.IsDeleted, 0) = 0
+            AND p.MsPlayed >= ?
+            AND YEAR(p.PlayedAt) = YEAR(CURDATE())
+            AND MONTH(p.PlayedAt) = MONTH(CURDATE())`,
+        [artistId, STREAM_MS_THRESHOLD]
+      );
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ artistId, monthlyListeners: Number(row?.MonthlyListeners || 0) }));
       return;
     }
 

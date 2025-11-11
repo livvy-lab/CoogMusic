@@ -80,7 +80,8 @@ export default function RecommendedSongs() {
     : [];
 
   useEffect(() => {
-    setVisibleIds(uniqueSongs.map(s => s.SongID).filter(Boolean));
+    // ensure visible IDs are numeric to match provider expectations
+    setVisibleIds(uniqueSongs.map(s => Number(s.SongID)).filter(id => Number.isFinite(id) && id > 0));
   }, [uniqueSongs]);
 
   const totalSlots = 3;

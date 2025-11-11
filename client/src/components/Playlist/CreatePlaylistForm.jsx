@@ -7,6 +7,9 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState(null);
+  const [coverFile, setCoverFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [playlistCount, setPlaylistCount] = useState(null);
 
@@ -30,7 +33,9 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         const r = await fetch(`${API_BASE_URL}/listeners/${listenerId}/playlists`);
         if (r.ok) {
           const data = await r.json();
-          if (mounted) setPlaylistCount(Array.isArray(data) ? data.length : 0);
+          // count only public playlists for the free-account limit
+          const publicCount = Array.isArray(data) ? data.filter(p => Number(p.IsPublic) === 1).length : 0;
+          if (mounted) setPlaylistCount(publicCount);
         }
       } catch (e) {
         // ignore
@@ -56,28 +61,88 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
       }
     }
 
-    const res = await fetch(`${API_BASE_URL}/playlists`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ListenerID: listenerId,
-        Name: name,
-        Description: description,
-        IsPublic: isPublic,
-      }),
-    });
+    try {
+      let mediaId = null;
 
-    if (!res.ok) {
-      const data = await res.json();
-      setError(data.error || "Failed to create playlist");
-      return;
+      // If user selected a cover image, upload it first
+      if (coverFile) {
+        setUploading(true);
+  const fd = new FormData();
+  // use the same field name as profile avatar uploads ('file') for consistency
+  fd.append("file", coverFile);
+        const up = await fetch(`${API_BASE_URL}/media`, {
+          method: "POST",
+          body: fd,
+        });
+        if (!up.ok) {
+          const txt = await up.text().catch(() => "");
+          throw new Error(`Image upload failed: ${up.status} ${txt}`);
+        }
+        const ju = await up.json();
+        mediaId = ju.mediaId || ju.media_id || ju.mediaID || ju.media_id || null;
+        setUploading(false);
+      }
+
+      // Create playlist as before
+      const res = await fetch(`${API_BASE_URL}/playlists`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ListenerID: listenerId,
+          Name: name,
+          Description: description,
+          IsPublic: isPublic,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to create playlist");
+      }
+
+      const newPlaylist = await res.json();
+
+      // If we uploaded an image, associate it with the new playlist.
+      // Make this atomic: if association fails, delete the created playlist.
+      if (mediaId && newPlaylist?.PlaylistID) {
+        try {
+          const assoc = await fetch(`${API_BASE_URL}/playlists/${newPlaylist.PlaylistID}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cover_media_id: mediaId }),
+          });
+          if (!assoc.ok) {
+            // rollback: delete the newly created playlist
+            await fetch(`${API_BASE_URL}/playlists/${newPlaylist.PlaylistID}`, { method: "DELETE" });
+            throw new Error("Failed to attach cover to new playlist; playlist creation rolled back.");
+          }
+          newPlaylist.cover_media_id = mediaId;
+        } catch (e) {
+          setUploading(false);
+          throw e;
+        }
+      }
+
+      onCreated?.(newPlaylist);
+      // update local public playlist count so the UI enforces the limit immediately
+      try {
+        if (newPlaylist && (newPlaylist.IsPublic === undefined || Number(newPlaylist.IsPublic) === 1)) {
+          setPlaylistCount(prev => (typeof prev === 'number' ? prev + 1 : prev));
+        }
+      } catch (e) {}
+      setName("");
+      setDescription("");
+      setIsPublic(true);
+      setCoverFile(null);
+  if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (e) {} }
+  setPreviewUrl(null);
+  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist created', type: 'success' } })); } catch (e) {}
+  if (mediaId) { try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Cover uploaded', type: 'success' } })); } catch (e) {} }
+      setUploading(false);
+    } catch (err) {
+      setUploading(false);
+      setError(err.message || String(err));
     }
-
-    const newPlaylist = await res.json();
-    onCreated?.(newPlaylist);
-    setName("");
-    setDescription("");
-    setIsPublic(true);
   }
 
   return (
@@ -100,6 +165,36 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         required
       />
 
+      <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+        Cover image (optional)
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => {
+            const f = e.target.files?.[0] ?? null;
+            setCoverFile(f);
+            if (f) {
+              try {
+                const url = URL.createObjectURL(f);
+                setPreviewUrl(url);
+              } catch (e) {
+                setPreviewUrl(null);
+              }
+            } else {
+              if (previewUrl) { URL.revokeObjectURL(previewUrl); }
+              setPreviewUrl(null);
+            }
+          }}
+        />
+      </label>
+
+      {previewUrl && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <img src={previewUrl} alt="cover preview" style={{ width: 96, height: 96, objectFit: 'cover', borderRadius: 8, border: '2px solid #895674' }} />
+          <button type="button" onClick={() => { setCoverFile(null); if (previewUrl) { URL.revokeObjectURL(previewUrl); } setPreviewUrl(null); }}>Remove</button>
+        </div>
+      )}
+
       <textarea
         placeholder="Description (optional)"
         value={description}
@@ -117,7 +212,7 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         </select>
       </label>
 
-      <button type="submit">Create</button>
+      <button type="submit" disabled={uploading}>{uploading ? "Uploading…" : "Create"}</button>
       {error && <p style={{ color: "red" }}>{error}</p>}
     </form>
   );

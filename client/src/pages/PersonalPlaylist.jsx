@@ -16,7 +16,7 @@ export default function MyPlaylistsPage() {
         listenerId={listenerId}
         onCreated={(newPlaylist) => {
           console.log("✅ Created playlist:", newPlaylist);
-          // Optional: reload PlaylistGrid if needed
+          try { window.dispatchEvent(new CustomEvent('playlistCreated', { detail: newPlaylist })); } catch (e) {}
         }}
       />
 

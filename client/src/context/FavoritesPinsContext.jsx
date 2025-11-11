@@ -12,7 +12,11 @@ export function FavoritesPinsProvider({ children }) {
     try {
       const u = getUser();
       const listenerId = u?.listenerId ?? u?.ListenerID;
-      if (!listenerId) return;
+      console.log('🔍 [FavoritesPins] Hydrate called:', { listenerId, ids });
+      if (!listenerId) {
+        console.log('❌ [FavoritesPins] No listenerId, skipping hydrate');
+        return;
+      }
 
       const idsParam = Array.isArray(ids) ? ids.filter(Boolean) : [];
       const qs = new URLSearchParams({
@@ -20,37 +24,75 @@ export function FavoritesPinsProvider({ children }) {
         ...(idsParam.length ? { ids: idsParam.join(",") } : {}),
       });
 
-  const r = await fetch(`${API_BASE_URL}/songs/status?${qs.toString()}`);
-      if (!r.ok) return;
+      const url = `${API_BASE_URL}/songs/status?${qs.toString()}`;
+      console.log('🔍 [FavoritesPins] Fetching:', url);
+      const r = await fetch(url);
+      if (!r.ok) {
+        console.log('❌ [FavoritesPins] Fetch failed:', r.status);
+        return;
+      }
       const j = await r.json();
-      setFavoriteIds(new Set(j.favorites || []));
-      setPinnedSongId(j.pinnedSongId ?? null);
-    } catch {}
+      console.log('✅ [FavoritesPins] Hydrate response:', j);
+      // normalize favorites to numbers to avoid string/number mismatch
+      const favs = Array.isArray(j.favorites) ? j.favorites.map(x => Number(x)).filter(Boolean) : [];
+      console.log('✅ [FavoritesPins] Setting favoriteIds:', favs);
+      setFavoriteIds(new Set(favs));
+      setPinnedSongId(j.pinnedSongId ? Number(j.pinnedSongId) : null);
+    } catch (e) {
+      console.error('❌ [FavoritesPins] Hydrate error:', e);
+    }
   }
 
   function setVisibleIds(ids) {
-    visibleIdsRef.current = Array.from(new Set((ids || []).filter(Boolean)));
-    hydrate(visibleIdsRef.current);
+    const normalized = Array.from(new Set((ids || []).filter(Boolean).map(x => Number(x)).filter(n => Number.isFinite(n) && n > 0)));
+    // Only hydrate if the IDs actually changed
+    const prev = visibleIdsRef.current;
+    const prevStr = (prev || []).join(",");
+    const nextStr = normalized.join(",");
+    if (prevStr !== nextStr) {
+      try { console.debug('FavoritesPins: setVisibleIds called with', normalized); } catch (e) {}
+      visibleIdsRef.current = normalized;
+      hydrate(normalized);
+    }
   }
 
   async function toggleFavorite(songId) {
     if (!songId) return;
     const u = getUser();
     const listenerId = u?.listenerId ?? u?.ListenerID;
+    console.log('🎵 [FavoritesPins] toggleFavorite called:', { songId, user: u, listenerId });
     if (!listenerId) return;
 
-    const has = favoriteIds.has(songId);
-    setFavoriteIds(prev => {
-      const next = new Set(prev);
-      has ? next.delete(songId) : next.add(songId);
-      return next;
-    });
+    const sid = Number(songId);
+    if (!Number.isFinite(sid) || sid <= 0) return;
 
-  fetch(`${API_BASE_URL}/likes`, {
-      method: has ? "DELETE" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listenerId, songId }),
-    }).catch(() => {});
+    try {
+      // Use the same server toggle endpoint the player uses so we get authoritative liked state
+      console.log(`🎵 [FavoritesPins] Sending toggle request to: /listeners/${listenerId}/liked_songs/toggle`);
+      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ songId: sid }),
+      });
+      console.log('🎵 [FavoritesPins] Response status:', res.status, res.ok);
+      if (!res.ok) throw new Error('toggle-failed');
+      const data = await res.json();
+      console.log('🎵 [FavoritesPins] Response data:', data);
+
+      // update local Set based on authoritative response
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        if (data && data.liked) next.add(sid); else next.delete(sid);
+        return next;
+      });
+
+      try { window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: sid, liked: !!data.liked } })); } catch (e) {}
+      return !!data.liked;
+    } catch (err) {
+      // on error, don't change local set; rethrow or return undefined
+      console.error('❌ [FavoritesPins] toggleFavorite error', err);
+      return null;
+    }
   }
 
   async function togglePin(songId) {

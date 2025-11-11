@@ -86,12 +86,43 @@
   flex-shrink: 0;
 }
 
+.pl__coverWrap {
+  /* enforce square container so cover always fills the same area */
+  aspect-ratio: 1 / 1;
+  overflow: hidden; /* clip any overflowing image */
+  padding: 0; /* remove inner padding so image sits flush with the border */
+  box-sizing: border-box;
+}
+
 .pl__cover {
   width: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 10px;
+  height: 100%;
+  border-radius: 10px; /* match inner radius so image meets wrapper border nicely */
   object-fit: cover;
   display: block;
+}
+
+/* Special liked cover: dark purple with centered white heart */
+.pl__cover--liked {
+  /* Match the exact gradient used on the Liked Songs playlist page
+     Do NOT add an extra border here — the .pl__coverWrap already provides the card border.
+     Make this element fill the inner area so the gradient lines up with the wrapper. */
+  background: linear-gradient(135deg, #D7A1D7, #5E2750);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 64px;
+  font-weight: 700;
+  border-radius: 10px; /* match .pl__cover inner radius so it sits flush */
+}
+.pl__cover--liked::before {
+  content: "❤";
+  font-size: 96px;
+  line-height: 1;
+  color: #fff;
 }
 
 /* Text */

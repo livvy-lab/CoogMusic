@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Play, Shuffle, Clock3, Heart } from "lucide-react";
+import { Play, Shuffle, Clock3, Heart, Pencil } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
 import "./PlaylistRowOverrides.css"; // minimal, playlist-scoped layout tweaks
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
+import EditPlaylistModal from "../components/Playlist/EditPlaylistModal";
 
 
 
@@ -15,7 +16,9 @@ export default function PlaylistPage() {
   const { id } = useParams(); // read playlist ID from URL
   const [tracks, setTracks] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
+  const [coverUrl, setCoverUrl] = useState(null);
   const { playList, playSong, playShuffled } = usePlayer();
+  const [editing, setEditing] = useState(false);
 
   // fetch playlist metadata
   async function fetchPlaylistInfo() {
@@ -23,6 +26,20 @@ export default function PlaylistPage() {
     if (res.ok) {
       const data = await res.json();
       setPlaylistInfo(data);
+      // resolve cover media id to a usable URL if present
+      if (data?.cover_media_id) {
+        try {
+          const m = await fetch(`${API_BASE_URL}/media/${data.cover_media_id}`);
+          if (m.ok) {
+            const mj = await m.json();
+            setCoverUrl(mj?.url || null);
+          }
+        } catch (e) {
+          // ignore
+        }
+      } else {
+        setCoverUrl(null);
+      }
     }
   }
 
@@ -56,6 +73,32 @@ export default function PlaylistPage() {
     fetchPlaylistTracks();
   }, [id]);
 
+  // Listen for cover updates made elsewhere and refresh header if needed
+  useEffect(() => {
+    function onCoverUpdated(e) {
+      const d = e?.detail;
+      if (!d || !playlistInfo) return;
+      if (Number(d.PlaylistID) !== Number(playlistInfo.PlaylistID)) return;
+      if (!d.cover_media_id) {
+        setCoverUrl(null);
+        setPlaylistInfo(prev => prev ? { ...prev, cover_media_id: null } : prev);
+        return;
+      }
+      (async () => {
+        try {
+          const m = await fetch(`${API_BASE_URL}/media/${d.cover_media_id}`);
+          if (!m.ok) return;
+          const mj = await m.json();
+          setCoverUrl(mj?.url || null);
+          setPlaylistInfo(prev => prev ? { ...prev, cover_media_id: d.cover_media_id } : prev);
+        } catch (e) {}
+      })();
+    }
+
+    window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    return () => window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+  }, [playlistInfo]);
+
   // Play the whole playlist
   function handlePlayAll() {
     if (!tracks || tracks.length === 0) return;
@@ -76,7 +119,14 @@ export default function PlaylistPage() {
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
             <div className="likedCoverCircle">
-              <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              {playlistInfo?.IsLikedSongs ? (
+                <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              ) : (
+                // show cover image when available; otherwise leave the gradient background
+                coverUrl ? (
+                  <img src={coverUrl} alt="Playlist Cover" className="playlistCoverImg" />
+                ) : null
+              )}
             </div>
 
             <div className="likedHeaderText">
@@ -99,8 +149,29 @@ export default function PlaylistPage() {
             <button className="shuffleButton" aria-label="Shuffle" onClick={handleShuffleAll}>
               <Shuffle size={24} />
             </button>
+            {/* Edit button: shows modal to rename playlist, change cover and remove songs */}
+            <button className="playlistEditBtn" aria-label="Edit playlist" onClick={() => setEditing(true)} title="Edit playlist">
+              <Pencil size={22} color="#782355" strokeWidth={1.6} />
+            </button>
           </div>
         </section>
+
+        {editing && playlistInfo && (
+          <EditPlaylistModal
+            playlist={playlistInfo}
+            tracks={tracks}
+            onClose={() => setEditing(false)}
+            onUpdated={(updatedPlaylist, updatedTracks) => {
+              // update local state
+              setPlaylistInfo(prev => prev ? { ...prev, ...updatedPlaylist } : prev);
+              if (Array.isArray(updatedTracks)) setTracks(updatedTracks);
+              // notify other components (playlist grid) about the update
+              try {
+                window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { ...updatedPlaylist } }));
+              } catch (e) {}
+            }}
+          />
+        )}
 
         <section className="albumCard listCard">
           <div className="likedTableHeader">
@@ -120,8 +191,19 @@ export default function PlaylistPage() {
                 className="likedRow"
                 role="button"
                 tabIndex={0}
-                onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
-                onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                onClick={() => {
+                  // set full playlist queue so player next/prev work
+                  try {
+                    const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                    if (list.length > 0) { playList(list, i); return; }
+                  } catch (e) {}
+                  playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                }}
+                onKeyDown={(e) => { if (e.key === 'Enter') {
+                  const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                  if (list.length > 0) { playList(list, i); return; }
+                  playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                } }}
               >
                 <div className="col-num">{i + 1}</div>
                 <div className="col-title">

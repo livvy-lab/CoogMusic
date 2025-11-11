@@ -7,7 +7,7 @@
 
 /* Header Section */
 .buyads-header {
-  background: linear-gradient(135deg, rgba(255, 192, 255, 0.6), rgba(255, 192, 255, 0.4));
+  background: #FFE8F5;
   padding: 2.5rem 2rem;
   border-radius: 20px;
   text-align: center;
@@ -33,12 +33,13 @@
 .buyads-form-container {
   background: rgba(255, 255, 255, 0.7);
   padding: 3rem 2.5rem 2rem;
-  padding-bottom: 140px;
+  padding-bottom: 140px; /* reserve room for decorations */
   border-radius: 20px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
   position: relative;
   backdrop-filter: blur(10px);
-  height: 350px;
+  /* Allow content to determine height so the button sits below the textarea */
+  height: auto;
 }
 
 /* Form Styling */
@@ -123,12 +124,16 @@ form {
 .upload-button {
   background: #5a8fc4 !important;
   padding: 0.75rem 1rem;
-  border: 4px solid #8b5a8b !important;
+  /* use outline to draw dotted line outside the box */
+  border: none !important;
   border-radius: 15px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(126, 179, 232, 0.3);
+  /* dotted outline outside and touching the outer edge */
+  outline: 2.5px dotted #8b5a8b;
+  outline-offset: 0;
 }
 
 .upload-button:hover {
@@ -144,6 +149,9 @@ form {
   cursor: pointer;
   display: block;
 }
+
+/* dotted outline outside the upload box, touching the outer edge */
+/* Note: outline sits outside the element without affecting layout. If you prefer a slight gap, increase outline-offset (e.g., 2px). */
 
 .file-name {
   font-size: 0.85rem;
@@ -196,18 +204,17 @@ form {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 3px 10px rgba(162, 106, 161, 0.3);
-  position: absolute;
-  bottom: 200px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 10;
+  /* place it naturally below the message textarea */
+  position: static;
+  align-self: center;
   width: auto;
-  max-width: 150px;
+  max-width: 220px;
+  margin-top: 0.25rem;
 }
 
 .submit-button:hover:not(:disabled) {
   background-color: #a26aa1;
-  transform: translate(-50%, -2px);
+  transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(162, 106, 161, 0.4);
 }
 

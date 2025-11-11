@@ -9,7 +9,16 @@ const linkFor = {
   song: (r) => "#",
   artist: (r) => `/artist/${r.id}`,
   album: (r) => "#",
-  playlist: (r) => `/playlist/${r.id}`,
+  // If the playlist object represents the special "Liked Songs" collection,
+  // route to the dedicated liked songs page. Fall back to the regular
+  // /playlist/:id route for normal playlists.
+  playlist: (r) => {
+    // backend may mark this with IsLikedSongs or similar; also accept a title match
+    if (r?.IsLikedSongs || r?.isLikedSongs || r?.is_liked_songs || (r?.title || "").toLowerCase() === "liked songs") {
+      return `/likedsongs`;
+    }
+    return `/playlist/${r.id}`;
+  },
   listener: (r) => `/listeners/${r.id}`,
 };
 
@@ -158,9 +167,18 @@ function Row({ r, to, playSong }) {
         width: 56, height: 56,
         background: "#e9d2df",
         borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
-        display: "grid", placeItems: "center", fontWeight: 700
+        display: "grid", placeItems: "center", fontWeight: 700,
+        overflow: "hidden",
       }}>
-        {r.type?.[0]?.toUpperCase() || "?"}
+        {r.pfpUrl ? (
+          <img 
+            src={r.pfpUrl} 
+            alt={r.title} 
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
+          />
+        ) : (
+          r.type?.[0]?.toUpperCase() || "?"
+        )}
       </div>
       <div style={{ display: "grid", alignContent: "center" }}>
         <div style={{ fontWeight: 700 }}>{r.title}</div>
@@ -221,9 +239,18 @@ function BigCard({ r, to, playSong }) {
       width: 96, height: 96,
       background: "#e9d2df",
       borderRadius: r.type === "artist" || r.type === "listener" ? "9999px" : "12px",
-      display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24
+      display: "grid", placeItems: "center", fontWeight: 800, fontSize: 24,
+      overflow: "hidden",
     }}>
-      {r.type?.[0]?.toUpperCase() || "?"}
+      {r.pfpUrl ? (
+        <img 
+          src={r.pfpUrl} 
+          alt={r.title} 
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+        />
+      ) : (
+        r.type?.[0]?.toUpperCase() || "?"
+      )}
     </div>
   );
 

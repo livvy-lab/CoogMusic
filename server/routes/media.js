@@ -33,6 +33,41 @@ export async function handleMediaRoutes(req, res) {
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
   try {
+    // GET /media/:id → return media record (url). Supports signed S3 links when applicable.
+    if (/^\/media\/\d+$/.test(pathname) && method === "GET") {
+      const id = Number(pathname.split("/").pop());
+      console.log(`[media] GET /media/${id}`);
+      const [rows] = await db.query("SELECT MediaID, storage_provider, bucket, s3_key, url, mime FROM Media WHERE MediaID = ?", [id]);
+      console.log(`[media] DB rows for MediaID=${id}:`, rows && rows.length ? rows[0] : null);
+      if (!rows.length) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Media not found" }));
+        return;
+      }
+      const row = rows[0];
+      if (row.bucket && row.s3_key) {
+        try {
+          const signed = await getSignedUrl(
+            s3,
+            new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key }),
+            { expiresIn: 3600 }
+          );
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ mediaId: row.MediaID, url: signed, mime: row.mime }));
+          return;
+        } catch (e) {
+          // fallback to canonical url if signing fails
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ mediaId: row.MediaID, url: row.url, mime: row.mime }));
+          return;
+        }
+      }
+
+      // local storage or legacy url
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ mediaId: row.MediaID, url: row.url, mime: row.mime }));
+      return;
+    }
     // POST /media (upload image) - supports both S3 and local paths
     if (pathname === "/media" && method === "POST") {
       if (!BUCKET || !process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID) {
@@ -41,6 +76,7 @@ export async function handleMediaRoutes(req, res) {
           destDir: "uploads/images",
           allowed: ["image/png", "image/jpeg", "image/webp"]
         });
+        console.log('[media] parseMultipart result (local):', { fields, files });
         
         const image = files.image || files.file || files.upload;
         if (!image?.filepath) {
@@ -69,6 +105,7 @@ export async function handleMediaRoutes(req, res) {
       const { fields, files } = await parseMultipart(req, {
         allowed: ["image/png", "image/jpeg", "image/webp"]
       });
+      console.log('[media] parseMultipart result (s3):', { fields, files });
 
       const image = files.image || files.file || files.upload;
       if (!image?.filepath) {
@@ -225,6 +262,50 @@ export async function handleMediaRoutes(req, res) {
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
       });
+      return;
+    }
+
+    if (/^\/media\/\d+\/signed-url$/.test(pathname) && method === "GET") {
+      const id = Number(pathname.split("/")[2]);
+      
+      const [rows] = await db.query(
+        `SELECT bucket, s3_key, storage_provider, url AS localUrl FROM Media WHERE MediaID = ?`,
+        [id]
+      );
+
+      if (!rows.length) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Media not found" }));
+        return;
+      }
+
+      const row = rows[0];
+
+      // handle local fallback
+      if (row.storage_provider === 'local') {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ url: row.localUrl })); // Send the local path
+        return;
+      }
+
+      // handle S3
+      if (row.storage_provider === 'aws-s3') {
+        if (!row.bucket || !row.s3_key) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Media has no S3 info" }));
+          return;
+        }
+        const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
+        const url = await getSignedUrl(s3, cmd, { expiresIn: 900 }); // 15-minute link
+
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ url: url }));
+        return;
+      }
+      
+      // fallback for unknown provider
+      res.writeHead(4404, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: "Media has no valid URL" }));
       return;
     }
 

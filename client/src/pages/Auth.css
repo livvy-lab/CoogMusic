@@ -1,250 +1,389 @@
-:root{
-    --bg:#e8c9d8;
-    --card:#f4dce6;
-    --card-border:#b07c97;
-    --shadow:rgba(75,44,61,.25);
-    --input:#ece7ea;
-    --input-border:#b68aa2;
-    --text:#4b2c3d;
-    --accent:#895674;
-    --white:#fff;
-    --chip:#e1b2c6;
-  }
-  
-  .authShell{
-    position:relative;
-    min-height:100vh;
-    background:var(--bg);
-    display:grid;
-    place-items:center;
-    overflow:hidden;            /* keep background art clipped to viewport */
-  }
-  
-  /* ===== Background art: BEHIND the cards (z-index layering) ===== */
-  .bg{
-    position:absolute;
-    pointer-events:none;
-    user-select:none;
-    opacity:.98;
-    z-index:0;                  /* << behind the card */
-  }
-  
-  /* Match Figma placement: records smaller, pushed to corners */
-  .bg-left-record{
-    left:-22%;
-    bottom:-24%;
-    width:min(56vw,640px);
-  }
-  .bg-right-record{
-    right:-14%;
-    top:-6%;
-    width:min(44vw,520px);
-  }
-  
-  /* Earbuds bigger but still background */
-  .bg-earbuds{
-    top:6%;
-    left:9%;
-    width:min(36vw,420px);
-    opacity:.95;
-  }
-  
-  .authCard {
-    position: relative;
-    z-index: 1;
-    width: min(980px, 94vw);        /* same as authCardLarge */
-    background: var(--card);
-    border: 3px solid var(--card-border);
-    border-radius: 18px;
-    box-shadow: 0 14px 0 #7e576b, 0 22px 60px var(--shadow);
-    padding: 26px 30px 18px;        /* same internal spacing as registration card */
-    color: var(--text);
-    display: grid;
-    row-gap: 14px;
-  }
-  
-  
-  .authCardLarge{
-    width:min(980px,94vw);
-    padding:26px 30px 18px;
-  }
-  
-  /* Header block */
-  .authTitleBlock{
-    background:#e9b7ca;
-    border:2px solid var(--card-border);
-    border-radius:12px;
-    text-align:center;
-    padding:12px 12px;
-    line-height:1.05;
-  }
-  .authTitle{font-size:30px}
-  .authSubtitle{font-size:16px;opacity:.9}
-  .authBrand{font-size:24px;font-weight:700;letter-spacing:.5px}
-  
-  /* ===== Inputs: smaller heights to prevent collision ===== */
-  .authForm{display:grid;row-gap:10px}
-  
-  .authInput{
-    width:100%;
-    background:var(--input);
-    border:2px solid var(--input-border);
-    border-radius:10px;
-    height:32px;                /* << reduced height */
-    padding:0 12px;
-    font-size:13.5px;           /* << slightly smaller text */
-    color:var(--text);
-    outline:none;
-    box-sizing:border-box;       /* << prevents overflow math */
-  }
-  
-  /* Login button and link row */
-  .authBtn{border:none;border-radius:12px;padding:9px 16px;font-weight:600;cursor:pointer}
-  .authBtnPlay{width:96px;margin:8px auto 0;background:var(--accent);color:var(--white);display:grid;place-items:center}
-  .playIcon{width:0;height:0;border-left:16px solid var(--white);border-top:10px solid transparent;border-bottom:10px solid transparent}
-  
-  .authMeta{
-    margin-top:6px;             /* raise a touch */
-    margin-bottom:2px;
-    text-align:center;          /* center the question + link */
-    font-size:14px;
-  }
-  .authLinkInline{color:var(--accent);text-decoration:none}
-  
-  /* Registration header chip */
-  .authChip{
-    margin:0 auto 6px;
-    background:var(--chip);
-    border:2px solid var(--card-border);
-    border-radius:8px;
-    padding:8px 14px;
-    font-weight:700;
-    letter-spacing:1px;
-    width:fit-content;
-  }
-  
-  /* ===== Registration grid: more column gap + short inputs ===== */
-  .regGrid{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    column-gap:24px;            /* << more space between columns */
-    row-gap:12px;               /* << room between rows */
-    align-items:start;
-  }
-  .regField{display:grid;row-gap:4px;font-size:14px}
-  .regField span{padding-left:2px}
-  .regField .authInput{height:32px} /* << match smaller height */
-  
-  /* Actions row */
-  .regActions{
-    grid-column:1/-1;
-    display:grid;
-    grid-template-columns:1fr auto 1fr;
-    align-items:center;
-    gap:10px;
-    margin-top:8px;
-  }
-  .authBtnGhost{justify-self:start;background:var(--accent);color:var(--white);opacity:.9}
-  .authBtnChip{justify-self:center;background:#c6c8f7;color:#514f7d;border-radius:999px;padding:8px 16px}
-  .authBtnPrimary{justify-self:end;background:var(--accent);color:var(--white)}
-  
-  /* ===== Responsive tweaks ===== */
-  @media (max-width:980px){
-    .bg-left-record{left:-20%;bottom:-20%;width:100vw}
-    .bg-right-record{right:-20%;top:-8%;width:100vw}
-    .bg-earbuds{left:6%;width:100vw}
-  }
-  @media (max-width:640px){
-    .regGrid{grid-template-columns:1fr}
-    .regActions{grid-template-columns:1fr;gap:10px}
-  }
-  
-  /* Frame dimensions (put your real Figma frame size) */
+:root {
+  --bg: #e8c9d8;
+  --card: #FFE8F5;
+  --card-border: #895674;
+  --shadow: rgba(75, 44, 61, .25);
+  --input: #F2F2F2;
+  --input-border: #895674;
+  --text: #895674;
+  --text-light: #FFEEF8;
+  --text-placeholder: #CA91B4;
+  --accent: #AD7D9B;
+  --accent-light: #ECAFD2;
+  --white: #F2F2F2;
+  --chip: #e1b2c6;
+}
+
 .authShell {
-    --F-W: 1280;  /* frame width  */
-    --F-H: 800;   /* frame height */
-    --sx: calc(100vw / var(--F-W));
-    --sy: calc(100vh / var(--F-H));
-    --s: min(var(--sx), var(--sy));           /* scale uniformly like Figma */
-  }
-  
-  /* All bg art stays behind the card */
-  .bg { position: absolute; z-index: 0; pointer-events: none; user-select: none; }
-  
-  /* === Fill these constants with your Figma numbers === */
-  /* Right record */
-  :root {
-    --R-W: 540;   /* right record width in Figma px */
-    --R-X: 1040;  /* right record X from left of frame */
-    --R-Y: -40;   /* right record Y from top of frame (can be negative) */
-  
-    --L-W: 680;   /* left record width */
-    --L-X: -280;  /* left record X (negative if off canvas) */
-    --L-Y: 1100;  /* if you're using bottom anchor, see note below */
-  
-    --E-W: 520;   /* earbuds width */
-    --E-X: 110;   /* earbuds X */
-    --E-Y: 60;    /* earbuds Y */
-  }
-  
-  /* Position using Figma's X/Y as top-left anchors */
-  .bg-right-record {
-    width: calc(var(--R-W) * var(--s));
-    left:  calc(var(--R-X) * var(--s));
-    top:   calc(var(--R-Y) * var(--s));
-  }
+  position: relative;
+  min-height: 100vh;
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: 'Fira Code', monospace;
+}
+
+.bg {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  opacity: .98;
+  z-index: 0;
+}
+
+.bg-left-record {
+  left: -22%;
+  bottom: -24%;
+  width: min(56vw, 640px);
+}
+
+.bg-right-record {
+  right: -14%;
+  top: -6%;
+  width: min(44vw, 520px);
+}
+
+.bg-earbuds {
+  top: 6%;
+  left: 9%;
+  width: min(36vw, 420px);
+  opacity: .95;
+}
+
+.authCard {
+  position: relative;
+  z-index: 1;
+  width: min(556px, 94vw);
+  background: var(--card);
+  border: 5px solid var(--card-border);
+  border-radius: 20px;
+  box-shadow: none;
+  padding: 30px;
+  color: var(--text);
+  display: grid;
+  row-gap: 20px;
+  font-family: 'Fira Code', monospace;
+}
+
+.authCardLarge {
+  width: min(980px, 94vw);
+  padding: 26px 30px 18px;
+}
+
+.authTitleBlock {
+  background: var(--accent-light);
+  border: 5px solid var(--card-border);
+  border-radius: 10px;
+  text-align: center;
+  padding: 20px 12px;
+  line-height: 1.2;
+}
+
+.authTitle {
+  font-size: 36px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.authSubtitle {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 1;
+}
+
+.authBrand {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  color: var(--text-light);
+}
+
+.authForm {
+  display: grid;
+  row-gap: 20px;
+}
+
+.authInput {
+  width: 100%;
+  background: var(--input);
+  border: 5px solid var(--input-border);
+  border-radius: 20px;
+  height: 78px;
+  padding: 0 25px;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  box-sizing: border-box;
+  font-family: 'Fira Code', monospace;
+}
+
+.authInput::placeholder {
+  color: var(--text-placeholder);
+  font-weight: 600;
+}
+
+.authBtn {
+  border: none;
+  border-radius: 20px;
+  padding: 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.authBtnPlay {
+  width: 162px;
+  height: 63px;
+  margin: 8px auto 0;
+  background: var(--accent);
+  color: var(--white);
+  display: grid;
+  place-items: center;
+  border: 5px solid var(--card-border);
+  border-radius: 20px;
+}
+
+.playIcon {
+  width: 0;
+  height: 0;
+  border-left: 24px solid var(--white);
+  border-top: 15px solid transparent;
+  border-bottom: 15px solid transparent;
+}
+
+.authMeta {
+  margin-top: 10px;
+  margin-bottom: 2px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-placeholder);
+}
+
+.authLinkInline {
+  color: var(--text-placeholder);
+  text-decoration: none;
+}
+
+.authChip {
+  margin: 0 auto 6px;
+  background: var(--chip);
+  border: 2px solid var(--card-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  width: fit-content;
+}
+
+.regGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: start;
+}
+
+.regField {
+  display: grid;
+  row-gap: 4px;
+  font-size: 14px;
+}
+
+.regField span {
+  padding-left: 2px;
+}
+
+.regField .authInput {
+  height: 32px;
+  font-size: 14px;
+  border-width: 2px;
+  border-radius: 10px;
+  padding: 0 12px;
+}
+
+.regActions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.authBtnGhost {
+  justify-self: start;
+  background: var(--accent);
+  color: var(--white);
+  opacity: .9;
+  padding: 9px 16px;
+}
+
+.authBtnChip {
+  justify-self: center;
+  background: #c6c8f7;
+  color: #514f7d;
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+.authBtnPrimary {
+  justify-self: end;
+  background: var(--accent);
+  color: var(--white);
+  padding: 9px 16px;
+}
+
+@media (max-width: 980px) {
   .bg-left-record {
-    width: calc(var(--L-W) * var(--s));
-    left:  calc(var(--L-X) * var(--s));
-    /* If you noted a top Y, use 'top'; if you noted a bottom offset, use 'bottom' */
-    bottom: calc( (var(--F-H) - var(--L-Y)) * var(--s) ); /* uses bottom anchor */
+    left: -20%;
+    bottom: -20%;
+    width: 100vw;
   }
+
+  .bg-right-record {
+    right: -20%;
+    top: -8%;
+    width: 100vw;
+  }
+
   .bg-earbuds {
-    width: calc(var(--E-W) * var(--s));
-    left:  calc(var(--E-X) * var(--s));
-    top:   calc(var(--E-Y) * var(--s));
+    left: 6%;
+    width: 100vw;
   }
-  
-  .fileInputHidden {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    border: 0;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .regGrid {
+    grid-template-columns: 1fr;
   }
-  
-  .fileBtn {
-    cursor: pointer;
-    user-select: none;
-    text-align: center;
-    min-width: 140px;
-    padding: 10px 22px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-    box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
-    transition: transform 0.02s ease, box-shadow 0.2s ease;
+
+  .regActions {
+    grid-template-columns: 1fr;
+    gap: 10px;
   }
-  .fileBtn:hover,
-  .fileBtn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(198, 200, 247, 0.35);
-  }
-  .fileBtn:active {
-    transform: translateY(1px);
-  }
-  
-  .pfpThumb {
-    width: 96px;
-    height: 96px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid var(--card-border);
-    background: var(--white);
-    display: block;
-    margin: 10px auto 0 auto;
-  }
-  
+}
+
+.authShell {
+  --F-W: 1280;
+  --F-H: 800;
+  --sx: calc(100vw / var(--F-W));
+  --sy: calc(100vh / var(--F-H));
+  --s: min(var(--sx), var(--sy));
+}
+
+.bg {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* figma numbers, position using x/y as top-left anchors */
+:root {
+  --R-W: 540;
+  --R-X: 1040;
+  --R-Y: -40;
+
+  --L-W: 680;
+  --L-X: -280;
+  --L-Y: 1100;
+
+  --E-W: 520;
+  --E-X: 110;
+  --E-Y: 60;
+}
+
+.bg-right-record {
+  width: calc(var(--R-W) * var(--s));
+  left: calc(var(--R-X) * var(--s));
+  top: calc(var(--R-Y) * var(--s));
+}
+
+.bg-left-record {
+  width: calc(var(--L-W) * var(--s));
+  left: calc(var(--L-X) * var(--s));
+  bottom: calc((var(--F-H) - var(--L-Y)) * var(--s));
+}
+
+.bg-earbuds {
+  width: calc(var(--E-W) * var(--s));
+  left: calc(var(--E-X) * var(--s));
+  top: calc(var(--E-Y) * var(--s));
+}
+
+.fileInputHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.fileBtn {
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  min-width: 140px;
+  padding: 10px 22px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.05);
+  transition: transform 0.02s ease, box-shadow 0.2s ease;
+}
+
+.fileBtn:hover,
+.fileBtn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(198, 200, 247, 0.35);
+}
+
+.fileBtn:active {
+  transform: translateY(1px);
+}
+
+.pfpThumb {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--card-border);
+  background: var(--white);
+  display: block;
+  margin: 10px auto 0 auto;
+}
+
+.authLinkInline:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.authInputContainer {
+  position: relative;
+  width: 100%;
+}
+
+.authShowPassBtn {
+  position: absolute;
+  top: 50%;
+  right: 25px;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: 40px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  z-index: 2;
+}
+
+.authShowPassBtn:hover {
+  opacity: 1;
+}

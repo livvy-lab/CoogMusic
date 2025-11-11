@@ -1,160 +1,154 @@
 :root {
-    --plum: #895674;
-    --shell: #F6DEE9;
-    --shell-dark: #e8cfe0;
-    --ink: #4b2c3d;
-  }
-  
-  .acctType {
-    width: 100%;
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-  }
-  
-  /* main container panel */
-  .acctType__panel {
-    width: min(960px, 96%);
-    background: var(--shell);
-    border: 4px solid var(--plum);
-    border-radius: 20px;
-    box-shadow: 0 10px 0 #6a3f59;
-    padding-top: clamp(20px, 4vw, 36px);
-    padding-inline: clamp(20px, 4vw, 36px);
-    min-height: 540px;
-  
-    /* flexbox to control vertical layout */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  } 
-  
-  .acctType__badge {
-    width: 220px;
-    margin: 0 auto;
-    text-align: center;
-    border: 4px solid var(--plum);
-    background: var(--shell-dark);
-    border-radius: 12px;
-    font-weight: 700;
-    color: var(--plum);
-    padding: 10px 16px;
-    letter-spacing: 1px;
-  }
-  
-  .acctType__heading {
-    text-align: center;
-    color: var(--ink);
-    font-size: clamp(26px, 3.2vw, 36px);
-    margin: 18px 0 28px;
-  }
-  
-  /* two-button grid */
+  --plum: #895674;
+  --shell: #FFE8F5;
+  --shell-dark: #ECAFD2;
+  --ink: #782355;
+  --text-placeholder: #CA91B4;
+}
+
+.acctType {
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  font-family: 'Fira Code', monospace;
+}
+
+.acctType__panel {
+  width: 1065px;
+  height: 550px;
+  background: var(--shell);
+  border: 5.55px solid var(--plum);
+  border-radius: 22.19px;
+  box-shadow: none;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.acctType__badge {
+  width: 220px;
+  margin: 0 auto;
+  text-align: center;
+  border: 5px solid var(--plum);
+  background: var(--shell-dark);
+  border-radius: 10px;
+  font-weight: 700;
+  color: var(--plum);
+  padding: 20px 12px;
+  font-size: 36px;
+  font-family: 'Fira Code', monospace;
+}
+
+.acctType__heading {
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 48px;
+  width: 1053px;
+  text-align: center;
+  letter-spacing: -0.01em;
+  margin-top: 0;
+  margin-bottom: 32px;
+}
+
+.acctType__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(16px, 3vw, 28px);
+  align-items: start;
+  justify-items: center;
+}
+
+.acctType__svgBtn {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Fira Code', monospace;
+}
+
+.acctType__svgBtn:focus-visible {
+  outline: 3px solid var(--plum);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.acctType__svgBtn:hover {
+  transform: scale(1.05);
+  filter: brightness(1.06);
+}
+
+.acctType__svgBtn:active {
+  transform: scale(0.98);
+  filter: brightness(0.98);
+}
+
+.acctType__svgBtn svg {
+  display: block;
+  width: clamp(220px, 32vw, 300px);
+  height: auto;
+}
+
+.acctType__info {
+  text-align: center;
+  max-width: 34ch;
+}
+
+.acctType__title {
+  font-size: clamp(18px, 2vw, 22px);
+  font-weight: 800;
+  color: var(--plum);
+}
+
+.acctType__blurb {
+  color: var(--ink);
+  opacity: 0.9;
+  font-size: clamp(14px, 1.4vw, 16px);
+  line-height: 1.3;
+}
+
+/* mobile layout */
+@media (max-width: 720px) {
   .acctType__grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: clamp(16px, 3vw, 28px);
-    align-items: start;
-    justify-items: center;
+    grid-template-columns: 1fr;
   }
-  
-  /* SVG buttons */
-  .acctType__svgBtn {
-    -webkit-appearance: none;
-    appearance: none;
-    background: transparent;
-    border: none;
-    padding: 0;
-    margin: 0;
-    box-shadow: none;
-    line-height: 0;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    transition: transform 0.15s ease, filter 0.15s ease;
-  }
-  
-  .acctType__svgBtn::-moz-focus-inner {
-    border: 0;
-    padding: 0;
-  }
-  
-  .acctType__svgBtn:focus-visible {
-    outline: 3px solid var(--plum);
-    outline-offset: 4px;
-    border-radius: 10px;
-  }
-  
-  .acctType__svgBtn:hover {
-    transform: scale(1.05);
-    filter: brightness(1.06);
-  }
-  
-  .acctType__svgBtn:active {
-    transform: scale(0.98);
-    filter: brightness(0.98);
-  }
-  
-  /* SVG sizing */
-  .acctType__svgBtn svg {
-    display: block;
-    width: clamp(220px, 32vw, 300px);
-    height: auto;
-  }
-  
-  /* info text under SVG */
-  .acctType__info {
-    text-align: center;
-    max-width: 34ch;
-  }
-  
-  .acctType__title {
-    font-size: clamp(18px, 2vw, 22px);
-    font-weight: 800;
-    color: var(--plum);
-  }
-  
-  .acctType__blurb {
-    color: var(--ink);
-    opacity: 0.9;
-    font-size: clamp(14px, 1.4vw, 16px);
-    line-height: 1.3;
-  }
-  
-  /* mobile layout */
-  @media (max-width: 720px) {
-    .acctType__grid {
-      grid-template-columns: 1fr;
-    }
-  }
-  
-  .acctType__footer {
-    margin-top: clamp(48px, 6vw, 72px); /* moves it lower in the panel */
-    text-align: center;
-    font-size: clamp(14px, 1.5vw, 16px);
-    color: var(--ink);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  
-  .acctType__footer p {
-    margin: 0;
-  }
-  
-  .acctType__signinLink {
-    color: var(--plum);
-    font-weight: 700;
-    text-decoration: none;
-    border-bottom: 2px solid transparent;
-    transition: color 0.2s ease, border-color 0.2s ease;
-    margin-left: 4px;
-  }
-  
-  .acctType__signinLink:hover {
-    color: #6a3f59;
-    border-color: #6a3f59;
-  }
+}
+
+.acctType__footer {
+  margin-top: 34px;
+  text-align: center;
+  font-family: 'Fira Code', monospace;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-placeholder);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.acctType__footer p {
+  margin: 0;
+}
+
+.acctType__signinLink {
+  color: var(--plum);
+  font-weight: 700;
+  text-decoration: none;
+  font-family: 'Fira Code', monospace;
+  margin-left: 8px;
+}
+
+.acctType__signinLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

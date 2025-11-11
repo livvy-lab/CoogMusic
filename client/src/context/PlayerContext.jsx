@@ -28,6 +28,7 @@ export function PlayerProvider({ children }) {
   const [volume, setVolume] = useState(0.8);
 
   const postedRef = useRef(false);
+  const playThresholdMs = 30000; // 30 seconds
 
   // notify API of play when appropriate
   async function postPlayIfPossible(msOverride) {
@@ -77,15 +78,35 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (!a) return;
 
-    function onLoaded() { setDuration(a.duration || 0); }
-    function onTime() { setCurrentTime(a.currentTime || 0); }
+    function onLoaded() { 
+      setDuration(a.duration || 0);
+      // Reset play posted flag when new song loads
+      postedRef.current = false;
+    }
+    
+    function onTime() { 
+      setCurrentTime(a.currentTime || 0);
+      
+      // Auto-post play when reaching 30 seconds of playback
+      if (!postedRef.current && a.currentTime >= (playThresholdMs / 1000)) {
+        console.log(`Reached ${playThresholdMs / 1000}s threshold, posting play...`);
+        postPlayIfPossible();
+      }
+    }
+    
     function onPlay() { setPlaying(true); }
+    
     function onPause() {
       setPlaying(false);
-      postPlayIfPossible(); // check for achievements
+      // Only post if we've passed the threshold
+      if (a.currentTime >= (playThresholdMs / 1000)) {
+        postPlayIfPossible();
+      }
     }
+    
     function onEnd() {
-      postPlayIfPossible(); // check for achievements
+      // Post play on song end (will have passed threshold if song > 30s)
+      postPlayIfPossible();
       if (queue && queue.length > 0 && currentIndex >= 0 && currentIndex < queue.length - 1) {
         const next = currentIndex + 1;
         setCurrentIndex(next);
@@ -125,6 +146,7 @@ export function PlayerProvider({ children }) {
         ArtistName: data.artistName,
         url: data.url,
         mime: data.mime,
+        CoverURL: data.coverUrl || null,
       });
       const a = audioRef.current;
       if (a) {
@@ -140,8 +162,24 @@ export function PlayerProvider({ children }) {
         ArtistName: song?.ArtistName || "Unknown Artist",
         url: song?.url || "",
         mime: "audio/mpeg",
+        CoverURL: song?.CoverURL || null,
       });
-      setPlaying(true);
+      // If the caller provided a direct URL, attach it to the audio element and play.
+      try {
+        const a = audioRef.current;
+        const fallbackUrl = song?.url;
+        if (a && fallbackUrl) {
+          a.src = fallbackUrl;
+          await a.play().catch(() => { });
+          setPlaying(true);
+        } else {
+          // nothing to play, but mark playing state so UI updates. The UI will show current info.
+          setPlaying(false);
+        }
+      } catch (e) {
+        console.error('Error playing fallback URL:', e);
+        setPlaying(false);
+      }
     }
   }
 

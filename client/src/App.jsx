@@ -31,11 +31,14 @@ import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
 import { AchievementProvider } from "./context/AchievementContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
+import Toasts from "./components/Toasts/Toasts";
 
 import ArtistAnalytics from "./pages/ArtistAnalytics";
 import ListenerAnalytics from "./pages/ListenerAnalytics";
 
 import AdminReportReview from "./pages/AdminReportReview";
+import AdminHome from "./pages/AdminHome";
+import RequireAdmin from "./components/Auth/RequireAdmin";
 
 
 export default function App() {
@@ -55,13 +58,14 @@ export default function App() {
               <Route path="/artist-dashboard" element={<ArtistsPerspective />} />
 
               {/* Admin Routes */}
-              <Route path="report-review" element={<AdminReportReview />} />
-
+              <Route path="report-review" element={<RequireAdmin><AdminReportReview /></RequireAdmin>} />
+              <Route path="admin-home" element={<RequireAdmin><AdminHome /></RequireAdmin>} />
+              
               {/* Listener routes */}
               <Route path="/profile" element={<ListenerProfile />} />
               <Route path="/home" element={<ListenerHome />} />
               <Route path="/user-report" element={<UserReport />} />
-              <Route path="/likedsongs" element={<PlaylistView isLikedSongs={true} />} />
+              <Route path="/likedsongs" element={<LikedSong />} />
               <Route path="/me/playlists" element={<MyPlaylistsPage />} />
               <Route path="/playlist/:id" element={<PlaylistPage />} />
               <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
@@ -82,13 +86,13 @@ export default function App() {
               <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
               <Route path="/artist-analytics" element={<ArtistAnalytics />} />
 
-                {/* Public listener profile (search links point to /listeners/:id) */}
-                <Route path="/listeners/:id" element={<ListenerPublic />} />
+              {/* Public listener profile (search links point to /listeners/:id) */}
+              <Route path="/listeners/:id" element={<ListenerPublic />} />
 
-                {/* Song routes */}
-                <Route path="/song" element={<Song />} />
-                <Route path="/genres/:genreId" element={<Song />} />
-                <Route path="/genre/:genreId" element={<Song />} />
+              {/* Song routes */}
+              <Route path="/song" element={<Song />} />
+              <Route path="/genres/:genreId" element={<Song />} />
+              <Route path="/genre/:genreId" element={<Song />} />
 
               {/* Search routes */}
               <Route path="/search" element={<SearchResults />} />
@@ -97,7 +101,8 @@ export default function App() {
               <Route path="*" element={<Navigate to="/home" replace />} />
             </Routes>
           </BrowserRouter>
-        
+          <Toasts />
+          
           <MusicPlayBar />
         </FavoritesPinsProvider>
       </PlayerProvider>

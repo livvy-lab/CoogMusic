@@ -46,12 +46,12 @@ export default function Playlists() {
             playlists.map((pl) => (
               <div
                 key={pl.PlaylistID}
-                className="bg-pink-50 border-2 border-pink-200 rounded-xl shadow-md p-4 hover:shadow-lg transition"
+                className="bg-pink-50 border-2 border-pink-200 rounded-xl shadow-md p-4 hover:shadow-lg transition playlistCard"
               >
                 <img
                   src={pl.ImageURL || "https://placehold.co/300x200?text=No+Image"}
                   alt={pl.Name}
-                  className="w-full h-40 object-cover rounded-md mb-3"
+                  className="w-full playlistCardImg mb-3 rounded-md"
                 />
                 <h3 className="text-lg font-semibold text-[#782355] truncate">
                   {pl.Name}

@@ -1,10 +1,9 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./NavigationBar.css";
 import { getUser, clearUser } from "../../lib/userStorage";
 
 export default function NavigationBar() {
-  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const user = useMemo(() => getUser(), []);
   const isArtist = (user?.accountType || "").toLowerCase() === "artist";
@@ -17,11 +16,11 @@ export default function NavigationBar() {
 
   return (
     <>
-      <aside className={`nav ${open ? "nav--open" : ""}`}>
+      {/* Invisible hover trigger area on the left edge */}
+      <div className="navHoverTrigger" />
+      
+      <aside className="nav">
         <div className="navBrand">
-          <button className="navBurger closeBtn" onClick={() => setOpen(false)}>
-            ✕
-          </button>
           <div className="logo">
             Coogs<br />Music
           </div>
@@ -29,9 +28,9 @@ export default function NavigationBar() {
 
         <nav className="navSection">
           <div className="navTitle">Dashboard</div>
-          <Link className="navLink" to="/home" onClick={() => setOpen(false)}>🏠 Home</Link>
-          <Link className="navLink" to="/subscription" onClick={() => setOpen(false)}>⭐ Subscription</Link>
-          <Link className="navLink" to={isArtist ? "/artist-analytics" : "/listener-analytics"} onClick={() => setOpen(false)}>
+          <Link className="navLink" to="/home">🏠 Home</Link>
+          <Link className="navLink" to="/subscription">⭐ Subscription</Link>
+          <Link className="navLink" to={isArtist ? "/artist-analytics" : "/listener-analytics"}>
             📈 My Analytics
           </Link>
         </nav>
@@ -39,30 +38,30 @@ export default function NavigationBar() {
         {isAdmin && (
           <nav className="navSection">
             <div className="navTitle">Admin</div>
-            <Link className="navLink" to="/report-review" onClick={() => setOpen(false)}>🛠️ Admin Report Review</Link>
+            <Link className="navLink" to="/report-review">🛠️ Admin Report Review</Link>
           </nav>
         )}
 
         <nav className="navSection">
           <div className="navTitle">Social</div>
-          <Link className="navLink" to="/profile" onClick={() => setOpen(false)}>👤 My Profile</Link>
-          <Link className="navLink" to="/edit-profile" onClick={() => setOpen(false)}>✏️ Edit Profile</Link>
-          <Link className="navLink" to="/follows" onClick={() => setOpen(false)}>👥 Connections</Link>
+          <Link className="navLink" to="/profile">👤 My Profile</Link>
+          <Link className="navLink" to="/edit-profile">✏️ Edit Profile</Link>
+          <Link className="navLink" to="/follows">👥 Connections</Link>
         </nav>
 
         <nav className="navSection">
           <div className="navTitle">Library</div>
-          <Link className="navLink" to="/likedsongs" onClick={() => setOpen(false)}>🤍 Favorite Songs</Link>
-          <Link className="navLink" to="/me/playlists" onClick={() => setOpen(false)}>🎧 Playlists</Link>
+          <Link className="navLink" to="/likedsongs">🤍 Favorite Tracks</Link>
+          <Link className="navLink" to="/me/playlists">🎧 Playlists</Link>
         </nav>
 
         {isArtist && (
           <nav className="navSection">
             <div className="navTitle">Artist</div>
-            <Link className="navLink" to="/my-ads" onClick={() => setOpen(false)}>📢 My Ads</Link>
-            <Link className="navLink" to="/buy-ads" onClick={() => setOpen(false)}>📣 Upload Ad</Link>
-            <Link className="navLink" to="/upload/song" onClick={() => setOpen(false)}>🎵 Upload Song</Link>
-            <Link className="navLink" to="/upload/album" onClick={() => setOpen(false)}>💿 Create Album</Link>
+            <Link className="navLink" to="/my-ads">📢 My Ads</Link>
+            <Link className="navLink" to="/buy-ads">📣 Upload Ad</Link>
+            <Link className="navLink" to="/upload/song">🎵 Upload Song</Link>
+            <Link className="navLink" to="/upload/album">💿 Create Album</Link>
           </nav>
         )}
 
@@ -74,14 +73,6 @@ export default function NavigationBar() {
         </nav>
 
       </aside>
-
-      {!open && (
-        <header className="topbar">
-          <button className="navBurger openBtn" onClick={() => setOpen(true)}>
-            ☰
-          </button>
-        </header>
-      )}
     </>
   );
 }

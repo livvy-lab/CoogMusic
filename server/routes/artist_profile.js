@@ -3,7 +3,7 @@ import db from "../db.js";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 0;
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
 
 // S3 client (env vars must be set)
 const s3 = new S3Client({
@@ -159,6 +159,9 @@ export async function handleArtistProfileRoutes(req, res) {
           s.Title,
           s.DurationSeconds,
           s.ReleaseDate,
+          m.url AS CoverURL,
+          m.bucket AS CoverBucket,
+          m.s3_key AS CoverS3Key,
           (
             SELECT COUNT(*)
             FROM Play p
@@ -169,6 +172,7 @@ export async function handleArtistProfileRoutes(req, res) {
         FROM Song s
         JOIN Song_Artist sa
           ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+        LEFT JOIN Media m ON m.MediaID = s.cover_media_id
         WHERE COALESCE(s.IsDeleted,0)=0
           AND sa.ArtistID = ?
         ORDER BY Streams DESC, s.SongID DESC
@@ -177,16 +181,40 @@ export async function handleArtistProfileRoutes(req, res) {
         [STREAM_MS_THRESHOLD, artistId, limit]
       );
 
+      // Generate signed URLs for cover images
+      const tracksWithCovers = await Promise.all(
+        rows.map(async (r) => {
+          let coverUrl = null;
+          if (r.CoverBucket && r.CoverS3Key) {
+            try {
+              coverUrl = await getSignedUrl(
+                s3,
+                new GetObjectCommand({ Bucket: r.CoverBucket, Key: r.CoverS3Key }),
+                { expiresIn: 3600 }
+              );
+            } catch (err) {
+              console.error("Error generating signed URL for cover:", err);
+              coverUrl = r.CoverURL || null;
+            }
+          } else {
+            coverUrl = r.CoverURL || null;
+          }
+
+          return {
+            SongID: r.SongID,
+            Title: r.Title,
+            DurationSeconds: r.DurationSeconds,
+            ReleaseDate: r.ReleaseDate,
+            StreamCount: Number(r.Streams || 0),
+            CoverURL: coverUrl,
+          };
+        })
+      );
+
       return json(res, 200, {
         ArtistID: artistId,
         limit,
-        tracks: rows.map(r => ({
-          SongID: r.SongID,
-          Title: r.Title,
-          DurationSeconds: r.DurationSeconds,
-          ReleaseDate: r.ReleaseDate,
-          StreamCount: Number(r.Streams || 0),
-        })),
+        tracks: tracksWithCovers,
       });
     }
 

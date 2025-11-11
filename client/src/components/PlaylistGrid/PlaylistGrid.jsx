@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
+import EditPlaylistCoverModal from "../Playlist/EditPlaylistCoverModal";
 
 export default function PlaylistGrid({
   listenerId,
@@ -11,11 +12,13 @@ export default function PlaylistGrid({
   authorName = "you",
 }) {
   const [playlists, setPlaylists] = useState([]);
+  const [covers, setCovers] = useState({});
   const [likedCount, setLikedCount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [pinnedId, setPinnedId] = useState(null);
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [openCoverModalFor, setOpenCoverModalFor] = useState(null);
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
@@ -36,18 +39,23 @@ export default function PlaylistGrid({
     const playlist = playlists.find(p => p.PlaylistID === id);
     const newName = prompt(`Rename playlist "${playlist?.Name || "Untitled"}":`, playlist?.Name || "");
     if (!newName || newName === playlist?.Name) return;
-
-  fetch(`${API_BASE_URL}/playlists/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ Name: newName }),
-    })
-      .then(res => res.json())
-      .then(() => {
-        setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
-        setOpenMenuId(null);
-      })
-      .catch(() => {});
+  // server expects PUT for updates; only update local state on success and notify other listeners
+  (async () => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/playlists/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ Name: newName }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(j.error || 'Failed to rename playlist');
+      setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
+      setOpenMenuId(null);
+      try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: id, Name: newName } })); } catch (e) {}
+    } catch (err) {
+      alert(err.message || 'Could not rename playlist');
+    }
+  })();
   }
 
   useEffect(() => {
@@ -72,7 +80,7 @@ export default function PlaylistGrid({
         );
         if (resPinned.ok) {
           const pinned = await resPinned.json();
-          if (!aborted) setPinnedId(pinned?.PlaylistID ?? null);
+              if (!aborted) setPinnedId(pinned?.PinnedPlaylistID ?? null);
         }
 
         const visible = (Array.isArray(data) ? data : []).filter(
@@ -88,29 +96,18 @@ export default function PlaylistGrid({
       if (!showLikedFallback) return;
 
       try {
-        const res1 = await fetch(
-          `${API_BASE_URL}/liked_songs/count?listenerId=${encodeURIComponent(listenerId)}`
-        );
-        if (res1.ok) {
-          const d = await res1.json();
-          if (!aborted) setLikedCount(Number(d.count) || 0);
+        // server exposes liked songs as GET /listeners/:id/liked_songs
+        const res = await fetch(`${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}/liked_songs`);
+        if (res.ok) {
+          const d = await res.json();
+          try { console.debug("PlaylistGrid: fetched liked_songs for listener", listenerId, "count", Array.isArray(d) ? d.length : 'bad', d?.slice?.(0,5)); } catch (e) {}
+          if (!aborted) setLikedCount(Array.isArray(d) ? d.length : 0);
           return;
         }
       } catch {}
 
-      try {
-        const res2 = await fetch(
-          `${API_BASE_URL}/liked_songs?listenerId=${encodeURIComponent(listenerId)}`
-        );
-        if (res2.ok) {
-          const d2 = await res2.json();
-          if (!aborted) setLikedCount(Array.isArray(d2) ? d2.length : 0);
-        } else {
-          if (!aborted) setLikedCount(0);
-        }
-      } catch {
-        if (!aborted) setLikedCount(0);
-      }
+      // on failure, ensure we at least show 0
+      if (!aborted) setLikedCount(0);
     }
 
     load();
@@ -119,11 +116,119 @@ export default function PlaylistGrid({
     };
   }, [listenerId, showPrivate, showLikedFallback]);
 
+  // Update playlist entry when cover changed by modal
+  function handleCoverUpdated(updated) {
+    setPlaylists(prev => prev.map(p => (p.PlaylistID === updated.PlaylistID ? { ...p, cover_media_id: updated.cover_media_id } : p)));
+    // if we resolved the media URL earlier, clear it so effect can re-resolve
+    setCovers(prev => {
+      const next = { ...prev };
+      if (updated.cover_media_id == null) {
+        // remove any entries that pointed to previous id for this playlist
+        return next;
+      }
+      return next;
+    });
+    setOpenCoverModalFor(null);
+  }
+
+  // Listen for playlistCreated or playlistCoverUpdated events to update UI immediately
+  useEffect(() => {
+    function onCreated(e) {
+      const pl = e?.detail;
+      if (!pl || !pl.PlaylistID) return;
+      setPlaylists(prev => [pl, ...prev]);
+    }
+
+    function onCoverUpdated(e) {
+      const d = e?.detail;
+      if (!d || !d.PlaylistID) return;
+      setPlaylists(prev => prev.map(p => p.PlaylistID === d.PlaylistID ? { ...p, cover_media_id: d.cover_media_id } : p));
+      // clear caches for media so it will be resolved
+      if (d.cover_media_id) {
+        setCovers(prev => { const next = { ...prev }; delete next[d.cover_media_id]; return next; });
+      }
+    }
+
+    function onUpdated(e) {
+      const d = e?.detail;
+      if (!d || !d.PlaylistID) return;
+      setPlaylists(prev => prev.map(p => p.PlaylistID === d.PlaylistID ? { ...p, ...d } : p));
+    }
+
+    window.addEventListener('playlistCreated', onCreated);
+    window.addEventListener('playlistCoverUpdated', onCoverUpdated);
+    window.addEventListener('playlistUpdated', onUpdated);
+    return () => {
+      window.removeEventListener('playlistCreated', onCreated);
+      window.removeEventListener('playlistCoverUpdated', onCoverUpdated);
+      window.removeEventListener('playlistUpdated', onUpdated);
+    };
+  }, []);
+
+  // Keep likedCount authoritative by re-fetching when liked state changes elsewhere
+  useEffect(() => {
+    if (!showLikedFallback) return;
+    let aborted = false;
+    async function refresh() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/listeners/${encodeURIComponent(listenerId)}/liked_songs`);
+        if (!res.ok) { if (!aborted) setLikedCount(0); return; }
+        const d = await res.json();
+        if (!aborted) setLikedCount(Array.isArray(d) ? d.length : 0);
+      } catch (e) {
+        if (!aborted) setLikedCount(0);
+      }
+    }
+
+    function onLikedChanged() {
+      try { console.debug('PlaylistGrid: likedChanged event received', listenerId); } catch (e) {}
+      // Always refresh the authoritative list when any liked state changes
+      refresh();
+    }
+
+    window.addEventListener('likedChanged', onLikedChanged);
+    return () => {
+      window.removeEventListener('likedChanged', onLikedChanged);
+      aborted = true;
+    };
+  }, [listenerId, showLikedFallback]);
+
+  // Resolve any cover_media_id → URL
+  useEffect(() => {
+    let aborted = false;
+    (async () => {
+      try {
+        const needed = [...new Set((playlists || []).map(p => p.cover_media_id).filter(Boolean))]
+          .filter(id => !(id in covers));
+        if (!needed.length) return;
+        const entries = await Promise.all(
+          needed.map(async (id) => {
+            try {
+              const r = await fetch(`${API_BASE_URL}/media/${id}`);
+              if (!r.ok) return [id, null];
+              const j = await r.json();
+              return [id, j?.url || null];
+            } catch { return [id, null]; }
+          })
+        );
+        if (aborted) return;
+        setCovers(prev => {
+          const next = { ...prev };
+          for (const [id, url] of entries) next[id] = url;
+          return next;
+        });
+      } catch (e) {
+        // ignore
+      }
+    })();
+    return () => { aborted = true; };
+  }, [playlists]);
+
   async function pinPlaylist(playlistId) {
     if (!listenerId || !playlistId) return;
     setPinLoading(true);
     try {
-      const res = await fetch(`http://localhost:3001/listeners/${listenerId}/pins/playlist`, {
+      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playlistId }),
@@ -138,24 +243,32 @@ export default function PlaylistGrid({
     }
   }
 
+  // Clears the pinned playlist for the listener. If playlistId is provided, it will set that
+  // playlist as pinned by calling the POST /pins/playlist endpoint (use pinPlaylist for that).
   async function unpinPlaylist(playlistId = null) {
     if (!listenerId) return;
     setPinLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/listeners/${listenerId}/pinned-playlist`,
-        {
-          method: "PATCH",
+      if (playlistId) {
+        // If caller passed a playlistId, treat as pin operation (backwards compatible)
+        const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ playlistId }),
-        }
-      );
-      const data = await res.json();
-      if (res.ok && data.success) {
-        // if playlistId is null we cleared the pin, otherwise set it
-        setPinnedId(playlistId || null);
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+        setPinnedId(playlistId);
       } else {
-        alert(data.error || "Failed to update pinned playlist");
+        // Clear the pinned playlist using the dedicated DELETE endpoint
+        const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.error || "Failed to clear pinned playlist");
+        }
+        setPinnedId(null);
       }
     } catch (e) {
       alert(e.message || "Could not update pinned playlist.");
@@ -199,7 +312,7 @@ export default function PlaylistGrid({
                 <div className="pl__pill">
                   <span className="pl__pillIcon">♥</span>
                   <span>
-                    {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
+                    {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "track" : "tracks"}
                   </span>
                 </div>
                 <div className="pl__coverWrap">
@@ -210,7 +323,7 @@ export default function PlaylistGrid({
                   by <span className="pl__author">{authorName}</span>
                 </div>
                 <div className="pl__tracks">
-                  {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "song" : "songs"}
+                  {likedCount == null ? "—" : likedCount} {likedCount === 1 ? "track" : "tracks"}
                 </div>
               </div>
             )}
@@ -219,7 +332,7 @@ export default function PlaylistGrid({
               playlists.map(p => {
                 const tracks = Number(p.TrackCount) || 0;
                 const title = p.Name ?? "Untitled Playlist";
-                const coverUrl = p.CoverURL || "https://placehold.co/600x600/FFE8F5/895674?text=Playlist";
+                const coverUrl = p.CoverURL || (p.cover_media_id ? (covers[p.cover_media_id] || "https://placehold.co/600x600/FFE8F5/895674?text=Playlist") : "https://placehold.co/600x600/FFE8F5/895674?text=Playlist");
                 const isPinned = pinnedId === p.PlaylistID;
                 const isPublic = Number(p.IsPublic) === 1;
 
@@ -307,10 +420,13 @@ export default function PlaylistGrid({
 
                       {openMenuId === p.PlaylistID && (
                         <div className="playlistDropdown">
-                          <button className="dropdownItem" onClick={() => handleEdit(p.PlaylistID)}>
+                          <button className="dropdownItem" onClick={(e) => { e.stopPropagation(); handleEdit(p.PlaylistID); }}>
                             ✏️ Edit
                           </button>
-                          <button className="dropdownItem delete" onClick={() => handleDelete(p.PlaylistID)}>
+                          <button className="dropdownItem" onClick={(e) => { e.stopPropagation(); setOpenCoverModalFor(p); setOpenMenuId(null); }}>
+                            🖼 Change cover
+                          </button>
+                          <button className="dropdownItem delete" onClick={(e) => { e.stopPropagation(); handleDelete(p.PlaylistID); }}>
                             🗑️ Delete
                           </button>
                         </div>
@@ -342,6 +458,9 @@ export default function PlaylistGrid({
           </>
         )}
       </div>
+      {openCoverModalFor && (
+        <EditPlaylistCoverModal playlist={openCoverModalFor} onClose={() => setOpenCoverModalFor(null)} onUpdated={handleCoverUpdated} />
+      )}
     </section>
   );
 }

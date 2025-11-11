@@ -4,23 +4,26 @@ import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css";
 import { API_BASE_URL } from "../config/api";
+import { getUser } from "../lib/userStorage";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
-  // derive listener id from localStorage like other pages; fallback to test account
-  const storedListener = localStorage.getItem("listener");
-  const listenerId = storedListener ? JSON.parse(storedListener).ListenerID : 6;
+  // derive listener id from same helper other components use
+  const user = getUser();
+  const listenerId = user?.listenerId ?? user?.ListenerID ?? 6;
 
   const { playList, playSong, playShuffled } = usePlayer();
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
     try {
+      console.log(`🎵 [LikedPage] Fetching liked songs for listenerId: ${listenerId}`);
   const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs`);
+      console.log(`🎵 [LikedPage] Response status:`, res.status);
       if (!res.ok) throw new Error("Failed to fetch liked songs");
       const data = await res.json();
 
-      console.log("✅ Raw liked songs data:", data);
+      console.log("✅ [LikedPage] Raw liked songs data:", data);
 
       // Format results for UI
       const formatted = data.map((row) => ({
@@ -43,9 +46,9 @@ export default function LikedPage() {
       // sort newest first
       formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
       setTracks(formatted);
-      console.log("🎵 Formatted tracks:", formatted);
+      console.log("🎵 [LikedPage] Formatted tracks:", formatted);
     } catch (err) {
-      console.error("❌ Error fetching liked songs:", err);
+      console.error("❌ [LikedPage] Error fetching liked songs:", err);
     }
   }
 
@@ -87,6 +90,15 @@ export default function LikedPage() {
 
   useEffect(() => {
     fetchLikedSongs();
+  }, [listenerId]);
+
+  // Refetch when navigating back to this page
+  useEffect(() => {
+    const handleFocus = () => fetchLikedSongs();
+    window.addEventListener('focus', handleFocus);
+    // Also fetch when component mounts/remounts (navigation)
+    fetchLikedSongs();
+    return () => window.removeEventListener('focus', handleFocus);
   }, []);
 
   // update list when likes change elsewhere (music bar)
@@ -104,7 +116,7 @@ export default function LikedPage() {
     }
     window.addEventListener('likedChanged', onLikedChanged);
     return () => window.removeEventListener('likedChanged', onLikedChanged);
-  }, []);
+  }, [listenerId]);
 
   return (
     <PageLayout>
@@ -112,16 +124,16 @@ export default function LikedPage() {
         {/* Header */}
         <section className="albumCard headerCard">
           <div className="likedHeaderLeft">
-            <div className="likedCoverCircle">
-              <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
-            </div>
+              <div className="likedCoverCircle">
+                <Heart size={100} fill="#fff" color="#fff" strokeWidth={1.5} />
+              </div>
             <div className="likedHeaderText">
               <p className="playlistLabel">PLAYLIST</p>
               <h1 className="likedTitle">Liked Songs</h1>
               <p className="likedUser">
                 {tracks.length
-                  ? `${tracks.length} song${tracks.length > 1 ? "s" : ""}`
-                  : "No songs"}
+                  ? `${tracks.length} track${tracks.length > 1 ? "s" : ""}`
+                  : "No tracks"}
               </p>
             </div>
           </div>

@@ -5,8 +5,11 @@ export function setUser(user) {
 }
 
 export function getUser() {
-  try { return JSON.parse(localStorage.getItem(KEY) || "null"); }
-  catch { return null; }
+  try {
+    // Some parts of the app store the user under 'user' and others under 'listener'.
+    const raw = localStorage.getItem(KEY) || localStorage.getItem('listener') || null;
+    return JSON.parse(raw || "null");
+  } catch { return null; }
 }
 
 export function clearUser() {

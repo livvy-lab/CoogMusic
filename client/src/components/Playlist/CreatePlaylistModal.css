@@ -45,6 +45,28 @@
   font-family: "Inter", sans-serif;
 }
 
+/* Right-side action column in edit modal */
+.modalRightActions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+/* reserve a fixed width for the right-side action column so inputs don't extend under buttons */
+.modalRightActions {
+  width: 160px;
+  flex: 0 0 160px;
+  margin-left: 12px;
+  align-self: flex-start; /* keep it aligned to top of the input row */
+}
+
+/* input on the left should include extra right padding equal to the actions width */
+.playlistNameInput {
+  padding-right: 176px; /* action width + a bit of breathing room */
+  box-sizing: border-box;
+}
+
 /* Form inputs */
 .modalContainer input,
 .modalContainer textarea,
@@ -69,6 +91,7 @@
 
 /* Create button */
 .modalContainer button[type="submit"] {
+  /* keep styles but rely on .modalBtn.primary for consistent look */
   background-color: #782355;
   color: #fff;
   border: none;
@@ -99,4 +122,37 @@
 .closeBtn:hover {
   background: #e8c9d8;
   transform: scale(1.03);
+}
+
+/* Generic modal action button (secondary) */
+/* Unified modal button styles */
+.modalBtn {
+  background: #ffe6f5;            /* same soft pink */
+  border: 2px solid #895674;      /* purple outline */
+  color: #782355;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.modalBtn:hover { background: #ffdff1; transform: translateY(-1px); }
+
+/* Compact square icon button (use for per-track remove) */
+.modalBtn.icon {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  gap: 0;
+}
+
+/* Slight variant for primary action (save) */
+.modalBtn.primary {
+  background: #782355;
+  color: #fff;
+  border-color: #782355;
 }

@@ -28,6 +28,7 @@ export default function FollowTabs() {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
+  const [myFollowing, setMyFollowing] = useState([]); // Track who the logged-in user follows
   const [search, setSearch] = useState("");
 
   // Refetch lists for profile being viewed
@@ -40,6 +41,12 @@ export default function FollowTabs() {
       `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`
     );
     setFollowing(await followingRes.json());
+    
+    // Also fetch who the logged-in user is following
+    const myFollowingRes = await fetch(
+      `${API_BASE_URL}/follows?userId=${currentUserId}&userType=${currentUserType}&tab=following`
+    );
+    setMyFollowing(await myFollowingRes.json());
   };
 
   useEffect(() => {
@@ -51,31 +58,57 @@ export default function FollowTabs() {
   }, [initialTab]);
 
   const handleFollow = async (targetUser) => {
-    await fetch(`${API_BASE_URL}/follows`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        FollowerID: currentUserId,
-        FollowerType: currentUserType,
-        FollowingID: targetUser.id,
-        FollowingType: targetUser.type,
-      }),
-    });
-    await refetchData();
+    try {
+      const response = await fetch(`${API_BASE_URL}/follows`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          FollowerID: currentUserId,
+          FollowerType: currentUserType,
+          FollowingID: targetUser.id,
+          FollowingType: targetUser.type,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Follow failed:", error);
+        alert(error.error || "Failed to follow user");
+        return;
+      }
+      
+      await refetchData();
+    } catch (error) {
+      console.error("Error following user:", error);
+      alert("Failed to follow user");
+    }
   };
 
   const handleUnfollow = async (targetUser) => {
-    await fetch(`${API_BASE_URL}/follows`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        FollowerID: currentUserId,
-        FollowerType: currentUserType,
-        FollowingID: targetUser.id,
-        FollowingType: targetUser.type,
-      }),
-    });
-    await refetchData();
+    try {
+      const response = await fetch(`${API_BASE_URL}/follows`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          FollowerID: currentUserId,
+          FollowerType: currentUserType,
+          FollowingID: targetUser.id,
+          FollowingType: targetUser.type,
+        }),
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        console.error("Unfollow failed:", error);
+        alert(error.error || "Failed to unfollow user");
+        return;
+      }
+      
+      await refetchData();
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      alert("Failed to unfollow user");
+    }
   };
 
   // Display list (followers or following) for the user being viewed
@@ -119,7 +152,7 @@ export default function FollowTabs() {
               user={user}
               isFollowing={
                 // check if the logged in user is following this user
-                following.some(
+                myFollowing.some(
                   (f) => f.id === user.id && f.type === user.type
                 )
               }

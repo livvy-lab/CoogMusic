@@ -29,6 +29,11 @@
   scrollbar-color: #AF578A #612C4B;
 }
 
+/* Show nav on hover */
+.nav:hover {
+  transform: translateX(0);
+}
+
 /* Chrome, Safari, Edge: custom internal scrollbar (inset, inside nav) */
 .nav::-webkit-scrollbar {
   width: 8px;
@@ -48,6 +53,21 @@
 
 /* Slide into view when open */
 .nav.nav--open {
+  transform: translateX(0);
+}
+
+/* Hover trigger area - invisible strip on left edge */
+.navHoverTrigger {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 180px; /* 3/4 of 240px sidebar width */
+  z-index: 99;
+  pointer-events: all;
+}
+
+.navHoverTrigger:hover + .nav {
   transform: translateX(0);
 }
 
@@ -90,22 +110,28 @@
 }
 
 /* Close button inside the sidebar */
-.navBurger {
+.navBurger.closeBtn {
   position: absolute;
   top: 16px;
   right: 16px;
   background: transparent;
   border: none;
-  color: #FFDAF0;
+  color: #FFB3D9;
   font-size: 22px;
   cursor: pointer;
-  transition: color 0.25s ease;
+  transition: color 0.25s ease, background 0.25s ease;
   z-index: 20;
   padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.navBurger:hover {
-  color: #fff;
+.navBurger.closeBtn:hover {
+  color: #C44F87;
+  background: transparent;
 }
 
 /* Logo text */

@@ -17,7 +17,7 @@ export default function LikedHeader({ title = "Liked Songs", owner = "coolgirl",
         <div>
           <p className="playlistLabel">PLAYLIST</p>
           <h1 className="likedTitle">{title}</h1>
-          <p className="likedUser">{owner} • {count} songs</p>
+          <p className="likedUser">{owner} • {count} {count === 1 ? 'track' : 'tracks'}</p>
         </div>
       </div>
     </div>
