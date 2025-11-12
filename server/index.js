@@ -21,6 +21,7 @@ import { handleArtistRoutes } from "./routes/artist.js";
 import { handleSongArtistRoutes } from "./routes/song_artist.js";
 import { handleSongGenreRoutes } from "./routes/song_genre.js";
 import { handleSubscriptionRoutes } from "./routes/subscription.js";
+import { handlePremiumRoutes } from "./routes/premium.js";
 import { handleUserReportsRoutes } from "./routes/user_reports.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
@@ -189,7 +190,8 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/artists")) { await handleArtistRoutes(req, res); return; }
     if (pathname.startsWith("/song_artists")) { await handleSongArtistRoutes(req, res); return; }
     if (pathname.startsWith("/song_genres")) { await handleSongGenreRoutes(req, res); return; }
-    if (pathname.startsWith("/subscriptions")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/subscriptions")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/premium")) { await handlePremiumRoutes(req, res); return; }
     if (pathname.startsWith("/user_reports")) { await handleUserReportsRoutes(req, res); return; }
     if (pathname.startsWith("/artist_buys")) { await handleArtistBuyRoutes(req, res); return; }
     if (pathname.startsWith("/listeners")) { await handleListenerRoutes(req, res); return; }
