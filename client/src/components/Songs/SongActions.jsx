@@ -1,9 +1,8 @@
-// client/src/components/Songs/SongActions.jsx
 import { useFavPins } from "../../context/FavoritesPinsContext";
 import AddToPlaylistMenu from "../Playlist/AddToPlaylistMenu";
 import "./SongActions.css";
 
-export default function SongActions({ songId, size = "sm" }) {
+export default function SongActions({ songId, songTitle, size = "sm" }) {
   const ctx = useFavPins();
   
 
@@ -19,14 +18,28 @@ export default function SongActions({ songId, size = "sm" }) {
   const fav = hasValidId ? favoriteIds.has(sid) : false;
   const pin = hasValidId ? (pinnedSongId === sid) : false;
 
-  try { console.debug('SongActions render', { songId: sid, hasValidId, fav, favoriteIdsSize: favoriteIds?.size }); } catch (e) {}
+  try {
+    console.debug("SongActions render", {
+      songId: sid,
+      hasValidId,
+      fav,
+      favoriteIdsSize: favoriteIds?.size,
+    });
+  } catch (e) {}
 
   return (
     <div className={`songActions songActions--${size}`}>
       <button
         className={`songActions__btn ${fav ? "is-on" : ""}`}
         aria-pressed={fav}
-        onClick={(e) => { e.stopPropagation(); if (hasValidId) { try { toggleFavorite(sid); } catch (err) {} } }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (hasValidId) {
+            try {
+              toggleFavorite(sid);
+            } catch (err) {}
+          }
+        }}
         title={hasValidId ? (fav ? "Unfavorite" : "Favorite") : "Unavailable"}
         disabled={!hasValidId}
       >
@@ -35,15 +48,28 @@ export default function SongActions({ songId, size = "sm" }) {
       <button
         className={`songActions__btn ${pin ? "is-on" : ""}`}
         aria-pressed={pin}
-        onClick={(e) => { e.stopPropagation(); if (hasValidId) togglePin(sid); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (hasValidId) {
+            const wasPinned = pin; // check the state *before* toggling
+            togglePin(sid);
+            if (!wasPinned) {
+              alert("This song has been pinned to your profile");
+            }
+          }
+        }}
         title={hasValidId ? (pin ? "Unpin song" : "Pin song") : "Unavailable"}
         disabled={!hasValidId}
       >
-        {pin ? "📍" : "📌"}
+        <span className="songActions__icon songActions__icon--pin"></span>
       </button>
       {/* Add to playlist menu/button */}
       <div className="songActions__add">
-        <AddToPlaylistMenu songId={songId} compact={true} />
+        <AddToPlaylistMenu
+          songId={songId}
+          songTitle={songTitle}
+          compact={true}
+        />
       </div>
     </div>
   );

@@ -1,0 +1,67 @@
+.addToPlaylistRoot {
+  display: inline-block;
+  position: relative;
+}
+
+.addToPlaylistBtn--icon {
+  background: none;
+  border: none;
+  color: #af578a;
+  font-size: 30px;
+  cursor: pointer;
+  padding: 2px 8px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.addToPlaylistBtn--icon:hover {
+  transform: scale(1.2);
+  color: #782355;
+}
+
+.addToPlaylistBtn--icon:active {
+  transform: scale(0.95);
+}
+
+/* Pink floating popup */
+.addToPlaylistPopup {
+  position: absolute;
+  right: 0;
+  z-index: 50;
+  background: #ffe2f4;
+  border: 1.5px solid #af578a;
+  box-shadow: 0 2px 14px rgba(100, 0, 20, 0.07);
+  padding: 12px 10px 10px 10px;
+  min-width: 180px;
+  border-radius: 11px;
+  margin-top: 7px;
+}
+
+.addToPlaylistPopup__title {
+  color: #af578a;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 9px;
+  text-align: left;
+}
+
+.addToPlaylistPopup__playlistBtn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #782355;
+  text-align: left;
+  cursor: pointer;
+  padding: 8px 0;
+  border-radius: 7px;
+  transition: background 0.15s;
+  font-size: 1rem;
+}
+.addToPlaylistPopup__playlistBtn:hover {
+  background: #ffd7ee;
+}
+
+@media (hover: none) {
+  .addToPlaylistBtn--icon {
+    font-size: 26px;
+  }
+}

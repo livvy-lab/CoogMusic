@@ -3,56 +3,68 @@
     justify-content: center;
     gap: 10px;
     margin-top: 6px;
-  }
-  
-  /* base button style — transparent, no outline */
-  .songActions__btn {
+}
+
+.songActions__btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 22px;
-    color: #af578a; /* matches your accent */
+    font-size: 35px;
+    color: #af578a;
     transition: transform 0.2s ease, color 0.2s ease;
-  }
-  
-  /* hover pop */
-  .songActions__btn:hover {
+}
+ 
+/* hover pop */
+.songActions__btn:hover {
     transform: scale(1.2);
     color: #782355;
-  }
-  
-  /* active (clicked) */
-  .songActions__btn:active {
+}
+ 
+/* active (clicked) */
+.songActions__btn:active {
     transform: scale(0.95);
-  }
-  
-  /* favorited/pinned "on" state */
-  .songActions__btn.is-on {
+}
+ 
+/* favorited/pinned "on" state */
+.songActions__btn.is-on {
     color: #782355; /* darker accent when active */
-  }
+}
 
-  .songActions__add {
+.songActions__icon {
+    display: inline-block;
+    width: 30px;
+    height: 30px;
+    vertical-align: middle;
+}
+ 
+.songActions__icon--pin {
+    background-image: url('../../assets/pin.svg');
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.songActions__add {
     display: inline-flex;
     align-items: center;
-  }
+}
 
 .addToPlaylistBtn--compact {
-  background: transparent !important;
-  border: none !important;
-  color: #782355 !important;
-  width: auto !important;
-  height: auto !important;
-  padding: 2px 8px !important;
-  font-size: 20px !important;
-  min-width: 30px !important;
-  min-height: 30px !important;
-  box-shadow: none !important;
+    background: transparent !important;
+    border: none !important;
+    color: #782355 !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 2px 8px !important;
+    font-size: 20px !important;
+    min-width: 30px !important;
+    min-height: 30px !important;
+    box-shadow: none !important;
 }
-  
-  /* make buttons more tappable on mobile */
-  @media (hover: none) {
+ 
+/* make buttons more tappable on mobile */
+@media (hover: none) {
     .songActions__btn {
-      font-size: 26px;
+        font-size: 26px;
     }
-  }
-  
+}

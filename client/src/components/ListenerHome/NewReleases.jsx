@@ -225,7 +225,7 @@ export default function NewReleases({ title = "New releases" }) {
 
               {!c.placeholder && (
                 <div className="newRel__actions">
-                  <SongActions songId={c.song.SongID} />
+                  <SongActions songId={c.song.SongID} songTitle={c.title} />
                 </div>
               )}
             </div>
