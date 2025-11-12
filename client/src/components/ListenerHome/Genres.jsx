@@ -72,7 +72,7 @@ export default function Genres() {
             type="button"
           >
             <img
-              src={iconMap[g.Name?.toLowerCase().replace(' ', '')] || defaultIcon}
+              src={iconMap[g.Name?.toLowerCase().replace(/[\s-]/g, '')] || defaultIcon}
               alt=""
               className="genres__icon"
             />
