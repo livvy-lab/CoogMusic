@@ -8,6 +8,7 @@ import "./AddToPlaylistMenu.css";
 export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [playlists, setPlaylists] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [fetchedFor, setFetchedFor] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
   const [buttonPos, setButtonPos] = useState({ left: 0, top: 0 });
@@ -18,7 +19,6 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
   // click outside closes
   useEffect(() => {
     function handle(e) {
-      // if the click is outside *both* the button and the menu, close it.
       if (
         isOpen &&
         btnRef.current &&
@@ -30,11 +30,10 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
       }
     }
     if (isOpen) {
-      // use mousedown to catch the event before click
       document.addEventListener("mousedown", handle);
       return () => document.removeEventListener("mousedown", handle);
     }
-  }, [isOpen]); // dependencies are correct
+  }, [isOpen]);
 
   // update popup portal position to be under the plus button
   useEffect(() => {
@@ -48,6 +47,7 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
   }, [isOpen]);
 
   async function fetchPlaylists() {
+    setLoading(true);
     const u = getUser();
     const listenerId = u?.listenerId ?? u?.ListenerID ?? null;
     const url = listenerId
@@ -55,7 +55,11 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
       : `${API_BASE_URL}/playlists`;
     try {
       const res = await fetch(url);
-      if (!res.ok) { setPlaylists([]); setFetchedFor(listenerId); return; }
+      if (!res.ok) {
+        setPlaylists([]);
+        setFetchedFor(listenerId);
+        return;
+      }
       const data = await res.json();
       setPlaylists(Array.isArray(data) ? data : []);
       setFetchedFor(listenerId);
@@ -75,6 +79,8 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
     } catch {
       setPlaylists([]);
       setFetchedFor(listenerId);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -95,7 +101,6 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
       const text = await res.text();
       let data = null;
       try { data = JSON.parse(text); } catch { data = { raw: text }; }
-
       if (res.status === 201) {
         setConfirmation(`"${songTitle}" has been added to your playlist "${playlistName}".`);
         setTimeout(() => {
@@ -136,6 +141,8 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
           <div className="addToPlaylistPopup__title">Add to playlist</div>
           {confirmation ? (
             <div className="addToPlaylistPopup__confirmation">{confirmation}</div>
+          ) : loading ? (
+            <div className="addToPlaylistPopup__loading" style={{padding: "8px 12px", fontSize: "14px", color: "#8c5d6dff"}}>Loading...</div>
           ) : playlists.length > 0 ? (
             playlists.map((pl) => (
               <button
@@ -149,9 +156,6 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
           ) : (
             <div className="addToPlaylistPopup__noPlaylists">
               <p className="addToPlaylistPopup__emptyTxt">You have no playlists yet.</p>
-              {fetchedFor != null && (
-                <p className="addToPlaylistPopup__fetchedFor">(fetched for listener id: {String(fetchedFor)})</p>
-              )}
               <Link to="/me/playlists" className="addToPlaylistPopup__create">
                 Create one
               </Link>
