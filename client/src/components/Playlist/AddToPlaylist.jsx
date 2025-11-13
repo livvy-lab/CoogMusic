@@ -9,7 +9,7 @@ export default function AddToPlaylist({ songId }) {
   const ref = useRef(null);
 
   const stored = localStorage.getItem("listener");
-  const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
+  const listenerId = stored ? JSON.parse(stored).ListenerID : null;
 
   useEffect(() => {
     function onDoc(e) {
@@ -20,6 +20,10 @@ export default function AddToPlaylist({ songId }) {
   }, []);
 
   async function fetchPlaylists() {
+    if (!listenerId) {
+      setPlaylists([]);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(

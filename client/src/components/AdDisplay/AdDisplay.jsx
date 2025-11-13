@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './AdDisplay.css';
 import { API_BASE_URL } from "../../config/api";
+import { usePremium } from "../../hooks/usePremium";
 
 export default function AdDisplay({ isSubscribed, listenerId }) {
+  // Check premium status
+  const { isPremium, loading: premiumLoading } = usePremium(listenerId);
+  
+  // User is considered subscribed if either isSubscribed prop is true OR they have premium
+  const hasAdFreeAccess = isSubscribed || isPremium;
+  
   const [ad, setAd] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -13,8 +20,8 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
   const containerRef = useRef(null);
 
   useEffect(() => {
-    // Don't fetch ads if user is subscribed
-    if (isSubscribed) {
+    // Don't fetch ads if user has ad-free access (subscribed or premium)
+    if (hasAdFreeAccess) {
       setLoading(false);
       return;
     }
@@ -53,7 +60,7 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
     const interval = setInterval(fetchRandomAd, 30000);
     
     return () => clearInterval(interval);
-  }, [isSubscribed, listenerId]);
+  }, [hasAdFreeAccess, listenerId]);
 
   const recordAdView = async (adId, listenerId) => {
     try {
@@ -157,13 +164,13 @@ export default function AdDisplay({ isSubscribed, listenerId }) {
     }
   };
 
-  // Don't render if subscribed
-  if (isSubscribed) {
+  // Don't render if user has ad-free access (subscribed or premium)
+  if (hasAdFreeAccess) {
     return null;
   }
 
-  // Loading state
-  if (loading) {
+  // Loading state (including premium check)
+  if (loading || premiumLoading) {
     return (
       <div className="adDisplay loading">
         <p>Loading...</p>
