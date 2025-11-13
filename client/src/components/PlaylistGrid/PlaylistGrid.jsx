@@ -6,6 +6,7 @@ import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 import EditPlaylistCoverModal from "../Playlist/EditPlaylistCoverModal";
+import EditPlaylistModal from "../Playlist/EditPlaylistModal";
 
 export default function PlaylistGrid({
   listenerId,
@@ -21,6 +22,7 @@ export default function PlaylistGrid({
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openCoverModalFor, setOpenCoverModalFor] = useState(null);
+  const [editingPlaylist, setEditingPlaylist] = useState(null);
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
@@ -39,25 +41,10 @@ export default function PlaylistGrid({
 
   function handleEdit(id) {
     const playlist = playlists.find(p => p.PlaylistID === id);
-    const newName = prompt(`Rename playlist "${playlist?.Name || "Untitled"}":`, playlist?.Name || "");
-    if (!newName || newName === playlist?.Name) return;
-  // server expects PUT for updates; only update local state on success and notify other listeners
-  (async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/playlists/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ Name: newName }),
-      });
-      const j = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(j.error || 'Failed to rename playlist');
-      setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
-      setOpenMenuId(null);
-      try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: id, Name: newName } })); } catch (e) {}
-    } catch (err) {
-      alert(err.message || 'Could not rename playlist');
-    }
-  })();
+    if (!playlist) return;
+    // open the EditPlaylistModal so user can edit name and description
+    setEditingPlaylist(playlist);
+    setOpenMenuId(null);
   }
 
   useEffect(() => {
@@ -481,6 +468,16 @@ export default function PlaylistGrid({
       </div>
       {openCoverModalFor && (
         <EditPlaylistCoverModal playlist={openCoverModalFor} onClose={() => setOpenCoverModalFor(null)} onUpdated={handleCoverUpdated} />
+      )}
+      {editingPlaylist && (
+        <EditPlaylistModal playlist={editingPlaylist} tracks={[]} onClose={() => setEditingPlaylist(null)} onUpdated={(u, tracks) => {
+          // update playlists list when modal saves
+          if (u && u.PlaylistID) {
+            setPlaylists(prev => prev.map(p => p.PlaylistID === u.PlaylistID ? { ...p, ...u } : p));
+            try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: u.PlaylistID, ...u } })); } catch(e) {}
+          }
+          setEditingPlaylist(null);
+        }} />
       )}
     </section>
   );

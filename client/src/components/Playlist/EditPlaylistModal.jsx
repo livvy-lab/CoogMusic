@@ -7,6 +7,7 @@ import { Trash2, Image as ImageIcon, Save } from "lucide-react";
 export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUpdated }) {
   const [open, setOpen] = useState(true);
   const [name, setName] = useState(playlist?.Name || "");
+  const [description, setDescription] = useState(playlist?.Description || "");
   const [localTracks, setLocalTracks] = useState(tracks || []);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -14,6 +15,7 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
 
   useEffect(() => {
     setName(playlist?.Name || "");
+    setDescription(playlist?.Description || "");
     setLocalTracks(tracks || []);
   }, [playlist, tracks]);
 
@@ -24,7 +26,8 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
 
   async function saveName() {
     if (!playlist?.PlaylistID) return;
-    if (name === playlist.Name) return;
+    // if nothing changed, do nothing
+    if (name === playlist.Name && description === (playlist.Description || "")) return;
     setLoading(true);
     setError(null);
     try {
@@ -32,16 +35,17 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
       const res = await fetch(`${API_BASE_URL}/playlists/${playlist.PlaylistID}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Name: name }),
+        body: JSON.stringify({ Name: name, Description: description }),
       });
       if (!res.ok) {
         const j = await res.json().catch(() => ({}));
-        throw new Error(j.error || "Failed to rename playlist");
+        throw new Error(j.error || "Failed to update playlist");
       }
       // optimistic update
-      const updated = { ...playlist, Name: name };
-      onUpdated?.(updated, localTracks);
-      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist renamed', type: 'success' } })); } catch(e){}
+      const updated = { ...playlist, Name: name, Description: description };
+  onUpdated?.(updated, localTracks);
+  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist updated', type: 'success' } })); } catch(e){}
+  try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: playlist.PlaylistID } })); } catch(e){}
     } catch (e) {
       setError(e.message || String(e));
     } finally {
@@ -76,6 +80,8 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
           <div style={{ flex: 1 }}>
             <label style={{ display: 'block', fontSize: 12, color: '#666' }}>Playlist name</label>
             <input className="playlistNameInput" value={name} onChange={(e) => setName(e.target.value)} style={{ width: '100%' }} />
+            <label style={{ display: 'block', fontSize: 12, color: '#666', marginTop: 8 }}>Description (optional)</label>
+            <textarea className="playlistNameInput" value={description} onChange={(e) => setDescription(e.target.value)} style={{ width: '100%', minHeight: 72 }} />
           </div>
 
           <div className="modalRightActions">
