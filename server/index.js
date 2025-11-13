@@ -190,7 +190,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/artists")) { await handleArtistRoutes(req, res); return; }
     if (pathname.startsWith("/song_artists")) { await handleSongArtistRoutes(req, res); return; }
     if (pathname.startsWith("/song_genres")) { await handleSongGenreRoutes(req, res); return; }
-    if (pathname.startsWith("/subscriptions")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/subscriptions") || pathname.startsWith("/subscription-plans")) { await handleSubscriptionRoutes(req, res); return; }
     if (pathname.startsWith("/premium")) { await handlePremiumRoutes(req, res); return; }
     if (pathname.startsWith("/user_reports")) { await handleUserReportsRoutes(req, res); return; }
     if (pathname.startsWith("/artist_buys")) { await handleArtistBuyRoutes(req, res); return; }
