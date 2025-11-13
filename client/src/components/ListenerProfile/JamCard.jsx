@@ -161,16 +161,6 @@ export default function JamCard({ listenerId }) {
     <aside className="jam">
       <div className="jam__header">
         <h3 className="jam__title">{title}</h3>
-        {isOwner && pinnedPlaylist ? (
-          <button
-            className="jam__headerEdit"
-            aria-label="Edit pinned playlist description"
-            title="Edit playlist description"
-            onClick={() => setModalOpen(true)}
-          >
-            ✏️
-          </button>
-        ) : null}
       </div>
 
       <div className="jam__artWrap">
