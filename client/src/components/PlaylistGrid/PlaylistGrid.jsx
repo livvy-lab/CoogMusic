@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 import EditPlaylistCoverModal from "../Playlist/EditPlaylistCoverModal";
 import EditPlaylistModal from "../Playlist/EditPlaylistModal";
+import DeletePlaylistModal from "../Playlist/DeletePlaylistModal";
 
 export default function PlaylistGrid({
   listenerId,
@@ -23,20 +24,32 @@ export default function PlaylistGrid({
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openCoverModalFor, setOpenCoverModalFor] = useState(null);
   const [editingPlaylist, setEditingPlaylist] = useState(null);
+  const [deletingPlaylist, setDeletingPlaylist] = useState(null);
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
 
   async function handleDelete(id) {
-    if (!window.confirm("Are you sure you want to delete this playlist?")) return;
+    const playlist = playlists.find(p => p.PlaylistID === id);
+    if (!playlist) return;
+    setDeletingPlaylist(playlist);
+    setOpenMenuId(null);
+  }
+
+  async function confirmDelete() {
+    if (!deletingPlaylist?.PlaylistID) return;
     try {
-  const res = await fetch(`${API_BASE_URL}/playlists/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/playlists/${deletingPlaylist.PlaylistID}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Failed to delete playlist");
-      setPlaylists(prev => prev.filter(p => p.PlaylistID !== id));
-      setOpenMenuId(null);
-    } catch {}
+      setPlaylists(prev => prev.filter(p => p.PlaylistID !== deletingPlaylist.PlaylistID));
+      setDeletingPlaylist(null);
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist deleted', type: 'success' } })); } catch(e) {}
+    } catch (err) {
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: err?.message || 'Failed to delete playlist', type: 'error' } })); } catch(e) {}
+      setDeletingPlaylist(null);
+    }
   }
 
   function handleEdit(id) {
@@ -478,6 +491,9 @@ export default function PlaylistGrid({
           }
           setEditingPlaylist(null);
         }} />
+      )}
+      {deletingPlaylist && (
+        <DeletePlaylistModal playlist={deletingPlaylist} onClose={() => setDeletingPlaylist(null)} onConfirm={confirmDelete} />
       )}
     </section>
   );
