@@ -83,7 +83,7 @@
    adjusted track-row columns above. These are small left shifts only for the
    playlist page and use !important to ensure they take precedence here. */
 .playlistPage .likedTableHeader .th-title {
-  left: 150px !important; /* nudged slightly right to align with row title */
+  left: 133px !important; /* nudged slightly left to better align with the title column */
   right: auto !important;
 }
 .playlistPage .likedTableHeader .th-album {
