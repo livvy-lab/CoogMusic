@@ -4,7 +4,9 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 1080px;
+    width: 75%; /* responsive width: 75% of screen */
+    max-width: 1080px; /* cap at original size for very large screens */
+    min-width: 600px; /* prevent it from getting too small */
     height: 75px;
     background: #AD7D9B;
     border: 4.5px solid #895674;
@@ -31,9 +33,9 @@
     background: #FFFFFF;
     border-right: 4.5px solid #895674;
     border-radius: 13.5px 0 0 13.5px;
-    width: 184px;
+    width: clamp(140px, 17%, 184px); /* scales down on smaller screens */
     justify-content: center;
-    gap: 20px;
+    gap: clamp(12px, 2vw, 20px); /* responsive gap */
     flex-shrink: 0;
 }
 
@@ -41,8 +43,8 @@
 .progress-section {
     flex-grow: 1;
     justify-content: center;
-    gap: 15px;
-    padding: 0 20px;
+    gap: clamp(8px, 1.5vw, 15px); /* smaller gap on small screens */
+    padding: 0 clamp(10px, 2vw, 20px); /* responsive padding */
 }
 
 /* right side: album art */
@@ -67,16 +69,16 @@
 }
 
 .play-pause-btn {
-    height: 38px;
-    width: 38px;
+    height: clamp(30px, 3.5vw, 38px); /* scales down on smaller screens */
+    width: clamp(30px, 3.5vw, 38px);
 }
 .play-pause-btn img {
-    height: 38px;
+    height: 100%; /* fill button */
 }
 
 .small-btn img {
-    height: 28px;
-    width: 28px;
+    height: clamp(20px, 2.5vw, 28px); /* scales down on smaller screens */
+    width: clamp(20px, 2.5vw, 28px);
     filter: brightness(150%) saturate(0%); 
     transition: filter 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
@@ -104,14 +106,14 @@
 
 /* Heart button: exact brand color when liked */
 .small-btn.heart-btn { 
-    width: 28px; 
-    height: 28px; 
+    width: clamp(20px, 2.5vw, 28px); /* matches other small buttons */
+    height: clamp(20px, 2.5vw, 28px);
     position: relative;
 }
 
 .small-btn.heart-btn img { 
-    width: 28px; 
-    height: 28px; 
+    width: clamp(20px, 2.5vw, 28px); /* explicit sizing to match other small-btn img */
+    height: clamp(20px, 2.5vw, 28px);
     display: block; 
 }
 
@@ -121,8 +123,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 28px;
-    height: 28px;
+    width: 100%;
+    height: 100%;
     background-color: #612C4B; /* requested color */
     -webkit-mask-image: url("../../assets/heart-icon.svg");
             mask-image: url("../../assets/heart-icon.svg");
@@ -130,8 +132,8 @@
             mask-repeat: no-repeat;
     -webkit-mask-position: center;
             mask-position: center;
-    -webkit-mask-size: 28px 28px; /* explicit size to match icon */
-            mask-size: 28px 28px;
+    -webkit-mask-size: 100% 100%; /* scale with button */
+            mask-size: 100% 100%;
     pointer-events: none;
 }
 
@@ -143,13 +145,13 @@
 .time-stamp {
     color: #FFE8F5;
     font-weight: 700;
-    font-size: 14px;
+    font-size: clamp(11px, 1.3vw, 14px); /* scales down on smaller screens */
     white-space: nowrap;
 }
 
 .album-art {
-    width: 59px;
-    height: 59px;
+    width: clamp(45px, 5.5vw, 59px); /* scales down on smaller screens */
+    height: clamp(45px, 5.5vw, 59px);
     border-radius: 6px;
     border: 1.5px solid #895674;
     overflow: hidden;
@@ -157,7 +159,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 15px;
+    margin-right: clamp(10px, 1.5vw, 15px); /* responsive margin */
 }
 
 /* progress bar slider styling*/
