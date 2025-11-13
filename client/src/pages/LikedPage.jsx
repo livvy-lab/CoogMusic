@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
@@ -13,6 +14,7 @@ export default function LikedPage() {
   const listenerId = user?.listenerId ?? user?.ListenerID ?? 6;
 
   const { playList, playSong, playShuffled } = usePlayer();
+  const navigate = useNavigate();
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
@@ -307,7 +309,28 @@ export default function LikedPage() {
                           <div className="col-title">
                             <div className="songInfo">
                               <span className="songTitle">{t.title}</span>
-                              <span className="songArtist">{t.artist}</span>
+                              {/* artist name: clickable and accessible; fetch song to resolve artist id then navigate */}
+                              <span className="songArtist">
+                                <button
+                                  className="artistLink"
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      // prefer preloaded artistId if available
+                                      if (t.artistId) { navigate(`/artist/${t.artistId}`); return; }
+                                      const r = await fetch(`${API_BASE_URL}/songs/${t.SongID}`);
+                                      if (!r.ok) return;
+                                      const j = await r.json();
+                                      const artistId = j?.ArtistID || j?.ArtistId || j?.artistId || j?.artistID;
+                                      if (artistId) navigate(`/artist/${artistId}`);
+                                    } catch (err) {
+                                      console.error('Failed to navigate to artist', err);
+                                    }
+                                  }}
+                                >
+                                  {t.artist}
+                                </button>
+                              </span>
                             </div>
                           </div>
 
