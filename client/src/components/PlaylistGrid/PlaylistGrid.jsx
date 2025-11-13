@@ -395,16 +395,20 @@ export default function PlaylistGrid({
                             try {
                               // If attempting to make private, verify subscription
                               if (isPublic) {
+                                // Check if playlist is pinned
+                                if (isPinned) {
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Cannot make a pinned playlist private. Unpin it first.', type: 'error' } })); } catch(e) {}
+                                  return;
+                                }
+                                
                                 const subRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${currentUserId}`);
                                 if (!subRes.ok) {
-                                  alert('Only subscribers can make playlists private.');
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Only subscribers can make playlists private.', type: 'error' } })); } catch(e) {}
                                   return;
                                 }
                                 const subData = await subRes.json();
                                 if (!subData?.IsActive) {
-                                  if (window.confirm('Private playlists are for subscribers only. Go to subscription page?')) {
-                                    navigate('/subscription');
-                                  }
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Private playlists are for subscribers only.', type: 'error' } })); } catch(e) {}
                                   return;
                                 }
                               }
@@ -418,8 +422,9 @@ export default function PlaylistGrid({
                               const data = await res.json().catch(() => ({}));
                               if (!res.ok) throw new Error(data.error || 'Failed to update playlist');
                               setPlaylists(prev => prev.map(x => x.PlaylistID === p.PlaylistID ? { ...x, IsPublic: Number(newPublic) } : x));
+                              try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: isPublic ? 'Playlist is now private' : 'Playlist is now public', type: 'success' } })); } catch(e) {}
                             } catch (err) {
-                              alert(err.message || 'Could not change privacy');
+                              try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: err.message || 'Could not change privacy', type: 'error' } })); } catch(e) {}
                             }
                           }}
                         >
