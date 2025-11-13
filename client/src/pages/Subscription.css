@@ -14,6 +14,7 @@
   max-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  border: 5px solid #895674;
 }
 
 .subscription-header h1 {
@@ -42,21 +43,38 @@
   border-radius: 20px;
   padding: 2rem;
   min-width: 300px;
+  max-width: 340px; 
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1rem; 
+  text-align: center; 
+  border: 5px solid #895674;
 }
 
 .plan-card h2 {
   font-size: 2rem;
   color: #8b1858;
+  margin-bottom: 0.5rem; 
+}
+
+.plan-price {
+  font-size: 2.25rem;
+  color: #8b1858;
+  font-weight: 700;
   margin-bottom: 1rem;
+}
+
+.plan-price span {
+  font-size: 1rem;
+  font-weight: 400;
+  color: #895674;
 }
 
 .plan-features {
   flex-grow: 1;
+  text-align: left; 
 }
 
 .feature {
@@ -64,6 +82,11 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: 0.8rem;
+  color: #8b1858; 
+}
+
+.feature span {
+  color: #895674; 
 }
 
 .checkmark {
@@ -73,9 +96,14 @@
 
 .crown-icon {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
-  font-size: 1.5rem;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  background-image: url('../assets/subscribe-crown.svg'); 
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .plan-button {
@@ -86,16 +114,23 @@
   font-size: 1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+  margin-top: auto; 
 }
 
-.plan-button:hover {
+.plan-button:hover:not(:disabled) {
   transform: scale(1.02);
+}
+
+.plan-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .current {
   background-color: #c5a0b6;
   color: white;
+  cursor: default;
 }
 
 .current-inactive {
@@ -132,11 +167,6 @@
   background-color: #6d1245;
 }
 
-.subscribe-toggle:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .subscribed-light {
   background-color: #c5a0b6;
   color: white;
@@ -147,13 +177,21 @@
   background-color: #b08fa0;
 }
 
-.subscribed-light:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.subscription-error {
+  color: #D8000C;
+  background-color: #FFD2D2;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 1.5rem;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
+
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .plans-container {
     flex-direction: column;
     align-items: center;
@@ -161,6 +199,6 @@
 
   .plan-card {
     width: 100%;
-    max-width: 400px;
+    max-width: 450px; 
   }
 }
