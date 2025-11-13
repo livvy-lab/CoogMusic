@@ -35,6 +35,8 @@ export default function MusicPlayBar() {
     setVolumePercent,   // (0..1) => void
       toggleLikeCurrent,
       audioRef,
+      repeatMode,
+      toggleRepeat,
   } = usePlayer();
 
   // Use FavoritesPinsContext for like state
@@ -44,7 +46,6 @@ export default function MusicPlayBar() {
 
   // keep hooks order stable (don't early return)
   const [isSeeking, setIsSeeking] = useState(false);
-  const [isRepeating, setIsRepeating] = useState(false);
   const [volOpen, setVolOpen] = useState(false);
   const volumeRef = useRef(null);
 
@@ -112,10 +113,11 @@ export default function MusicPlayBar() {
         </button>
 
         <button
-          className={`control-btn small-btn ${isRepeating ? "is-active" : ""}`}
-          onClick={() => setIsRepeating((v) => !v)}
-          aria-pressed={isRepeating}
-          aria-label="Repeat"
+          className={`control-btn small-btn ${repeatMode !== 'none' ? 'is-active' : ''}`}
+          onClick={() => toggleRepeat?.()}
+          aria-pressed={repeatMode !== 'none'}
+          aria-label={repeatMode === 'one' ? 'Repeat one' : repeatMode === 'all' ? 'Repeat all' : 'Repeat off'}
+          title={repeatMode === 'one' ? 'Repeat one' : repeatMode === 'all' ? 'Repeat all' : 'Repeat off'}
         >
           <img src={repeatIcon} alt="" />
         </button>

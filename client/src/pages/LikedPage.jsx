@@ -279,10 +279,25 @@ export default function LikedPage() {
                         <div
                           key={t.SongID}
                           className="likedRow"
-                          onClick={() => playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist })}
+                          onClick={() => {
+                            // set full liked-songs queue so prev/next work as expected
+                            try {
+                              const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                              if (list.length > 0) { playList(list, i); return; }
+                            } catch (e) {
+                              // fallback to playing single song
+                            }
+                            playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                          }}
                           role="button"
                           tabIndex={0}
-                          onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
+                          onKeyDown={(e) => { if (e.key === 'Enter') {
+                            try {
+                              const list = (tracks || []).map((s) => ({ SongID: s.SongID, Title: s.title, ArtistName: s.artist }));
+                              if (list.length > 0) { playList(list, i); return; }
+                            } catch (err) {}
+                            playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist });
+                          } }}
                         >
                           <div className="col-num">{i + 1}</div>
 
