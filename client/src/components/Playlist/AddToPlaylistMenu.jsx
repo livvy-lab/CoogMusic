@@ -50,9 +50,13 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
     setLoading(true);
     const u = getUser();
     const listenerId = u?.listenerId ?? u?.ListenerID ?? null;
-    const url = listenerId
-      ? `${API_BASE_URL}/listeners/${listenerId}/playlists`
-      : `${API_BASE_URL}/playlists`;
+    if (!listenerId) {
+      setPlaylists([]);
+      setFetchedFor(null);
+      setLoading(false);
+      return;
+    }
+    const url = `${API_BASE_URL}/listeners/${listenerId}/playlists`;
     try {
       const res = await fetch(url);
       if (!res.ok) {
@@ -63,7 +67,6 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
       const data = await res.json();
       setPlaylists(Array.isArray(data) ? data : []);
       setFetchedFor(listenerId);
-
       // fallback for dev dbs
       if (listenerId && (!Array.isArray(data) || data.length === 0)) {
         try {
@@ -142,7 +145,16 @@ export default function AddToPlaylistMenu({ songId, songTitle, onAdded, compact 
           {confirmation ? (
             <div className="addToPlaylistPopup__confirmation">{confirmation}</div>
           ) : loading ? (
-            <div className="addToPlaylistPopup__loading" style={{padding: "8px 12px", fontSize: "14px", color: "#8c5d6dff"}}>Loading...</div>
+            <div
+              className="addToPlaylistPopup__loading"
+              style={{
+                padding: "8px 12px",
+                fontSize: "14px",
+                color: "#8c5d6d"
+              }}
+            >
+              Loading...
+            </div>
           ) : playlists.length > 0 ? (
             playlists.map((pl) => (
               <button

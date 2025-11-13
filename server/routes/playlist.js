@@ -70,7 +70,23 @@ export async function handlePlaylistRoutes(req, res) {
           s.Title,
           s.DurationSeconds,
           s.ReleaseDate,
-          al.Title AS Album
+          al.Title AS Album,
+          (
+            SELECT ar.ArtistID
+            FROM Song_Artist sa
+            JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
+            WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+            ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtistID
+            LIMIT 1
+          ) AS ArtistID,
+          (
+            SELECT ar.ArtistName
+            FROM Song_Artist sa
+            JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
+            WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
+            ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtistID
+            LIMIT 1
+          ) AS ArtistName
         FROM Playlist_Track pt
         JOIN Song s ON pt.SongID = s.SongID
         LEFT JOIN Album_Track at ON s.SongID = at.SongID

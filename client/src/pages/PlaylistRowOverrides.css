@@ -10,7 +10,7 @@
   align-items: center;
   overflow: visible; /* allow wrapped title to grow vertically */
   justify-self: start; /* force left alignment inside the grid cell */
-  padding-left: 8px; /* small left offset so text isn't flush to the card edge */
+  padding-left: 14px; /* small left offset so text isn't flush to the card edge - nudged right */
 }
 
 .playlistPage .songInfo {
@@ -83,7 +83,7 @@
    adjusted track-row columns above. These are small left shifts only for the
    playlist page and use !important to ensure they take precedence here. */
 .playlistPage .likedTableHeader .th-title {
-  left: 130px !important; /* move 'Title' slightly left */
+  left: 133px !important; /* nudged slightly left to better align with the title column */
   right: auto !important;
 }
 .playlistPage .likedTableHeader .th-album {
