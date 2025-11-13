@@ -113,13 +113,14 @@ export default function MusicPlayBar() {
         </button>
 
         <button
-          className={`control-btn small-btn ${repeatMode !== 'none' ? 'is-active' : ''}`}
+          className={`control-btn small-btn ${repeatMode !== 'none' ? 'is-active' : ''} ${repeatMode === 'one' ? 'repeat-one' : ''}`}
           onClick={() => toggleRepeat?.()}
           aria-pressed={repeatMode !== 'none'}
-          aria-label={repeatMode === 'one' ? 'Repeat one' : repeatMode === 'all' ? 'Repeat all' : 'Repeat off'}
-          title={repeatMode === 'one' ? 'Repeat one' : repeatMode === 'all' ? 'Repeat all' : 'Repeat off'}
+          aria-label={repeatMode === 'one' ? 'Repeat this song' : repeatMode === 'all' ? 'Loop playlist' : 'Repeat off'}
+          title={repeatMode === 'one' ? 'Repeat this song' : repeatMode === 'all' ? 'Loop playlist' : 'Repeat off'}
         >
           <img src={repeatIcon} alt="" />
+          {repeatMode === 'one' && <span className="repeat-badge">1</span>}
         </button>
 
         <span className="time-stamp">{fmt(currentTime)}</span>

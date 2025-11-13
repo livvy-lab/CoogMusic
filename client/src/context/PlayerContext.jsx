@@ -290,6 +290,10 @@ export function PlayerProvider({ children }) {
   // play next track in queue
   function next() {
     if (!queue || queue.length === 0) return;
+    // If user manually presses Next while in repeat-one, switch back to playlist repeat
+    if (repeatMode === 'one') {
+      setRepeatMode('all');
+    }
     const nextIndex = currentIndex + 1;
     if (nextIndex >= 0 && nextIndex < queue.length) {
       setCurrentIndex(nextIndex);
