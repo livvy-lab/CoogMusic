@@ -183,10 +183,10 @@
   /* nudged values: move columns right (clock stays fine) */
   --th-num-left: 70px;   /* was 55px */
   --th-heart-left: 130px; /* was 105px */
-  --th-title-left: 180px; /* was 243px */
+  --th-title-left: 230px; /* nudged right for header-only alignment */
   --th-title-right: auto;
   --th-album-left: 702px; /* was 562px */
-  --th-date-left: 920px;  /* was 880px */
+  --th-date-left: 930px;  /* nudged right from 920px */
   --th-dur-left: 1170px;  /* keep clock position */
 
   position: relative;           /* anchor for absolute children */
@@ -241,8 +241,9 @@
 /* Pill rows (match header grid) */
 .likedRow {
   display: grid;
-  /* columns:  # | heart | title | album | date | duration */
-  grid-template-columns: 60px 40px minmax(200px, 2fr) minmax(150px, 1fr) minmax(120px, 1fr) minmax(100px, 0.8fr); /* Set minimum widths to prevent collapse */
+  /* columns:  # | heart | cover | title | album | date | duration */
+  /* cover column is 36px total (32px image + 2px border each side) */
+  grid-template-columns: 60px 40px 36px minmax(200px, 2fr) minmax(150px, 1fr) minmax(120px, 1fr) minmax(100px, 0.8fr); /* Set minimum widths to prevent collapse */
   align-items: center;
   gap: 1rem;
   margin: 10px 0;
@@ -298,7 +299,7 @@
   justify-content: center;
   text-align: left;
   min-width: 0;
-  padding-left: 5px;
+  padding-left: -5px;
   width: 100%;
 }
 
@@ -434,7 +435,7 @@
 /* 📱 Responsive adjustments: keep right alignment, only shrink grid */
 @media (max-width: 1200px) {
   .likedRow {
-    grid-template-columns: 50px 36px minmax(170px, 2fr) minmax(140px, 1fr) minmax(120px, 1fr) minmax(90px, 0.8fr);
+      grid-template-columns: 50px 36px 36px minmax(170px, 2fr) minmax(140px, 1fr) minmax(120px, 1fr) minmax(90px, 0.8fr);
     gap: 0.75rem;
     padding: 10px 16px;
   }
@@ -447,24 +448,28 @@
   /* manual header offsets for mid-size screens */
   .listCard .likedTableHeader .th-num  { left: 26px !important; }
   .listCard .likedTableHeader .th-heart { left: 66px !important; }
-  .listCard .likedTableHeader .th-title { left: 100px !important; right: 360px !important; }
+  /* move header title right only (rows unaffected) */
+  .listCard .likedTableHeader .th-title { left: 170px !important; right: 360px !important; }
   .listCard .likedTableHeader .th-album { right: 300px !important; }
-  .listCard .likedTableHeader .th-date  { right: 150px !important; }
+  /* move Date Liked header slightly right (reduce right offset) */
+  .listCard .likedTableHeader .th-date  { right: 130px !important; }
   .listCard .likedTableHeader .th-dur   { right: 24px !important; }
 }
 
 @media (max-width: 900px) {
   .likedRow {
-    grid-template-columns: 45px 34px minmax(150px, 2fr) minmax(130px, 1fr) minmax(110px, 1fr) minmax(80px, 0.8fr);
+  grid-template-columns: 45px 34px 34px minmax(150px, 2fr) minmax(130px, 1fr) minmax(110px, 1fr) minmax(80px, 0.8fr);
     gap: 0.6rem;
     padding: 8px 14px;
   }
   .likedTableHeader { min-width: 700px; }
   .listCard .likedTableHeader .th-num  { left: 22px !important; }
   .listCard .likedTableHeader .th-heart { left: 60px !important; }
-  .listCard .likedTableHeader .th-title { left: 86px !important; right: 320px !important; }
+  /* small screens: nudge header title right only */
+  .listCard .likedTableHeader .th-title { left: 106px !important; right: 320px !important; }
   .listCard .likedTableHeader .th-album { right: 280px !important; }
-  .listCard .likedTableHeader .th-date  { right: 140px !important; }
+  /* small screens: shift Date Liked header right slightly */
+  .listCard .likedTableHeader .th-date  { right: 120px !important; }
   .listCard .likedTableHeader .th-dur   { right: 20px !important; }
   .col-album, .col-date, .col-duration { padding-right: 14px; }
 }
@@ -503,8 +508,29 @@
 .listCard.lockedLayout .likedTableHeader,
 .listCard.lockedLayout .likedRow {
   display: grid !important;
-  grid-template-columns: 60px 40px 520px 300px 190px 60px !important;
+  /* Add a small cover column so liked rows show a tiny image between heart and title */
+  grid-template-columns: 60px 40px 36px 480px 300px 190px 60px !important;
   gap: 16px !important;
+}
+
+/* Tiny cover column styling (only affects liked page rows) */
+.col-cover { display: flex; align-items: center; justify-content: center; }
+.songCoverTiny {
+  /* image content sized to 32x32, plus 2px border on each side -> column 36px */
+  width: 32px;
+  height: 32px;
+  border-radius: 6px; /* small rounded corners */
+  border: 2px solid #895674;
+  overflow: hidden;
+  display: inline-block;
+  background: linear-gradient(135deg, #b989b1, #8d5a8c);
+  box-sizing: content-box; /* keep border outside the width so total fits 36px */
+}
+.songCoverTiny img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 /* Prevent font-size adjustments and keep text centered inside cells */
