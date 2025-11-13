@@ -1,4 +1,6 @@
 import "./PlaylistGrid.css";
+// reuse the song actions pin styles so playlist pins match song pins
+import "../Songs/SongActions.css";
 import { useEffect, useState } from "react";
 import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
@@ -234,10 +236,16 @@ export default function PlaylistGrid({
         body: JSON.stringify({ playlistId }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+      if (!res.ok) {
+        const errMsg = res.status === 403 ? 'Can not pin private playlist' : (data?.error || 'Failed to pin playlist');
+        throw new Error(errMsg);
+      }
       setPinnedId(playlistId);
+      try {
+        window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist pinned to your profile', type: 'success' } }));
+      } catch (e) {}
     } catch (e) {
-      alert(e.message || "Could not pin playlist.");
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: e?.message || 'Can not pin private playlist', type: 'error' } })); } catch (err) {}
     } finally {
       setPinLoading(false);
     }
@@ -257,8 +265,14 @@ export default function PlaylistGrid({
           body: JSON.stringify({ playlistId }),
         });
         const data = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+        if (!res.ok) {
+          const errMsg = res.status === 403 ? 'Can not pin private playlist' : (data?.error || 'Failed to pin playlist');
+          throw new Error(errMsg);
+        }
         setPinnedId(playlistId);
+        try {
+          window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist pinned to your profile', type: 'success' } }));
+        } catch (e) {}
       } else {
         // Clear the pinned playlist using the dedicated DELETE endpoint
         const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
@@ -269,9 +283,12 @@ export default function PlaylistGrid({
           throw new Error(data?.error || "Failed to clear pinned playlist");
         }
         setPinnedId(null);
+        try {
+          window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist unpinned from your profile', type: 'success' } }));
+        } catch (e) {}
       }
     } catch (e) {
-      alert(e.message || "Could not update pinned playlist.");
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: e?.message || 'Could not update pinned playlist.', type: 'error' } })); } catch (err) {}
     } finally {
       setPinLoading(false);
     }
@@ -346,21 +363,25 @@ export default function PlaylistGrid({
                     <div className="pl__pinRow">
                       {!isPinned ? (
                         <button
-                          className="pl__pinBtn"
+                          className={`pl__pinBtn songActions__btn`}
+                          aria-pressed={false}
                           title={(!isPublic && Number(currentUserId) !== Number(p.ListenerID)) ? "Private playlists can only be pinned by the owner" : "Pin to profile"}
                           disabled={pinLoading || (!isPublic && Number(currentUserId) !== Number(p.ListenerID))}
                           onClick={e => { e.stopPropagation(); pinPlaylist(p.PlaylistID); }}
                         >
-                          📌 Pin
+                          <span className="songActions__icon songActions__icon--pin" aria-hidden="true"></span>
+                          <span className="sr-only">Pin</span>
                         </button>
                       ) : (
                         <button
-                          className="pl__pinBtn pl__pinBtn--active"
+                          className={`pl__pinBtn songActions__btn is-on`}
+                          aria-pressed={true}
                           title="Unpin from profile"
                           disabled={pinLoading}
                           onClick={e => { e.stopPropagation(); unpinPlaylist(); }}
                         >
-                          ✖ Unpin
+                          <span className="songActions__icon songActions__icon--pin" aria-hidden="true"></span>
+                          <span className="sr-only">Unpin</span>
                         </button>
                       )}
 

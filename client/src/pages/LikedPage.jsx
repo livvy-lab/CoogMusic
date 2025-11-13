@@ -145,10 +145,13 @@ export default function LikedPage() {
           </div>
         </section>
 
-        {/* Table */}
-        <section className="albumCard listCard">
+  {/* Table */}
+  <section className="albumCard listCard">
           <div className="likedTableHeader">
             <div className="th th-num">#</div>
+            <div className="th th-heart" title="Liked">
+              <Heart size={16} fill="#782355" color="#782355" />
+            </div>
             <div className="th th-title">Title</div>
             <div className="th th-album">Album</div>
             <div className="th th-date">Date Liked</div>
@@ -170,32 +173,31 @@ export default function LikedPage() {
                           tabIndex={0}
                           onKeyDown={(e) => { if (e.key === 'Enter') playSong({ SongID: t.SongID, Title: t.title, ArtistName: t.artist }); }}
                         >
-                  <div className="col-num">{i + 1}</div>
-                  <div className="col-title">
-                    <div className="songInfo">
-                      <span className="songTitle">{t.title}</span>
-                      <span className="songArtist">{t.artist}</span>
-                    </div>
-                  </div>
+                          <div className="col-num">{i + 1}</div>
 
-                  <div className="col-album">{t.album}</div>
-                  <div className="col-date">{t.date}</div>
-                  <div className="col-duration">
-                    {t.duration}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); unlikeSong(t.SongID); }}
-                      style={{
-                        background: "none",
-                        border: "none",
-                        marginLeft: "10px",
-                        cursor: "pointer",
-                      }}
-                      aria-label="Unlike song"
-                    >
-                      <Heart size={18} fill="#a94486" color="#a94486" />
-                    </button>
-                  </div>
-                </div>
+                          <div className="col-heart">
+                            <button
+                              className="heartBtn"
+                              onClick={(e) => { e.stopPropagation(); unlikeSong(t.SongID); }}
+                              aria-label="Unlike song"
+                              title="Unlike"
+                              style={{ background: 'none', border: 'none', cursor: 'pointer' }}
+                            >
+                              <Heart size={16} fill="#782355" color="#782355" />
+                            </button>
+                          </div>
+
+                          <div className="col-title">
+                            <div className="songInfo">
+                              <span className="songTitle">{t.title}</span>
+                              <span className="songArtist">{t.artist}</span>
+                            </div>
+                          </div>
+
+                          <div className="col-album">{t.album}</div>
+                          <div className="col-date">{t.date}</div>
+                          <div className="col-duration">{t.duration}</div>
+                        </div>
               ))
             )}
           </div>

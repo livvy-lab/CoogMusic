@@ -1,0 +1,109 @@
+.addToPlaylistMenu-root {
+  display: inline-block;
+  position: relative;
+}
+
+.addToPlaylistBtn--icon {
+  background: none;
+  border: none;
+  color: #af578a;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 2px 8px;
+  transition: transform 0.2s, color 0.2s;
+}
+
+.addToPlaylistBtn--icon:hover {
+  transform: scale(1.2);
+  color: #782355;
+}
+
+.addToPlaylistBtn--icon:active {
+  transform: scale(0.95);
+}
+
+.addToPlaylistBtn--compact {
+  width: auto !important;
+  height: auto !important;
+  padding: 2px 8px !important;
+  font-size: 40px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  box-shadow: none !important;
+}
+
+.addToPlaylistPopup-menu {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  z-index: 9999;
+  background: #ffe2f4;
+  border: 1.5px solid #af578a;
+  box-shadow: 0 2px 14px rgba(100, 0, 20, 0.07);
+  padding: 12px 10px 10px 10px;
+  min-width: 182px;
+  max-width: 250px;
+  border-radius: 11px;
+}
+
+.addToPlaylistPopup__title {
+  color: #af578a;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 9px;
+  text-align: left;
+}
+
+.addToPlaylistPopup__playlistBtn {
+  width: 100%;
+  background: none;
+  border: none;
+  color: #782355;
+  text-align: left;
+  cursor: pointer;
+  padding: 8px 0;
+  border-radius: 7px;
+  transition: background 0.15s;
+  font-size: 1rem;
+}
+.addToPlaylistPopup__playlistBtn:hover {
+  background: #ffd7ee;
+}
+
+.addToPlaylistPopup__noPlaylists {
+  padding: 4px 0;
+  text-align: left;
+}
+.addToPlaylistPopup__emptyTxt {
+  font-size: 12px;
+  margin-bottom: 3px;
+  color: #666;
+}
+.addToPlaylistPopup__fetchedFor {
+  font-size: 11px;
+  color: #bfa3ba;
+  margin-bottom: 2px;
+}
+.addToPlaylistPopup__create {
+  color: #782355;
+  font-size: 13px;
+  text-decoration: underline;
+  margin-top: 2px;
+  display: inline-block;
+}
+
+@media (hover: none) {
+  .addToPlaylistBtn--icon {
+    font-size: 26px;
+  }
+}
+
+.addToPlaylistPopup__confirmation {
+  color: #4b2c3d;
+  font-weight: 500;
+  background: #ffe2f4;
+  border-radius: 8px;
+  margin: 10px 0;
+  padding: 13px 10px 11px 10px;
+  text-align: left;
+}

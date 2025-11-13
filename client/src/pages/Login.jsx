@@ -36,7 +36,10 @@ export default function Login() {
           name: data.name,
         };
         setUser(user);
-        if (data.accountType === "artist") {
+        
+        if (data.accountType === "admin") {
+          navigate("/admin-home");
+        } else if (data.accountType === "artist") {
           navigate("/artist-dashboard");
         } else {
           navigate("/home");

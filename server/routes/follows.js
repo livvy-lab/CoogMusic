@@ -122,7 +122,7 @@ export async function handleFollowsRoutes(req, res) {
         return;
       }
       const [[row]] = await db.query(
-        "SELECT COUNT(*) AS FollowerCount FROM Follows WHERE FollowingID = ? AND FollowingType = 'Artist'",
+        "SELECT COUNT(*) AS FollowerCount FROM Follows WHERE FollowingID = ? AND FollowingType = 'Artist' AND COALESCE(IsDeleted, 0) = 0",
         [artistId]
       );
       res.writeHead(200, { "Content-Type": "application/json" });

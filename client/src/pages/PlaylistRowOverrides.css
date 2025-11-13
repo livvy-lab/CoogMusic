@@ -10,7 +10,7 @@
   align-items: center;
   overflow: visible; /* allow wrapped title to grow vertically */
   justify-self: start; /* force left alignment inside the grid cell */
-  padding-left: 150px; /* small left offset so text isn't flush to the card edge */
+  padding-left: 8px; /* small left offset so text isn't flush to the card edge */
 }
 
 .playlistPage .songInfo {
@@ -18,7 +18,7 @@
   flex-direction: column; /* stack title above artist */
   gap: 4px;
   justify-content: center;
-  padding-left: 0; /* align left on playlist page */
+  padding-left: 10px; /* align left on playlist page */
   align-items: flex-start; /* left-align stacked text */
   background: transparent; /* explicit to avoid blending */
   mix-blend-mode: normal; /* avoid visual blending artifacts */
@@ -26,7 +26,12 @@
 
 /* Give the title column more space on the playlist page only */
 .playlistPage .likedRow {
-  grid-template-columns: 40px 2fr 1fr 1fr 60px !important;
+  /* 5 columns for playlist page: number | title | album | date | duration
+     Shrink the title column slightly and give album/date fixed-ish space so
+     they appear more left in the row. */
+  grid-template-columns: 60px minmax(180px, 1.6fr) minmax(140px, 1fr) minmax(120px, 1fr) 80px !important;
+  align-items: center;
+  column-gap: 12px;
 }
 
 /* Allow the song title to wrap to multiple lines so it can hold more text */
@@ -56,7 +61,10 @@
 .playlistPage .col-album { margin-left: 0 !important; }
 .playlistPage .col-date  { margin-left: 0 !important; }
 
-.playlistPage .col-album { justify-self: start; padding-left: -120px; }
+/* Move album and date left by left-aligning their cells and adding a small
+  left padding so they sit nearer the title column. */
+.playlistPage .col-album { justify-self: start; padding-left: 40px; text-align: left; }
+.playlistPage .col-date  { justify-self: start; padding-left: 40px; text-align: left; }
 
 /* Optional small tweak: reduce gap between title + artist safely */
 .playlistPage .songInfo { gap: 2px; }
@@ -69,4 +77,18 @@
   object-fit: cover;
   display: block;
   border-radius: 12px; /* match likedCoverCircle rounded corners */
+}
+
+/* Header tweaks for playlist page: nudge column titles so they align with the
+   adjusted track-row columns above. These are small left shifts only for the
+   playlist page and use !important to ensure they take precedence here. */
+.playlistPage .likedTableHeader .th-title {
+  left: 130px !important; /* move 'Title' slightly left */
+  right: auto !important;
+}
+.playlistPage .likedTableHeader .th-album {
+  left: 620px !important; /* move 'Album' left to sit above album cells */
+}
+.playlistPage .likedTableHeader .th-date {
+  left: 880px !important; /* move 'Date Added' left to sit above date cells */
 }

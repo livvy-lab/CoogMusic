@@ -231,11 +231,27 @@
 .pl__pinRow {
   position: absolute;
   top: 8px;
+  /* keep the control row anchored near the top-right; individual buttons may be nudged */
   right: 8px;
   display: flex;
   gap: 8px;
   align-items: center;
   z-index: 10;
+}
+
+/* Nudge only the pin button left so it visually centers over the card without
+   moving the privacy toggle. Use a small translate and ensure hover scale
+   preserves the offset. We use !important to override the songActions transform
+   without changing the global songActions file. */
+.pl__pinBtn {
+  --pl-pin-offset: -15px; /* tweak this value if you want more/less shift */
+  transform: translateX(var(--pl-pin-offset)) !important;
+}
+.pl__pinBtn:hover {
+  transform: translateX(var(--pl-pin-offset)) scale(1.2) !important;
+}
+.pl__pinBtn.is-on {
+  transform: translateX(var(--pl-pin-offset)) !important;
 }
 
 /* Privacy toggle button — subtle, matches card colors */
@@ -315,5 +331,18 @@
 
 .dropdownItem.delete {
   color: #a94486;
+}
+
+/* Accessibility helper: visually hide elements but keep them available to screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
 }
 
