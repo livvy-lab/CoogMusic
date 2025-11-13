@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "./NavigationBar.css";
 import { getUser, clearUser } from "../../lib/userStorage";
+import { usePlayer } from "../../context/PlayerContext";
 
 import dashboardIcon from '../../assets/navigation_icons/dashboard.svg';
 import socialIcon from '../../assets/navigation_icons/social.svg';
@@ -25,8 +26,10 @@ export default function NavigationBar() {
   const user = useMemo(() => getUser(), []);
   const isArtist = (user?.accountType || "").toLowerCase() === "artist";
   const isAdmin = (user?.accountType || "").toLowerCase() === "admin";
+  const { clearPlayer } = usePlayer();
 
   const handleLogout = () => {
+    clearPlayer(); // Stop music and clear player state
     clearUser();
     navigate("/login");
   };
