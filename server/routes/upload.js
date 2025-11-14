@@ -1,4 +1,3 @@
-// server/routes/upload.js
 import path from "path";
 import fs from "fs";
 import { stat } from "fs/promises";
@@ -93,7 +92,6 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 500, "s3_not_configured");
       }
 
-      // Accept common ad types (image/audio/video). Field name: adFile
       let fields, files;
       try {
         ({ fields, files } = await parseMultipart(req, {
@@ -112,7 +110,6 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 400, e.message || "multipart_parse_error");
       }
 
-      // Authorization: only allow Artists to upload ads
       try {
         const accountId = Number(fields.accountId ?? fields.accountID ?? fields.AccountID);
         if (!Number.isFinite(accountId) || accountId <= 0) {
@@ -131,8 +128,7 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 500, authErr.message || "auth_check_failed");
       }
 
-  // Accept a variety of field names from forms, prefer 'adFile'
-  const raw = (files?.adFile || files?.file || files?.upload || Object.values(files || {})[0] || null);
+      const raw = (files?.adFile || files?.file || files?.upload || Object.values(files || {})[0] || null);
       const up = raw && {
         filepath: raw.filepath || null,
         originalFilename: raw.originalFilename || "",
@@ -141,32 +137,24 @@ export async function handleUploadRoutes(req, res) {
       if (!up) return bad(res, 400, "adFile_field_missing");
       if (!up.filepath) return bad(res, 400, "adfile_tempfile_missing");
 
-      // Optional metadata and S3 key naming
       const title = String(fields.adTitle || fields.title || "").trim();
       const ext = path.extname(up.originalFilename || "");
       const origBase = path.basename(up.originalFilename || "ad", ext);
       const slugTitle = slug(title);
       const base = slugTitle || (slug(origBase) || "ad");
 
-      // If Ad Title provided, prefer exact name images/ads/<slugTitle><ext>.
-      // Otherwise, fall back to unique key with uuid.
       let key = slugTitle ? `images/ads/${base}${ext}` : `images/ads/${base}_${randomUUID()}${ext}`;
 
-      // Avoid unintentional overwrite when title-based name already exists.
       if (slugTitle) {
         try {
           await s3.send(new HeadObjectCommand({ Bucket: BUCKET, Key: key }));
-          // If exists, append timestamp suffix
           key = `images/ads/${base}-${Date.now()}${ext}`;
-        } catch (e) {
-          // NotFound => safe to use original key; ignore other errors
-        }
+        } catch (e) {}
       }
 
       let put;
       try {
         put = await putToS3(key, up.filepath, up.mimetype);
-  // Log where the file was uploaded for troubleshooting
         console.log("S3 upload success:", { bucket: BUCKET, key, title, mime: up.mimetype });
       } catch (awsErr) {
         return ok(res, 500, {
@@ -176,12 +164,10 @@ export async function handleUploadRoutes(req, res) {
         });
       }
 
-      // Persist to Advertisement table: AdName, AdFile (canonical), ArtistID, IsDeleted=0
       let adId = null;
       try {
         const adName = title || path.basename(key);
 
-        // Resolve ArtistID from the uploading accountId
         const accountId = Number(fields.accountId ?? fields.accountID ?? fields.AccountID);
         let artistId = null;
         if (Number.isFinite(accountId) && accountId > 0) {
@@ -205,7 +191,6 @@ export async function handleUploadRoutes(req, res) {
         adId = ins.insertId ?? null;
       } catch (dbErr) {
         console.error("DB insert Advertisement failed:", dbErr?.message || dbErr);
-        // Continue to return upload success even if DB insert fails, but include error
         return ok(res, 201, {
           canonical: put.canonical,
           url: put.url,
@@ -227,7 +212,6 @@ export async function handleUploadRoutes(req, res) {
     }
 
     if (method === "POST" && pathname === "/upload/album") {
-      // 1) Parse multipart (no files required for album, just metadata)
       let fields, files;
       try {
         ({ fields, files } = await parseMultipart(req, { allowed: ["*/*"] }));
@@ -235,13 +219,11 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 400, e.message || "multipart_parse_error");
       }
 
-      // 2) Validate fields
       const title = String(fields.title || "").trim();
       const artistId = Number(fields.artistId);
       const releaseDate = fields.releaseDate || null;
       const description = String(fields.description || "").trim();
-      
-      // Parse genres array (sent as JSON string)
+
       let genres = [];
       try {
         if (fields.genres) {
@@ -256,14 +238,12 @@ export async function handleUploadRoutes(req, res) {
       if (!Number.isFinite(artistId) || artistId <= 0)
         return bad(res, 400, "artistId_required");
 
-      // 3) Insert Album
       const [albumIns] = await db.query(
         "INSERT INTO Album (Title, ReleaseDate, Description, IsDeleted) VALUES (?, ?, ?, 0)",
         [title, releaseDate, description]
       );
       const albumId = albumIns.insertId;
 
-      // 4) Link artist to album
       try {
         await db.query(
           "INSERT INTO Album_Artist (AlbumID, ArtistID) VALUES (?, ?)",
@@ -273,7 +253,6 @@ export async function handleUploadRoutes(req, res) {
         console.warn("Failed to link artist to album:", err?.message);
       }
 
-      // 5) Link genres to album
       if (genres.length > 0) {
         for (const genreId of genres) {
           if (Number.isFinite(genreId) && genreId > 0) {
@@ -303,7 +282,6 @@ export async function handleUploadRoutes(req, res) {
         return bad(res, 500, "s3_not_configured");
       }
 
-      // 1) Parse multipart (accept audio/*)
       let fields, files;
       try {
         ({ fields, files } = await parseMultipart(req, { allowed: ["audio/*"] }));
@@ -324,14 +302,12 @@ export async function handleUploadRoutes(req, res) {
       if (!aud) return bad(res, 400, "audio_field_missing");
       if (!aud.filepath) return bad(res, 400, "audio_tempfile_missing");
 
-      // 2) Validate fields
       const title = String(fields.title || "").trim();
       const artistId = Number(fields.artistId);
       const albumId = fields.albumId ? Number(fields.albumId) : null;
       const genreId = fields.genreId ? Number(fields.genreId) : null;
       const trackNumber = fields.trackNumber ? Number(fields.trackNumber) : null;
 
-      // Parse genres array (sent as JSON string from frontend)
       let genres = [];
       try {
         if (fields.genres) {
@@ -346,7 +322,6 @@ export async function handleUploadRoutes(req, res) {
       if (!Number.isFinite(artistId) || artistId <= 0)
         return bad(res, 400, "artistId_required");
 
-      // 3) Hash + de-dupe media
       const { size } = await stat(aud.filepath);
       const sha = await sha256File(aud.filepath);
 
@@ -369,7 +344,6 @@ export async function handleUploadRoutes(req, res) {
           { expiresIn: 3600 }
         );
       } else {
-        // S3 path under "song/<artistId>/..."
         const ext = path.extname(aud.originalFilename || "");
         const base = slug(path.basename(aud.originalFilename || "audio", ext)) || "audio";
         s3key = `song/${artistId}/${base}_${randomUUID()}${ext}`;
@@ -395,7 +369,6 @@ export async function handleUploadRoutes(req, res) {
         mediaId = ins.insertId;
       }
 
-      // 4) DurationSeconds
       let durationSeconds = 0;
       try {
         const dur = await getAudioDurationInSeconds(aud.filepath);
@@ -404,7 +377,6 @@ export async function handleUploadRoutes(req, res) {
         console.warn("Could not read duration:", durErr?.message || durErr);
       }
 
-      // 5) Insert Song
       const cols = [
         "Title",
         "audio_media_id",
@@ -434,7 +406,6 @@ export async function handleUploadRoutes(req, res) {
         ]);
       } catch {}
 
-      // Link genres to song
       if (genres.length > 0) {
         for (const genreIdFromArray of genres) {
           if (Number.isFinite(genreIdFromArray) && genreIdFromArray > 0) {
@@ -472,7 +443,72 @@ export async function handleUploadRoutes(req, res) {
       });
     }
 
-    // === FALLBACK ===
+    if (method === "POST" && pathname === "/upload/image") {
+      if (!BUCKET || !process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID) {
+        return bad(res, 500, "s3_not_configured");
+      }
+
+      let fields, files;
+      try {
+        ({ fields, files } = await parseMultipart(req, { allowed: ["image/*"] }));
+      } catch (e) {
+        if (String(e.code) === "UNSUPPORTED_MIME")
+          return bad(res, 415, e.message || "unsupported_mime");
+        return bad(res, 400, e.message || "multipart_parse_error");
+      }
+
+      const raw = files?.image || files?.cover || null;
+      const img = raw && {
+        filepath: raw.filepath || null,
+        originalFilename: raw.originalFilename || "",
+        mimetype: raw.mimetype || "application/octet-stream"
+      };
+      if (!img) return bad(res, 400, "image_field_missing");
+      if (!img.filepath) return bad(res, 400, "image_tempfile_missing");
+
+      const artistId = Number(fields.artistId) || "unknown";
+
+      const { size } = await stat(img.filepath);
+      const sha = await sha256File(img.filepath);
+
+      const [mrows] = await db.query(
+        "SELECT MediaID FROM Media WHERE sha256=? AND size_bytes=? LIMIT 1",
+        [sha, size]
+      );
+      const existing = mrows[0];
+
+      let mediaId;
+
+      if (existing) {
+        mediaId = existing.MediaID;
+      } else {
+        const ext = path.extname(img.originalFilename || "");
+        const base = slug(path.basename(img.originalFilename || "image", ext)) || "image";
+        const s3key = `image/cover/${artistId}/${base}_${randomUUID()}${ext}`;
+
+        let put;
+        try {
+          put = await putToS3(s3key, img.filepath, img.mimetype);
+        } catch (awsErr) {
+          return ok(res, 500, { error: awsErr.message || "s3_put_error" });
+        }
+        const canonical = put.canonical;
+        const mimeStored = img.mimetype;
+
+        const [ins] = await db.query(
+          "INSERT INTO Media (storage_provider, bucket, s3_key, url, mime, size_bytes, sha256, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+          ["aws-s3", BUCKET, s3key, canonical, mimeStored, size, sha]
+        );
+        mediaId = ins.insertId;
+      }
+
+      return ok(res, 201, {
+        mediaId,
+        sha256: sha,
+        size_bytes: Number(size)
+      });
+    }
+
     return bad(res, 404, "not_found");
   } catch (e) {
     return ok(res, 500, {
@@ -484,7 +520,6 @@ export async function handleUploadRoutes(req, res) {
     });
   }
 }
-
 
 export async function handleLocalUpload(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);

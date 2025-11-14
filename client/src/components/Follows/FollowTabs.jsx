@@ -22,10 +22,18 @@ export default function FollowTabs() {
     : "Artist";
 
   // Hide follow button for logged in user
-  const currentUserId = loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
-  const currentUserType = loggedInUser.accountType === "listener" ? "Listener" : "Artist";
+  const currentUserId =
+    loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
+  const currentUserType =
+    loggedInUser.accountType === "listener" ? "Listener" : "Artist";
 
-  const [activeTab, setActiveTab] = useState(initialTab);
+
+  const isArtist = currentUserType === "Artist";
+  const isViewingOwnProfile = !isViewingOtherListener;
+  const [activeTab, setActiveTab] = useState(
+    isArtist && isViewingOwnProfile ? "followers" : initialTab,
+  );
+
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [myFollowing, setMyFollowing] = useState([]); // Track who the logged-in user follows
@@ -34,30 +42,34 @@ export default function FollowTabs() {
   // Refetch lists for profile being viewed
   const refetchData = async () => {
     const followersRes = await fetch(
-      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`
+      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`,
     );
     setFollowers(await followersRes.json());
-    const followingRes = await fetch(
-      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`
-    );
-    setFollowing(await followingRes.json());
-    
-    // Also fetch who the logged-in user is following
-    const myFollowingRes = await fetch(
-      `${API_BASE_URL}/follows?userId=${currentUserId}&userType=${currentUserType}&tab=following`
-    );
-    setMyFollowing(await myFollowingRes.json());
+    if (!isArtist || !isViewingOwnProfile) {
+      const followingRes = await fetch(
+        `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`,
+      );
+      setFollowing(await followingRes.json());
+    }
+
+    if (!isArtist) {
+      const myFollowingRes = await fetch(
+        `${API_BASE_URL}/follows?userId=${currentUserId}&userType=${currentUserType}&tab=following`,
+      );
+      setMyFollowing(await myFollowingRes.json());
+    }
   };
 
   useEffect(() => {
     refetchData();
-  }, [viewedUserId, viewedUserType]);
+  }, [viewedUserId, viewedUserType, isArtist, isViewingOwnProfile]);
 
   useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
+    setActiveTab(isArtist && isViewingOwnProfile ? "followers" : initialTab);
+  }, [initialTab, isArtist, isViewingOwnProfile]);
 
   const handleFollow = async (targetUser) => {
+    if (isArtist) return;
     try {
       const response = await fetch(`${API_BASE_URL}/follows`, {
         method: "POST",
@@ -69,14 +81,14 @@ export default function FollowTabs() {
           FollowingType: targetUser.type,
         }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error("Follow failed:", error);
         alert(error.error || "Failed to follow user");
         return;
       }
-      
+
       await refetchData();
     } catch (error) {
       console.error("Error following user:", error);
@@ -85,6 +97,7 @@ export default function FollowTabs() {
   };
 
   const handleUnfollow = async (targetUser) => {
+    if (isArtist) return;
     try {
       const response = await fetch(`${API_BASE_URL}/follows`, {
         method: "DELETE",
@@ -96,14 +109,14 @@ export default function FollowTabs() {
           FollowingType: targetUser.type,
         }),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         console.error("Unfollow failed:", error);
         alert(error.error || "Failed to unfollow user");
         return;
       }
-      
+
       await refetchData();
     } catch (error) {
       console.error("Error unfollowing user:", error);
@@ -123,12 +136,16 @@ export default function FollowTabs() {
         >
           Followers
         </button>
-        <button
-          className={activeTab === "following" ? "active" : ""}
-          onClick={() => setActiveTab("following")}
-        >
-          Following
-        </button>
+        
+        {(!isArtist || !isViewingOwnProfile) && (
+          <button
+            className={activeTab === "following" ? "active" : ""}
+            onClick={() => setActiveTab("following")}
+          >
+            Following
+          </button>
+        )}
+
       </div>
       <div className="search-bar-container">
         <input
@@ -144,7 +161,8 @@ export default function FollowTabs() {
           .filter(
             (u) =>
               (u.name && u.name.toLowerCase().includes(search.toLowerCase())) ||
-              (u.username && u.username.toLowerCase().includes(search.toLowerCase()))
+              (u.username &&
+                u.username.toLowerCase().includes(search.toLowerCase())),
           )
           .map((user) => (
             <UserRow
@@ -153,7 +171,7 @@ export default function FollowTabs() {
               isFollowing={
                 // check if the logged in user is following this user
                 myFollowing.some(
-                  (f) => f.id === user.id && f.type === user.type
+                  (f) => f.id === user.id && f.type === user.type,
                 )
               }
               onFollow={() => handleFollow(user)}

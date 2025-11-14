@@ -1,4 +1,3 @@
-// server/routes/artist.js
 import db from "../db.js";
 
 function json(res, status, body) {
@@ -6,38 +5,17 @@ function json(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-const STREAM_MS_THRESHOLD = 0;
-
 export async function handleArtistRoutes(req, res) {
-  const { pathname, searchParams } = new URL(
-    req.url,
-    `http://${req.headers.host}`
-  );
+  const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET, POST, PUT, DELETE, OPTIONS"
-  );
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (method === "OPTIONS") {
-    res.writeHead(204);
-    res.end();
-    return;
-  }
 
   try {
     if (method === "GET" && pathname === "/artists") {
       const [rows] = await db.query(
         `
         SELECT
-          a.ArtistID,
-          a.ArtistName,
-          a.DateCreated,
-          a.Bio,
-          a.AccountID,
-          a.image_media_id,
+          a.ArtistID, a.ArtistName, a.DateCreated, a.Bio, a.AccountID, a.image_media_id,
           COALESCE(m.url, a.PFP) AS pfpUrl
         FROM Artist a
         LEFT JOIN Media m ON m.MediaID = a.image_media_id
@@ -45,27 +23,28 @@ export async function handleArtistRoutes(req, res) {
         ORDER BY a.ArtistID ASC
         `
       );
-      return json(
-        res,
-        200,
-        rows.map((r) => ({ ...r, PFP: r.pfpUrl || null }))
-      );
+      return json(res, 200, rows.map((r) => ({ ...r, PFP: r.pfpUrl || null })));
     }
 
-    const mBio = pathname.match(/^\/artists\/(\d+)\/bio\/?$/);
-    if (method === "GET" && mBio) {
-      const artistId = Number(mBio[1]);
-      const [[row]] = await db.query(
+    const mAlbums = pathname.match(/^\/artists\/(\d+)\/albums\/?$/);
+    if (method === "GET" && mAlbums) {
+      const artistId = Number(mAlbums[1]);
+      const [rows] = await db.query(
         `
-        SELECT
-          a.Bio
-        FROM Artist a
-        WHERE a.ArtistID = ? AND COALESCE(a.IsDeleted,0) = 0
+        SELECT 
+          al.AlbumID, al.Title, al.ReleaseDate, al.cover_media_id,
+          COUNT(DISTINCT at.SongID) AS TrackCount
+        FROM Album al
+        JOIN Album_Artist aa ON aa.AlbumID = al.AlbumID
+        LEFT JOIN Album_Track at ON at.AlbumID = al.AlbumID
+        WHERE COALESCE(al.IsDeleted,0) = 0
+          AND aa.ArtistID = ?
+        GROUP BY al.AlbumID, al.Title, al.ReleaseDate, al.cover_media_id
+        ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
         `,
         [artistId]
       );
-      if (!row) return json(res, 404, { error: "Artist not found" });
-      return json(res, 200, { Bio: row.Bio || "" });
+      return json(res, 200, rows);
     }
 
     const mGet = pathname.match(/^\/artists\/(\d+)\/?$/);
@@ -74,12 +53,7 @@ export async function handleArtistRoutes(req, res) {
       const [[row]] = await db.query(
         `
         SELECT
-          a.ArtistID,
-          a.ArtistName,
-          a.DateCreated,
-          a.Bio,
-          a.AccountID,
-          a.image_media_id,
+          a.ArtistID, a.ArtistName, a.DateCreated, a.Bio, a.AccountID, a.image_media_id,
           COALESCE(m.url, a.PFP) AS pfpUrl
         FROM Artist a
         LEFT JOIN Media m ON m.MediaID = a.image_media_id
@@ -91,114 +65,13 @@ export async function handleArtistRoutes(req, res) {
       return json(res, 200, { ...row, PFP: row.pfpUrl || null });
     }
 
-    if (/^\/artists\/\d+\/top-tracks\/?$/.test(pathname) && method === "GET") {
-      const artistId = Number(pathname.split("/")[2]);
-      const limit = Math.min(
-        Math.max(Number(searchParams.get("limit")) || 10, 1),
-        50
-      );
-
-      const [tracks] = await db.query(
-        `
-        SELECT
-          s.SongID,
-          s.Title,
-          s.DurationSeconds,
-          s.ReleaseDate,
-          COALESCE(COUNT(p.PlayID),0) AS Streams
-        FROM Song s
-        JOIN Song_Artist sa
-          ON sa.SongID = s.SongID
-         AND COALESCE(sa.IsDeleted,0)=0
-         AND sa.ArtistID = ?
-        LEFT JOIN Play p
-          ON p.SongID = s.SongID
-         AND COALESCE(p.IsDeleted,0) = 0
-         AND p.MsPlayed >= ?
-        WHERE COALESCE(s.IsDeleted,0)=0
-        GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate
-        ORDER BY Streams DESC, s.SongID DESC
-        LIMIT ?
-        `,
-        [artistId, STREAM_MS_THRESHOLD, limit]
-      );
-
-      return json(res, 200, { tracks });
-    }
-
-    if (/^\/artists\/\d+\/discography\/?$/.test(pathname) && method === "GET") {
-      const artistId = Number(pathname.split("/")[2]);
-
-      const [albums] = await db.query(
-        `
-        SELECT
-          al.AlbumID,
-          al.Title AS AlbumTitle,
-          al.ReleaseDate,
-          al.cover_media_id AS CoverMediaID,
-          COUNT(DISTINCT at.SongID) AS TrackCount
-        FROM Album al
-        LEFT JOIN Album_Artist aa
-          ON aa.AlbumID = al.AlbumID AND COALESCE(aa.IsDeleted,0)=0
-        LEFT JOIN Album_Track at
-          ON at.AlbumID = al.AlbumID
-        WHERE COALESCE(al.IsDeleted,0)=0
-          AND (
-            aa.ArtistID = ?
-            OR EXISTS (
-              SELECT 1
-                FROM Album_Track at2
-                JOIN Song_Artist sa2
-                  ON sa2.SongID = at2.SongID AND COALESCE(sa2.IsDeleted,0)=0
-               WHERE at2.AlbumID = al.AlbumID
-                 AND sa2.ArtistID = ?
-            )
-          )
-        GROUP BY al.AlbumID, al.Title, al.ReleaseDate, al.cover_media_id
-        ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
-        `,
-        [artistId, artistId]
-      );
-
-      const [singles] = await db.query(
-        `
-        SELECT
-          s.SongID,
-          s.Title,
-          s.ReleaseDate,
-          s.cover_media_id AS CoverMediaID,
-          COALESCE(COUNT(p.PlayID),0) AS Streams
-        FROM Song s
-        JOIN Song_Artist sa
-          ON sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-        LEFT JOIN Album_Track at ON at.SongID = s.SongID
-        LEFT JOIN Play p
-          ON p.SongID = s.SongID
-         AND COALESCE(p.IsDeleted,0) = 0
-         AND p.MsPlayed >= ?
-        WHERE COALESCE(s.IsDeleted,0)=0
-          AND sa.ArtistID = ?
-          AND at.SongID IS NULL
-        GROUP BY s.SongID, s.Title, s.ReleaseDate, s.cover_media_id
-        ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
-        `,
-        [STREAM_MS_THRESHOLD, artistId]
-      );
-
-      return json(res, 200, { albums, singles });
-    }
-
     if (method === "POST" && pathname === "/artists") {
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
         const {
-          AccountID = null,
-          ArtistName = "",
-          DateCreated = null,
-          PFP = null,
-          Bio = null,
-          image_media_id = null,
+          AccountID = null, ArtistName = "", DateCreated = null,
+          PFP = null, Bio = null, image_media_id = null,
         } = JSON.parse(body || "{}");
 
         const [r] = await db.query(
@@ -210,14 +83,8 @@ export async function handleArtistRoutes(req, res) {
         );
 
         return json(res, 201, {
-          ArtistID: r.insertId,
-          AccountID,
-          ArtistName,
-          DateCreated,
-          PFP,
-          Bio,
-          image_media_id,
-          IsDeleted: 0,
+          ArtistID: r.insertId, AccountID, ArtistName, DateCreated,
+          PFP, Bio, image_media_id, IsDeleted: 0,
         });
       });
       return;
@@ -226,38 +93,24 @@ export async function handleArtistRoutes(req, res) {
     const mPut = pathname.match(/^\/artists\/(\d+)\/?$/);
     if (method === "PUT" && mPut) {
       const artistId = Number(mPut[1]);
-
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
         const {
-          AccountID = null,
-          ArtistName = "",
-          DateCreated = null,
-          PFP = null,
-          Bio = null,
-          image_media_id = null,
+          AccountID = null, ArtistName = "", DateCreated = null,
+          PFP = null, Bio = null, image_media_id = null,
         } = JSON.parse(body || "{}");
 
         const [r] = await db.query(
           `
           UPDATE Artist
-             SET AccountID = ?,
-                 ArtistName = ?,
-                 DateCreated = ?,
-                 PFP = ?,
-                 Bio = ?,
-                 image_media_id = ?
+             SET AccountID = ?, ArtistName = ?, DateCreated = ?,
+                 PFP = ?, Bio = ?, image_media_id = ?
            WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0
           `,
           [
-            AccountID,
-            ArtistName,
-            DateCreated,
-            PFP,
-            Bio,
-            image_media_id,
-            artistId,
+            AccountID, ArtistName, DateCreated, PFP,
+            Bio, image_media_id, artistId,
           ]
         );
 
@@ -265,13 +118,8 @@ export async function handleArtistRoutes(req, res) {
           return json(res, 404, { error: "Artist not found" });
 
         return json(res, 200, {
-          ArtistID: artistId,
-          AccountID,
-          ArtistName,
-          DateCreated,
-          PFP,
-          Bio,
-          image_media_id,
+          ArtistID: artistId, AccountID, ArtistName, DateCreated,
+          PFP, Bio, image_media_id,
           message: "Artist updated successfully",
         });
       });
@@ -290,7 +138,9 @@ export async function handleArtistRoutes(req, res) {
       return json(res, 200, { message: "Artist soft deleted successfully" });
     }
 
-    return json(res, 404, { error: "Route not found" });
+    // fallback if no other route in this file matches
+    return json(res, 404, { error: "Route not found in artist.js" });
+
   } catch (err) {
     console.error(
       "artist route error:",

@@ -78,10 +78,15 @@ export default function NavigationBar() {
               <img src={socialIcon} alt="" className="navTitleIcon" />
               <span>Social</span>
             </div>
-            <Link className="navLink" to="/profile">
+            
+            <Link 
+              className="navLink" 
+              to={(isArtist && (user?.artistId ?? user?.ArtistID)) ? `/artist/${user.artistId ?? user.ArtistID}` : "/profile"}
+            >
               <img src={profileIcon} alt="" className="navIcon" />
               <span>My Profile</span>
             </Link>
+
             <Link className="navLink" to="/edit-profile">
               <img src={editIcon} alt="" className="navIcon" />
               <span>Edit Profile</span>
