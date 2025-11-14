@@ -145,10 +145,10 @@ export default function RecommendedSongs() {
                     <span className="rs__artistText">{s.artist}</span>
                   )}
 
-                  {/* ❤️📌 icons below artist name */}
+                  {/*icons below artist name */}
                   {!s.placeholder && (
                     <div className="rs__actions">
-                      <SongActions songId={s.songId} />
+                      <SongActions songId={s.songId} songTitle={s.title} />
                     </div>
                   )}
                 </div>

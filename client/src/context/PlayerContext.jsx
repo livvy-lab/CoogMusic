@@ -22,6 +22,7 @@ export function PlayerProvider({ children }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [shuffleMode, setShuffleMode] = useState(false);
   const [originalQueue, setOriginalQueue] = useState(null);
+  const [repeatMode, setRepeatMode] = useState('none'); // 'none' | 'all' | 'one'
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -107,12 +108,34 @@ export function PlayerProvider({ children }) {
     function onEnd() {
       // Post play on song end (will have passed threshold if song > 30s)
       postPlayIfPossible();
-      if (queue && queue.length > 0 && currentIndex >= 0 && currentIndex < queue.length - 1) {
-        const next = currentIndex + 1;
-        setCurrentIndex(next);
-        playSong(queue[next]).catch(() => { });
+      // handle repeat-one: restart same track
+      if (repeatMode === 'one') {
+        seek(0);
+        // ensure we reload the same URL
+        if (current) {
+          playSong({ SongID: current.SongID }).catch(() => {});
+        }
         return;
       }
+
+      // if there is a next track, play it
+      if (queue && queue.length > 0) {
+        const nextIndex = currentIndex + 1;
+        if (nextIndex >= 0 && nextIndex < queue.length) {
+          setCurrentIndex(nextIndex);
+          playSong(queue[nextIndex]).catch(() => {});
+          return;
+        }
+
+        // reached end of queue
+        if (repeatMode === 'all' && queue.length > 0) {
+          // wrap to start
+          setCurrentIndex(0);
+          playSong(queue[0]).catch(() => {});
+          return;
+        }
+      }
+
       setPlaying(false);
     }
 
@@ -209,6 +232,15 @@ export function PlayerProvider({ children }) {
     playSong(cloned[0]).catch(() => { });
   }
 
+  // cycle repeat mode: none -> all -> one -> none
+  function toggleRepeat() {
+    setRepeatMode((prev) => {
+      if (prev === 'none') return 'all';
+      if (prev === 'all') return 'one';
+      return 'none';
+    });
+  }
+
   // toggle shuffle mode for current queue
   function toggleShuffle() {
     if (!queue || queue.length <= 1) {
@@ -258,10 +290,22 @@ export function PlayerProvider({ children }) {
   // play next track in queue
   function next() {
     if (!queue || queue.length === 0) return;
+    // If user manually presses Next while in repeat-one, switch back to playlist repeat
+    if (repeatMode === 'one') {
+      setRepeatMode('all');
+    }
     const nextIndex = currentIndex + 1;
     if (nextIndex >= 0 && nextIndex < queue.length) {
       setCurrentIndex(nextIndex);
       playSong(queue[nextIndex]).catch(() => { });
+      return;
+    }
+
+    // If we've reached the end of the queue and repeat-all is enabled, wrap to the start
+    if (repeatMode === 'all' && queue.length > 0) {
+      setCurrentIndex(0);
+      playSong(queue[0]).catch(() => { });
+      return;
     }
   }
 
@@ -273,10 +317,19 @@ export function PlayerProvider({ children }) {
       return;
     }
     if (!queue || queue.length === 0) return;
-    const prevIndex = Math.max(0, currentIndex - 1);
+    const prevIndex = currentIndex - 1;
     if (prevIndex >= 0 && prevIndex < queue.length) {
       setCurrentIndex(prevIndex);
       playSong(queue[prevIndex]).catch(() => { });
+      return;
+    }
+
+    // If at the start and repeat-all is enabled, wrap to the last track
+    if (repeatMode === 'all' && queue.length > 0) {
+      const last = queue.length - 1;
+      setCurrentIndex(last);
+      playSong(queue[last]).catch(() => { });
+      return;
     }
   }
 
@@ -326,6 +379,7 @@ export function PlayerProvider({ children }) {
       queue,
       currentIndex,
       shuffleMode,
+      repeatMode,
       originalQueue,
       playing,
       duration,
@@ -339,11 +393,12 @@ export function PlayerProvider({ children }) {
       prev,
       toggle,
       toggleShuffle,
+      toggleRepeat,
       seek,
       setVolumePercent,
       toggleLikeCurrent,
     }),
-    [current, queue, currentIndex, shuffleMode, originalQueue, playing, duration, currentTime, volume]
+    [current, queue, currentIndex, shuffleMode, originalQueue, playing, duration, currentTime, volume, repeatMode]
   );
 
   return (

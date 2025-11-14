@@ -21,6 +21,7 @@ import { handleArtistRoutes } from "./routes/artist.js";
 import { handleSongArtistRoutes } from "./routes/song_artist.js";
 import { handleSongGenreRoutes } from "./routes/song_genre.js";
 import { handleSubscriptionRoutes } from "./routes/subscription.js";
+import { handlePremiumRoutes } from "./routes/premium.js";
 import { handleUserReportsRoutes } from "./routes/user_reports.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";
@@ -143,26 +144,27 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/achievements/listener/")) { await handleAchievements(req, res); return; }
 
     if (pathname.startsWith("/administrators")) { await handleAdminRoutes(req, res); return; }
-    if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
-    if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
-    if (pathname.startsWith("/ad_views")) { await handleAdViewRoutes(req, res); return; }
-    if (pathname.startsWith("/companies")) { await handleCompanyRoutes(req, res); return; }
-    if (pathname.startsWith("/company_buys")) { await handleCompanyBuyRoutes(req, res); return; }
-    if (pathname.startsWith("/follows")) { await handleFollowsRoutes(req, res); return; }
-    if (pathname.startsWith("/genres")) { await handleGenreRoutes(req, res); return; }
-    if (pathname.includes("/liked_songs")) { await handleLikedSongRoutes(req, res); return; }
-    if (pathname.startsWith("/listen_history")) { await handleListenHistoryRoutes(req, res); return; }
-    if (pathname.startsWith("/playlists")) { await handlePlaylistRoutes(req, res); return; }
-    if (pathname.startsWith("/playlist_tracks")) { await handlePlaylistTrackRoutes(req, res); return; }
-    if (pathname.startsWith("/songs")) { await handleSongRoutes(req, res); return; }
-    if (pathname.startsWith("/auth")) { await handleAuthRoutes(req, res); return; }
-    if (pathname.startsWith("/album_artists")) { await handleAlbumArtistRoutes(req, res); return; }
-    if (pathname.startsWith("/album_genres")) { await handleAlbumGenreRoutes(req, res); return; }
-    if (pathname.startsWith("/album_tracks")) { await handleAlbumTrackRoutes(req, res); return; }
-    if (pathname.startsWith("/artists")) { await handleArtistRoutes(req, res); return; }
-    if (pathname.startsWith("/song_artists")) { await handleSongArtistRoutes(req, res); return; }
-    if (pathname.startsWith("/song_genres")) { await handleSongGenreRoutes(req, res); return; }
-    if (pathname.startsWith("/subscriptions")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
+    if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
+    if (pathname.startsWith("/ad_views")) { await handleAdViewRoutes(req, res); return; }
+    if (pathname.startsWith("/companies")) { await handleCompanyRoutes(req, res); return; }
+    if (pathname.startsWith("/company_buys")) { await handleCompanyBuyRoutes(req, res); return; }
+    if (pathname.startsWith("/follows")) { await handleFollowsRoutes(req, res); return; }
+    if (pathname.startsWith("/genres")) { await handleGenreRoutes(req, res); return; }
+    if (pathname.includes("/liked_songs")) { await handleLikedSongRoutes(req, res); return; }
+    if (pathname.startsWith("/listen_history")) { await handleListenHistoryRoutes(req, res); return; }
+    if (pathname.startsWith("/playlists")) { await handlePlaylistRoutes(req, res); return; }
+    if (pathname.startsWith("/playlist_tracks")) { await handlePlaylistTrackRoutes(req, res); return; }
+    if (pathname.startsWith("/songs")) { await handleSongRoutes(req, res); return; }
+    if (pathname.startsWith("/auth")) { await handleAuthRoutes(req, res); return; }
+    if (pathname.startsWith("/album_artists")) { await handleAlbumArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/album_genres")) { await handleAlbumGenreRoutes(req, res); return; }
+    if (pathname.startsWith("/album_tracks")) { await handleAlbumTrackRoutes(req, res); return; }
+    if (pathname.startsWith("/artists")) { await handleArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/song_artists")) { await handleSongArtistRoutes(req, res); return; }
+    if (pathname.startsWith("/song_genres")) { await handleSongGenreRoutes(req, res); return; }
+    if (pathname.startsWith("/subscriptions") || pathname.startsWith("/subscription-plans")) { await handleSubscriptionRoutes(req, res); return; }
+    if (pathname.startsWith("/premium")) { await handlePremiumRoutes(req, res); return; }
     if (pathname.startsWith("/user_reports")) { await handleUserReportsRoutes(req, res); return; }
     if (pathname.startsWith("/artist_buys")) { await handleArtistBuyRoutes(req, res); return; }
     if (pathname.startsWith("/listeners")) { await handleListenerRoutes(req, res); return; }

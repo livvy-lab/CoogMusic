@@ -5,65 +5,73 @@ import { getUser } from '../lib/userStorage';
 import { API_BASE_URL } from "../config/api";
 
 const Subscription = () => {
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [activeSubscription, setActiveSubscription] = useState(null);
+  const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const isSubscribed = !!activeSubscription;
 
   useEffect(() => {
     const user = getUser();
     if (!user?.listenerId) return;
 
-    async function checkSubscription() {
+    // fetch all available plans from the new table
+    async function fetchPlans() {
       try {
-  const res = await fetch(`${API_BASE_URL}/subscriptions/listener/${user.listenerId}`);
-        
+        const res = await fetch(`${API_BASE_URL}/subscription-plans`);
         if (res.ok) {
           const data = await res.json();
-          // Backend returns single subscription object with IsActive field
-          setIsSubscribed(!!data.IsActive);
-        } else {
-          // 404 means no active subscription found
-          setIsSubscribed(false);
+          // store all plans that have a cost (e.g., "Monthly", "Annual")
+          setPlans(data.filter(plan => plan.Cost > 0));
         }
       } catch (err) {
-        console.error('Error checking subscription:', err);
-        setIsSubscribed(false);
+        console.error('Error fetching plans:', err);
       }
     }
 
+    // check the user's current subscription status
+    async function checkSubscription() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/subscriptions/listener/${user.listenerId}`);
+        if (res.ok) {
+          const data = await res.json();
+          setActiveSubscription(data); // store the full subscription object (including PlanID, PlanName, etc.)
+        } else {
+          setActiveSubscription(null); // 404 means no active subscription
+        }
+      } catch (err) {
+        console.error('Error checking subscription:', err);
+        setActiveSubscription(null);
+      }
+    }
+
+    fetchPlans();
     checkSubscription();
   }, []);
 
-  const handleSubscriptionToggle = async () => {
-  const user = getUser();
-  if (!user?.listenerId) {
-    setError('Please log in first');
-    return;
-  }
-
-  // Show confirmation dialog when unsubscribing
-  if (isSubscribed) {
-    const confirmed = window.confirm('Are you sure you want to unsubscribe?');
-    if (!confirmed) {
-      return; // User cancelled, don't proceed
+  // handles subscribing to a new plan
+  const handleSubscribe = async (planId) => {
+    const user = getUser();
+    if (!user?.listenerId) {
+      setError('Please log in first');
+      return;
     }
-  }
 
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    setError(null);
 
-  try {
-    if (!isSubscribed) {
+    try {
       // SUBSCRIBE
       const res = await fetch(`${API_BASE_URL}/subscriptions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ListenerID: user.listenerId,
-           // replace with valid subscription/plan ID if needed
           DateStarted: new Date().toISOString().slice(0, 19).replace('T', ' '),
           DateEnded: null,
-          IsActive: 1
+          IsActive: 1,
+          PlanID: planId
         })
       });
 
@@ -75,111 +83,147 @@ const Subscription = () => {
 
       const data = await res.json();
       console.log('✅ Subscription success:', data);
-      setIsSubscribed(true);
+      setActiveSubscription(data); // set the new active subscription
       
       // Reload the page to remove ads from display
       window.location.reload();
 
-} else {
-  // Unsubscribe logic
-  const checkRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${user.listenerId}`);
-  if (!checkRes.ok) throw new Error('Failed to find subscription');
-  const subData = await checkRes.json();
+    } catch (err) {
+      console.error('Error subscribing:', err);
+      setError('Failed to subscribe');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Handle cases where backend returns a single object or inside a `subscription` key
-  const subscription = subData.subscription || subData;
-  const subscriptionId = subscription?.SubscriptionID;
+  // handles unsubscribing (reverting to free)
+  const handleUnsubscribe = async () => {
+    const user = getUser();
+    if (!user?.listenerId || !activeSubscription) {
+      setError('No active subscription found to unsubscribe from');
+      return;
+    }
 
-  if (!subscriptionId) {
-    console.error('❌ Could not find SubscriptionID for user', user.listenerId);
-    throw new Error('No active subscription found');
-  }
+    // show confirmation dialog
+    const confirmed = window.confirm('Are you sure you want to unsubscribe and revert to the free plan?');
+    if (!confirmed) {
+      return; // user cancelled
+    }
 
-  // Update the subscription to mark it inactive
-  const res = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      IsActive: 0,
-      DateEnded: new Date().toISOString().slice(0, 19).replace('T', ' ')
-    })
-  });
+    setLoading(true);
+    setError(null);
 
-  if (!res.ok) throw new Error('Failed to unsubscribe');
+    try {
+      // use the SubscriptionID from the state
+      const subscriptionId = activeSubscription.SubscriptionID;
 
-  setIsSubscribed(false);
-  
-  // Reload the page to show ads again
-  window.location.reload();
-}
+      if (!subscriptionId) {
+        console.error('Could not find SubscriptionID in state');
+        throw new Error('No active subscription found');
+      }
 
-  } catch (err) {
-    console.error('Error toggling subscription:', err);
-    setError(isSubscribed ? 'Failed to unsubscribe' : 'Failed to subscribe');
-  } finally {
-    setLoading(false);
-  }
-};
+      // Update the subscription to mark it inactive
+      const res = await fetch(`${API_BASE_URL}/subscriptions/${subscriptionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          IsActive: 0,
+
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to unsubscribe');
+
+      setActiveSubscription(null); // User is no longer subscribed
+      
+      // Reload the page to show ads again
+      window.location.reload();
+
+
+    } catch (err) {
+      console.error('Error unsubscribing:', err);
+      setError('Failed to unsubscribe');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <PageLayout>
       <div className="subscription-container">
         <div className="subscription-header">
-          <h1>Support Coogs Music & Grow Your Reach</h1>
-          <p>Choose a plan that fits your needs - promote your music or enjoy ad-free streaming</p>
+          <h1>Become a premium member ≽^•⩊•^≼ </h1>
+          <p>Subscribe and obtain additional benefits</p>
         </div>
 
         <div className="plans-container">
+          
           <div className="plan-card free">
             <h2>Free</h2>
+            <h3 className="plan-price">$0.00<span> / month</span></h3>
             <div className="plan-features">
               <div className="feature">
-                <span className="checkmark"></span>
-                <span>Stream with ads</span>
+                <span className="checkmark">X</span>
+                <span>Ads appear on homepage</span>
               </div>
               <div className="feature">
-                <span className="checkmark"></span>
-                <span>Can only have up to 10 playlists</span>
+                <span className="checkmark">X</span>
+                <span>Can create up to 10 playlists</span>
               </div>
               <div className="feature">
-                <span className="checkmark"></span>
-                <span>Can only make public playlist</span>
+                <span className="checkmark">X</span>
+                <span>Can only create public playlists</span>
               </div>
             </div>
             <button
               className={`plan-button ${!isSubscribed ? 'current' : 'revert-free'}`}
-              onClick={isSubscribed ? handleSubscriptionToggle : undefined}
-              disabled={loading}
+              onClick={isSubscribed ? handleUnsubscribe : undefined}
+              disabled={loading || !isSubscribed}
             >
-              {isSubscribed ? 'Revert back to free version' : 'Current Plan'}
+              {!isSubscribed ? 'Current Plan' : (loading ? 'Processing...' : 'Cancel Subscription')}
             </button>
           </div>
 
-          <div className="plan-card premium">
-            <h2>Premium</h2>
-            <div className="crown-icon"></div>
-            <div className="plan-features">
-              <div className="feature">
-                <span className="checkmark"></span>
-                <span>Ad-free listening</span>
+          {plans.map(plan => {
+          
+            // check if the user is subscribed AND if this plan is their active one
+            const isThisPlanActive = isSubscribed && activeSubscription.PlanID === plan.PlanID;
+
+            return (
+              <div className="plan-card premium" key={plan.PlanID}>
+                <h2>{plan.PlanName}</h2>
+                <div className="crown-icon"></div>
+                <h3 className="plan-price">${plan.Cost}<span> / {plan.PlanName.toLowerCase().includes('annual') ? 'year' : 'month'}</span></h3>
+                
+                <div className="plan-features">
+                  <div className="feature">
+                    <span className="checkmark">✓</span>
+                    <span>Remove ads on homepage</span>
+                  </div>
+                  <div className="feature">
+                    <span className="checkmark">✓</span>
+                    <span>Can create unlimited playlists</span>
+                  </div>
+                  <div className="feature">
+                    <span className="checkmark">✓</span>
+                    <span>Can create private playlists</span>
+                  </div>
+                </div>
+                
+                <button
+                  className={`plan-button ${isThisPlanActive ? 'current' : 'subscribe-toggle'}`}
+                  onClick={() => !isSubscribed ? handleSubscribe(plan.PlanID) : undefined}
+                  disabled={loading || isSubscribed} // Disable if loading or ANY plan is active
+                >
+                  {loading ? 'Processing...' : 
+                    isThisPlanActive ? 'Currently Active' : 
+                    `Subscribe to ${plan.PlanName}`
+                  }
+                </button>
               </div>
-              <div className="feature">
-                <span className="checkmark"></span>
-                <span>Can have any amount of playlist</span>
-              </div>
-              <div className="feature">
-                <span className="checkmark"></span>
-                <span>Can make a playlist private</span>
-              </div>
-            </div>
-            <button
-              className={`plan-button ${isSubscribed ? 'subscribed-light' : 'subscribe-toggle'}`}
-              onClick={handleSubscriptionToggle}
-              disabled={loading}
-            >
-              {loading ? 'Processing...' : isSubscribed ? 'Unsubscribe' : 'Subscribe'}
-            </button>
-          </div>
+            );
+          })}
+
         </div>
 
         {error && <div className="subscription-error">{error}</div>}

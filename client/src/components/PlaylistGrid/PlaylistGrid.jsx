@@ -1,9 +1,13 @@
 import "./PlaylistGrid.css";
+// reuse the song actions pin styles so playlist pins match song pins
+import "../Songs/SongActions.css";
 import { useEffect, useState } from "react";
 import { getUser } from "../../lib/userStorage";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 import EditPlaylistCoverModal from "../Playlist/EditPlaylistCoverModal";
+import EditPlaylistModal from "../Playlist/EditPlaylistModal";
+import DeletePlaylistModal from "../Playlist/DeletePlaylistModal";
 
 export default function PlaylistGrid({
   listenerId,
@@ -19,36 +23,41 @@ export default function PlaylistGrid({
   const [pinLoading, setPinLoading] = useState(false);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [openCoverModalFor, setOpenCoverModalFor] = useState(null);
+  const [editingPlaylist, setEditingPlaylist] = useState(null);
+  const [deletingPlaylist, setDeletingPlaylist] = useState(null);
   const navigate = useNavigate();
   const currentUser = getUser();
   const currentUserId = currentUser?.listenerId ?? currentUser?.ListenerID ?? null;
 
   async function handleDelete(id) {
-    if (!window.confirm("Are you sure you want to delete this playlist?")) return;
+    const playlist = playlists.find(p => p.PlaylistID === id);
+    if (!playlist) return;
+    setDeletingPlaylist(playlist);
+    setOpenMenuId(null);
+  }
+
+  async function confirmDelete() {
+    if (!deletingPlaylist?.PlaylistID) return;
     try {
-      const res = await fetch(`http://localhost:3001/playlists/${id}`, { method: "DELETE" });
+      const res = await fetch(`${API_BASE_URL}/playlists/${deletingPlaylist.PlaylistID}`, {
+        method: "DELETE",
+      });
       if (!res.ok) throw new Error("Failed to delete playlist");
-      setPlaylists(prev => prev.filter(p => p.PlaylistID !== id));
-      setOpenMenuId(null);
-    } catch {}
+      setPlaylists(prev => prev.filter(p => p.PlaylistID !== deletingPlaylist.PlaylistID));
+      setDeletingPlaylist(null);
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist deleted', type: 'success' } })); } catch(e) {}
+    } catch (err) {
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: err?.message || 'Failed to delete playlist', type: 'error' } })); } catch(e) {}
+      setDeletingPlaylist(null);
+    }
   }
 
   function handleEdit(id) {
     const playlist = playlists.find(p => p.PlaylistID === id);
-    const newName = prompt(`Rename playlist "${playlist?.Name || "Untitled"}":`, playlist?.Name || "");
-    if (!newName || newName === playlist?.Name) return;
-
-    fetch(`http://localhost:3001/playlists/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ Name: newName }),
-    })
-      .then(res => res.json())
-      .then(() => {
-        setPlaylists(prev => prev.map(p => (p.PlaylistID === id ? { ...p, Name: newName } : p)));
-        setOpenMenuId(null);
-      })
-      .catch(() => {});
+    if (!playlist) return;
+    // open the EditPlaylistModal so user can edit name and description
+    setEditingPlaylist(playlist);
+    setOpenMenuId(null);
   }
 
   useEffect(() => {
@@ -115,10 +124,16 @@ export default function PlaylistGrid({
         body: JSON.stringify({ playlistId }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data?.error || "Failed to pin playlist");
+      if (!res.ok) {
+        const errMsg = res.status === 403 ? 'Can not pin private playlist' : (data?.error || 'Failed to pin playlist');
+        throw new Error(errMsg);
+      }
       setPinnedId(playlistId);
+      try {
+        window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist pinned to your profile', type: 'success' } }));
+      } catch (e) {}
     } catch (e) {
-      alert(e.message || "Could not pin playlist.");
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: e?.message || 'Can not pin private playlist', type: 'error' } })); } catch (err) {}
     } finally {
       setPinLoading(false);
     }
@@ -133,11 +148,31 @@ export default function PlaylistGrid({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error || "Failed to unpin playlist");
+        if (!res.ok) {
+          const errMsg = res.status === 403 ? 'Can not pin private playlist' : (data?.error || 'Failed to pin playlist');
+          throw new Error(errMsg);
+        }
+        setPinnedId(playlistId);
+        try {
+          window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist pinned to your profile', type: 'success' } }));
+        } catch (e) {}
+      } else {
+        // Clear the pinned playlist using the dedicated DELETE endpoint
+        const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/pins/playlist`, {
+          method: "DELETE",
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data?.error || "Failed to clear pinned playlist");
+        }
+        setPinnedId(null);
+        try {
+          window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Playlist unpinned from your profile', type: 'success' } }));
+        } catch (e) {}
       }
       setPinnedId(null);
     } catch (e) {
-      alert(e.message || "Could not unpin playlist.");
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: e?.message || 'Could not update pinned playlist.', type: 'error' } })); } catch (err) {}
     } finally {
       setPinLoading(false);
     }
@@ -207,21 +242,72 @@ export default function PlaylistGrid({
                     <div className="pl__pinRow">
                       {!isPinned ? (
                         <button
-                          className="pl__pinBtn"
-                          title="Pin to profile"
-                          disabled={pinLoading || !isPublic}
-                          onClick={() => pinPlaylist(p.PlaylistID)}
+                          className={`pl__pinBtn songActions__btn`}
+                          aria-pressed={false}
+                          title={(!isPublic && Number(currentUserId) !== Number(p.ListenerID)) ? "Private playlists can only be pinned by the owner" : "Pin to profile"}
+                          disabled={pinLoading || (!isPublic && Number(currentUserId) !== Number(p.ListenerID))}
+                          onClick={e => { e.stopPropagation(); pinPlaylist(p.PlaylistID); }}
                         >
-                          📌 Pin
+                          <span className="songActions__icon songActions__icon--pin" aria-hidden="true"></span>
+                          <span className="sr-only">Pin</span>
                         </button>
                       ) : (
                         <button
-                          className="pl__pinBtn pl__pinBtn--active"
+                          className={`pl__pinBtn songActions__btn is-on`}
+                          aria-pressed={true}
                           title="Unpin from profile"
                           disabled={pinLoading}
                           onClick={unpinPlaylist}
                         >
-                          ✖ Unpin
+                          <span className="songActions__icon songActions__icon--pin" aria-hidden="true"></span>
+                          <span className="sr-only">Unpin</span>
+                        </button>
+                      )}
+
+                      {/* Privacy toggle shown only to playlist owner */}
+                      {Number(currentUserId) === Number(p.ListenerID) && (
+                        <button
+                          className="pl__privacyBtn"
+                          title={isPublic ? 'Make private' : 'Make public'}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              // If attempting to make private, verify subscription
+                              if (isPublic) {
+                                // Check if playlist is pinned
+                                if (isPinned) {
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Cannot make a pinned playlist private. Unpin it first.', type: 'error' } })); } catch(e) {}
+                                  return;
+                                }
+                                
+                                const subRes = await fetch(`${API_BASE_URL}/subscriptions/listener/${currentUserId}`);
+                                if (!subRes.ok) {
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Only subscribers can make playlists private.', type: 'error' } })); } catch(e) {}
+                                  return;
+                                }
+                                const subData = await subRes.json();
+                                if (!subData?.IsActive) {
+                                  try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Private playlists are for subscribers only.', type: 'error' } })); } catch(e) {}
+                                  return;
+                                }
+                              }
+
+                              const newPublic = isPublic ? 0 : 1;
+                              const res = await fetch(`${API_BASE_URL}/playlists/${p.PlaylistID}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ IsPublic: newPublic }),
+                              });
+                              const data = await res.json().catch(() => ({}));
+                              if (!res.ok) throw new Error(data.error || 'Failed to update playlist');
+                              setPlaylists(prev => prev.map(x => x.PlaylistID === p.PlaylistID ? { ...x, IsPublic: Number(newPublic) } : x));
+                              try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: isPublic ? 'Playlist is now private' : 'Playlist is now public', type: 'success' } })); } catch(e) {}
+                            } catch (err) {
+                              try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: err.message || 'Could not change privacy', type: 'error' } })); } catch(e) {}
+                            }
+                          }}
+                        >
+                          {isPublic ? '🔓 Public' : '🔒 Private'}
                         </button>
                       )}
                     </div>
@@ -276,6 +362,19 @@ export default function PlaylistGrid({
       </div>
       {openCoverModalFor && (
         <EditPlaylistCoverModal playlist={openCoverModalFor} onClose={() => setOpenCoverModalFor(null)} onUpdated={handleCoverUpdated} />
+      )}
+      {editingPlaylist && (
+        <EditPlaylistModal playlist={editingPlaylist} tracks={[]} onClose={() => setEditingPlaylist(null)} onUpdated={(u, tracks) => {
+          // update playlists list when modal saves
+          if (u && u.PlaylistID) {
+            setPlaylists(prev => prev.map(p => p.PlaylistID === u.PlaylistID ? { ...p, ...u } : p));
+            try { window.dispatchEvent(new CustomEvent('playlistUpdated', { detail: { PlaylistID: u.PlaylistID, ...u } })); } catch(e) {}
+          }
+          setEditingPlaylist(null);
+        }} />
+      )}
+      {deletingPlaylist && (
+        <DeletePlaylistModal playlist={deletingPlaylist} onClose={() => setDeletingPlaylist(null)} onConfirm={confirmDelete} />
       )}
     </section>
   );

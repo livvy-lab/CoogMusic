@@ -53,7 +53,8 @@ export async function handleSearchRoutes(req, res) {
 
   try {
     const [songs] = await db.query(
-      `SELECT s.SongID AS id, s.Title AS title, 'song' AS type
+      `SELECT s.SongID AS id, s.Title AS title, 'song' AS type,
+              s.cover_media_id AS coverMediaId
        FROM Song s
        WHERE ${notDeleted("s.IsDeleted")} AND s.Title LIKE ?
        LIMIT 25`,

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import "./LikedPage.css";
@@ -9,6 +9,7 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
 
   const { id } = useParams(); // used for /playlist/:id
   const [tracks, setTracks] = useState([]);
+  const navigate = useNavigate();
   const [playlistName, setPlaylistName] = useState("");
   const [playlistOwner, setPlaylistOwner] = useState("");
   const [loading, setLoading] = useState(true);
@@ -43,7 +44,8 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
           const formatted = data.map((row) => ({
             SongID: row.SongID,
             title: row.Title,
-            artist: row.Artist || "Unknown Artist",
+            artist: row.ArtistName || row.Artist || "Unknown Artist",
+            artistId: row.ArtistID || row.ArtistId || null,
             album: row.Album || "Unknown Album",
             added: new Date(row.LikedDate || Date.now()),
             duration: row.DurationSeconds
@@ -60,9 +62,10 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
           const formatted = data.map((row) => ({
             SongID: row.SongID,
             title: row.Title,
-            artist: row.Artist || "Unknown Artist",
+            artist: row.ArtistName || row.Artist || "Unknown Artist",
+            artistId: row.ArtistID || row.ArtistId || null,
             album: row.Album || "Unknown Album",
-            added: new Date(row.ReleaseDate || Date.now()),
+            added: new Date(row.DateSongAdded || Date.now()),
             duration: row.DurationSeconds
               ? `${Math.floor(row.DurationSeconds / 60)}:${String(
                   row.DurationSeconds % 60
@@ -70,6 +73,33 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
               : "0:00",
           }));
           setTracks(formatted);
+
+          // If any tracks lack artist info, try to resolve them by fetching /songs/:id
+          (async () => {
+            const toResolve = formatted.filter(
+              (f) => !f.artistId && (!f.artist || f.artist === "Unknown Artist")
+            );
+            for (const r of toResolve) {
+              try {
+                const s = await fetch(`${API_BASE_URL}/songs/${r.SongID}`);
+                if (!s.ok) continue;
+                const sj = await s.json();
+                const name = sj?.ArtistName || sj?.Artist || null;
+                const aid = sj?.ArtistID || sj?.ArtistId || null;
+                if (name || aid) {
+                  setTracks((prev) =>
+                    prev.map((p) =>
+                      p.SongID === r.SongID
+                        ? { ...p, artist: name || p.artist, artistId: aid || p.artistId }
+                        : p
+                    )
+                  );
+                }
+              } catch (e) {
+                // ignore individual failures
+              }
+            }
+          })();
           setPlaylistName("Study Vibes");
           setPlaylistOwner("You");
         }
@@ -219,7 +249,26 @@ return (
                     <div className="songCoverPlaceholder" />
                     <div className="songInfo">
                       <span className="songTitle">{t.title}</span>
-                      <span className="songArtist">{t.artist}</span>
+                      <span className="songArtist">
+                        <button
+                          className="artistLink"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              if (t.artistId) { navigate(`/artist/${t.artistId}`); return; }
+                              const r = await fetch(`${API_BASE_URL}/songs/${t.SongID}`);
+                              if (!r.ok) return;
+                              const j = await r.json();
+                              const artistId = j?.ArtistID || j?.ArtistId || j?.artistId || j?.artistID;
+                              if (artistId) navigate(`/artist/${artistId}`);
+                            } catch (err) {
+                              console.error('Failed to navigate to artist', err);
+                            }
+                          }}
+                        >
+                          {t.artist}
+                        </button>
+                      </span>
                     </div>
                   </div>
 

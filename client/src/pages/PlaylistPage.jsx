@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Play, Shuffle, Clock3, Heart, Pencil } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css"; // reuse your same CSS
@@ -17,6 +17,7 @@ export default function PlaylistPage() {
   const [tracks, setTracks] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
   const [coverUrl, setCoverUrl] = useState(null);
+  const navigate = useNavigate();
   const { playList, playSong, playShuffled } = usePlayer();
   const [editing, setEditing] = useState(false);
 
@@ -51,8 +52,9 @@ export default function PlaylistPage() {
       const formatted = data.map((row) => ({
         SongID: row.SongID,
         title: row.Title,
-        album: row.Album || "Unknown Album",
-        artist: row.ArtistName || row.Artist || "Unknown Artist",
+          album: row.Album || "Unknown Album",
+          artist: row.ArtistName || row.Artist || "Unknown Artist",
+          artistId: row.ArtistID || row.ArtistId || null,
         duration: row.DurationSeconds
           ? `${Math.floor(row.DurationSeconds / 60)}:${String(
               row.DurationSeconds % 60
@@ -65,6 +67,33 @@ export default function PlaylistPage() {
         }),
       }));
       setTracks(formatted);
+
+      // If artist info is missing for some rows, try to fetch per-song details and patch
+      (async () => {
+        const toResolve = formatted.filter(
+          (f) => !f.artistId && (!f.artist || f.artist === "Unknown Artist")
+        );
+        for (const r of toResolve) {
+          try {
+            const s = await fetch(`${API_BASE_URL}/songs/${r.SongID}`);
+            if (!s.ok) continue;
+            const sj = await s.json();
+            const name = sj?.ArtistName || sj?.Artist || null;
+            const aid = sj?.ArtistID || sj?.ArtistId || null;
+            if (name || aid) {
+              setTracks((prev) =>
+                prev.map((p) =>
+                  p.SongID === r.SongID
+                    ? { ...p, artist: name || p.artist, artistId: aid || p.artistId }
+                    : p
+                )
+              );
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+      })();
     }
   }
 
@@ -209,7 +238,26 @@ export default function PlaylistPage() {
                 <div className="col-title">
                   <div className="songInfo">
                     <span className="songTitle">{t.title}</span>
-                    <span className="songArtist">{t.artist}</span>
+                      <span className="songArtist">
+                      <button
+                        className="artistLink"
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          try {
+                            if (t.artistId) { navigate(`/artist/${t.artistId}`); return; }
+                            const r = await fetch(`${API_BASE_URL}/songs/${t.SongID}`);
+                            if (!r.ok) return;
+                            const j = await r.json();
+                            const artistId = j?.ArtistID || j?.ArtistId || j?.artistId || j?.artistID;
+                            if (artistId) navigate(`/artist/${artistId}`);
+                          } catch (err) {
+                            console.error('Failed to navigate to artist', err);
+                          }
+                        }}
+                      >
+                        {t.artist}
+                      </button>
+                    </span>
                   </div>
                 </div>
                 <div className="col-album">{t.album}</div>
