@@ -73,7 +73,9 @@ export default function ArtistCard({ artistId }) {
       setState({ loading: false, notFound: true });
       return;
     }
+
     const ctrl = new AbortController();
+
     (async () => {
       setState({ loading: true, notFound: false });
       try {
@@ -96,13 +98,16 @@ export default function ArtistCard({ artistId }) {
         }
       }
     })();
+
     return () => ctrl.abort();
   }, [artistId]);
 
   // check pin/favorite status (only for listeners)
   useEffect(() => {
     if (!listenerId || !artistId) return;
+
     let alive = true;
+
     (async () => {
       try {
         const r = await fetch(
@@ -220,8 +225,13 @@ export default function ArtistCard({ artistId }) {
     });
   }
 
-  if (state.loading) return <div className="artistCard">Loading…</div>;
-  if (state.notFound) return <PlaceholderCard />;
+  if (state.loading) {
+    return <div className="artistCard">Loading…</div>;
+  }
+
+  if (state.notFound) {
+    return <PlaceholderCard />;
+  }
 
   const isVerified = Boolean(artist?.IsVerified);
 

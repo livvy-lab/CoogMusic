@@ -45,6 +45,7 @@ import { handleAdminAnalyticsRoutes } from "./routes/admin_analytics.js";
 import { handleAchievements } from "./routes/achievements.js";
 import { handleSoftDeleteRoutes } from "./routes/soft_delete.js";
 import { handleRecentUsersRoutes } from "./routes/users_recent.js";
+
 const PORT = process.env.PORT || 3001;
 
 const ALLOWED_ORIGINS = (
@@ -180,7 +181,7 @@ const server = http.createServer(async (req, res) => {
     if (
       pathname.startsWith("/songs/status") ||
       pathname.startsWith("/likes") ||
-      pathname.startsWith("/pin") || // legacy song pin
+      pathname.startsWith("/pin") ||
       /^\/listeners\/\d+\/pins\/artists(?:\/\d+)?$/.test(pathname) ||
       /^\/listeners\/\d+\/pins\/playlist$/.test(pathname)
     ) {

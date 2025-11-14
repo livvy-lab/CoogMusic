@@ -22,7 +22,6 @@ export async function handleListenerProfile(req, res) {
   const listenerId = pathname.split("/")[2];
 
   try {
-    // 1) Core listener
     const [listenerRows] = await db.query(
       `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Bio, Major, Minor,
               PinnedSongID, PinnedPlaylistID
@@ -37,7 +36,6 @@ export async function handleListenerProfile(req, res) {
     }
     const listener = listenerRows[0];
 
-    // 2) Favorite artists (safe alias + guard)
     let favArtists = [];
     try {
       const [rows] = await db.query(
