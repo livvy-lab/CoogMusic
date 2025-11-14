@@ -65,7 +65,7 @@ export default function PlaylistView({ isLikedSongs = false, variant = "default"
             artist: row.ArtistName || row.Artist || "Unknown Artist",
             artistId: row.ArtistID || row.ArtistId || null,
             album: row.Album || "Unknown Album",
-            added: new Date(row.ReleaseDate || Date.now()),
+            added: new Date(row.DateSongAdded || Date.now()),
             duration: row.DurationSeconds
               ? `${Math.floor(row.DurationSeconds / 60)}:${String(
                   row.DurationSeconds % 60

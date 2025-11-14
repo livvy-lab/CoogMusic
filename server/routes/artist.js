@@ -135,6 +135,7 @@ export async function handleArtistRoutes(req, res) {
           al.AlbumID,
           al.Title AS AlbumTitle,
           al.ReleaseDate,
+          al.cover_media_id AS CoverMediaID,
           COUNT(DISTINCT at.SongID) AS TrackCount
         FROM Album al
         LEFT JOIN Album_Artist aa
@@ -153,7 +154,7 @@ export async function handleArtistRoutes(req, res) {
                  AND sa2.ArtistID = ?
             )
           )
-        GROUP BY al.AlbumID, al.Title, al.ReleaseDate
+        GROUP BY al.AlbumID, al.Title, al.ReleaseDate, al.cover_media_id
         ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
         `,
         [artistId, artistId]
@@ -165,6 +166,7 @@ export async function handleArtistRoutes(req, res) {
           s.SongID,
           s.Title,
           s.ReleaseDate,
+          s.cover_media_id AS CoverMediaID,
           COALESCE(COUNT(p.PlayID),0) AS Streams
         FROM Song s
         JOIN Song_Artist sa
@@ -177,7 +179,7 @@ export async function handleArtistRoutes(req, res) {
         WHERE COALESCE(s.IsDeleted,0)=0
           AND sa.ArtistID = ?
           AND at.SongID IS NULL
-        GROUP BY s.SongID, s.Title, s.ReleaseDate
+        GROUP BY s.SongID, s.Title, s.ReleaseDate, s.cover_media_id
         ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
         `,
         [STREAM_MS_THRESHOLD, artistId]

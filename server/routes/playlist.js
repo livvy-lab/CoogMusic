@@ -71,6 +71,7 @@ export async function handlePlaylistRoutes(req, res) {
           s.DurationSeconds,
           s.ReleaseDate,
           al.Title AS Album,
+          pt.DateSongAdded,
           (
             SELECT ar.ArtistID
             FROM Song_Artist sa
@@ -92,7 +93,7 @@ export async function handlePlaylistRoutes(req, res) {
         LEFT JOIN Album_Track at ON s.SongID = at.SongID
         LEFT JOIN Album al ON at.AlbumID = al.AlbumID
         WHERE pt.PlaylistID = ?
-        ORDER BY pt.TrackNumber ASC, pt.DateSongAdded DESC
+        ORDER BY pt.DateSongAdded ASC, pt.TrackNumber ASC
         `,
         [playlistId]
       );
