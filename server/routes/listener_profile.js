@@ -5,7 +5,6 @@ export async function handleListenerProfile(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
-  // CORS (keep global CORS too if you have it)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -19,7 +18,6 @@ export async function handleListenerProfile(req, res) {
   const listenerId = pathname.split("/")[2];
 
   try {
-    // 1) Core listener
     const [listenerRows] = await db.query(
       `SELECT ListenerID, FirstName, LastName, DateCreated, PFP, Bio, Major, Minor,
               PinnedSongID, PinnedPlaylistID
@@ -34,7 +32,6 @@ export async function handleListenerProfile(req, res) {
     }
     const listener = listenerRows[0];
 
-    // 2) Favorite artists (safe alias + guard)
     let favArtists = [];
     try {
       const [rows] = await db.query(
@@ -96,10 +93,8 @@ export async function handleListenerProfile(req, res) {
       }
     }
 
-    // 5) Counts (defensive about Follows schema)
     let followers = 0, following = 0, playlists = 0, songs = 0;
 
-    // Try the “typeful” schema first
     try {
       const [[followersCountRow]] = await db.query(
         `SELECT COUNT(*) AS cnt

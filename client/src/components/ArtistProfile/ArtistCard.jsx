@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import "./ArtistCard.css";
+
 const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001";
 
 function PlaceholderCard() {
@@ -30,7 +31,9 @@ export default function ArtistCard({ artistId }) {
     try {
       const u = JSON.parse(localStorage.getItem("user") || "null");
       return u?.listenerId ?? u?.ListenerID ?? null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }, []);
 
   useEffect(() => {
@@ -43,56 +46,94 @@ export default function ArtistCard({ artistId }) {
       setState({ loading: false, notFound: true });
       return;
     }
+
     const ctrl = new AbortController();
+
     (async () => {
       setState({ loading: true, notFound: false });
       try {
-        const r = await fetch(`${API_BASE}/artists/${artistId}/profile`, { signal: ctrl.signal });
-        if (r.status === 404) { setArtist(null); setState({ loading: false, notFound: true }); return; }
-        if (!r.ok) throw new Error();
+        const r = await fetch(
+          `${API_BASE}/artists/${artistId}/profile`,
+          { signal: ctrl.signal }
+        );
+
+        if (r.status === 404) {
+          setArtist(null);
+          setState({ loading: false, notFound: true });
+          return;
+        }
+
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}`);
+        }
+
         const data = await r.json();
         setArtist(data);
         setState({ loading: false, notFound: false });
-      } catch {
+      } catch (e) {
+        if (ctrl.signal.aborted) return;
         setArtist(null);
         setState({ loading: false, notFound: true });
       }
     })();
+
     return () => ctrl.abort();
   }, [artistId]);
 
   useEffect(() => {
     if (!listenerId || !artistId) return;
+
     let alive = true;
+
     (async () => {
       try {
-        const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`);
+        const r = await fetch(
+          `${API_BASE}/listeners/${listenerId}/pins/artists`
+        );
         if (!r.ok) return;
         const pins = await r.json();
         if (!alive) return;
-        setFavorited(pins.some(p => Number(p.ArtistID) === Number(artistId)));
-      } catch {}
+        setFavorited(
+          pins.some(p => Number(p.ArtistID) === Number(artistId))
+        );
+      } catch {
+      }
     })();
-    return () => { alive = false; };
+
+    return () => {
+      alive = false;
+    };
   }, [listenerId, artistId]);
 
   async function togglePin() {
     if (!listenerId || !artistId) return;
+
     if (!favorited) {
-      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ artistId: Number(artistId) })
-      });
+      const r = await fetch(
+        `${API_BASE}/listeners/${listenerId}/pins/artists`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ artistId: Number(artistId) })
+        }
+      );
       if (r.ok) setFavorited(true);
     } else {
-      const r = await fetch(`${API_BASE}/listeners/${listenerId}/pins/artists/${artistId}`, { method: "DELETE" });
+      const r = await fetch(
+        `${API_BASE}/listeners/${listenerId}/pins/artists/${artistId}`,
+        { method: "DELETE" }
+      );
       if (r.ok) setFavorited(false);
     }
   }
 
-  if (state.loading) return <div className="artistCard">Loading…</div>;
-  if (state.notFound) return <PlaceholderCard />;
+  if (state.loading) {
+    return <div className="artistCard">Loading…</div>;
+  }
+
+  if (state.notFound) {
+    return <PlaceholderCard />;
+  }
 
   const isVerified = Boolean(artist?.IsVerified);
 
@@ -129,28 +170,6 @@ export default function ArtistCard({ artistId }) {
         <div className="artistCard__followers">
           {Number(artist?.FollowerCount || 0).toLocaleString()} followers
         </div>
-
-        {!isOwnProfile && (
-          <div style={{ marginTop: 12 }}>
-            <button
-              type="button"
-              className={`pc__followBtn${isFollowing ? " following" : ""}`}
-              onClick={handleFollowToggle}
-              disabled={followPending}
-              style={{ marginRight: 10 }}
-            >
-              {isFollowing ? "Following" : "+ Follow"}
-            </button>
-            <button
-              type="button"
-              className="pc__reportBtn"
-              onClick={handleReportClick}
-              style={{ marginLeft: 12 }}
-            >
-              Report
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="artistCard__songs">
