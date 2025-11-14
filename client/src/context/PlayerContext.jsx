@@ -372,6 +372,25 @@ export function PlayerProvider({ children }) {
     if (a) a.volume = v;
   }
 
+  // Clear player state and stop playback (for logout)
+  function clearPlayer() {
+    const a = audioRef.current;
+    if (a) {
+      a.pause();
+      a.src = '';
+    }
+    setCurrent(null);
+    setQueue([]);
+    setCurrentIndex(-1);
+    setPlaying(false);
+    setShuffleMode(false);
+    setOriginalQueue(null);
+    setRepeatMode('none');
+    setDuration(0);
+    setCurrentTime(0);
+    postedRef.current = false;
+  }
+
   // Memoized value, for stable context
   const value = useMemo(
     () => ({
@@ -397,6 +416,7 @@ export function PlayerProvider({ children }) {
       seek,
       setVolumePercent,
       toggleLikeCurrent,
+      clearPlayer,
     }),
     [current, queue, currentIndex, shuffleMode, originalQueue, playing, duration, currentTime, volume, repeatMode]
   );

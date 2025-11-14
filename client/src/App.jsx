@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListenerProfile from "./pages/ListenerProfile";
@@ -41,13 +41,13 @@ import AdminHome from "./pages/AdminHome";
 import RequireAdmin from "./components/Auth/RequireAdmin";
 
 
-export default function App() {
+function AppContent() {
+  const location = useLocation();
+  const hidePlaybar = ['/login', '/register', '/account-type'].includes(location.pathname);
+
   return (
-    <AchievementProvider>
-      <PlayerProvider>
-        <FavoritesPinsProvider>
-          <BrowserRouter>
-            <Routes>
+    <>
+      <Routes>
               {/* Redirect root to login */}
               <Route path="/" element={<Navigate to="/login" replace />} />
 
@@ -99,11 +99,21 @@ export default function App() {
 
               {/* Catch-all */}
               <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
+      </Routes>
+      <Toasts />
+      {!hidePlaybar && <MusicPlayBar />}
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <AchievementProvider>
+      <PlayerProvider>
+        <FavoritesPinsProvider>
+          <BrowserRouter>
+            <AppContent />
           </BrowserRouter>
-          <Toasts />
-          
-          <MusicPlayBar />
         </FavoritesPinsProvider>
       </PlayerProvider>
     </AchievementProvider>

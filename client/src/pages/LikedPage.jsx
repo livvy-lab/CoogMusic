@@ -6,6 +6,7 @@ import PageLayout from "../components/PageLayout/PageLayout.jsx";
 import "./LikedPage.css";
 import { API_BASE_URL } from "../config/api";
 import { getUser } from "../lib/userStorage";
+import { useFavPins } from "../context/FavoritesPinsContext";
 
 export default function LikedPage() {
   const [tracks, setTracks] = useState([]);
@@ -14,6 +15,7 @@ export default function LikedPage() {
   const listenerId = user?.listenerId ?? user?.ListenerID ?? 6;
 
   const { playList, playSong, playShuffled } = usePlayer();
+  const favCtx = useFavPins() || {};
   const navigate = useNavigate();
 
   // --- Fetch liked songs
@@ -158,26 +160,16 @@ export default function LikedPage() {
   // --- Unlike a song
   async function unlikeSong(songId) {
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ songId }),
-        }
-      );
-      if (!res.ok) throw new Error("Toggle failed");
-      const data = await res.json();
+      // Use FavoritesPinsContext as the single source of truth so the playbar updates immediately
+      const toggledToLiked = await (favCtx.toggleFavorite?.(Number(songId)));
 
-      // Notify other parts of the app that liked state changed
-      try {
-        window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId, liked: data.liked } }));
-      } catch (e) {}
-
-      // If the backend reports the song is now unliked, remove it from this page
-      if (!data.liked) {
+      // If it was unliked (toggledToLiked === false), remove from this page
+      if (toggledToLiked === false) {
         setTracks((prev) => prev.filter((t) => t.SongID !== songId));
       }
+
+      // Also broadcast for any components that still listen to the event
+      try { window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId, liked: !!toggledToLiked } })); } catch (e) {}
     } catch (err) {
       console.error("Error unliking song:", err);
     }

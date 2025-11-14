@@ -192,7 +192,7 @@ export default function MusicPlayBar() {
         </div>
 
         <button
-          className={`control-btn small-btn ${isLiked ? "is-active" : ""}`}
+          className={`control-btn small-btn heart-btn ${isLiked ? "is-active" : ""}`}
           onClick={async () => {
             if (current?.SongID) {
               await toggleFavorite(Number(current.SongID));
