@@ -1,7 +1,3 @@
-/* =================================== */
-/* "My Songs" Page Styles      */
-/* =================================== */
-
 .my-songs-page-title {
   font-family: 'Inter', sans-serif;
   font-size: clamp(26px, 3vw, 36px);
@@ -41,7 +37,7 @@
   color: #895674;
 }
 
-/* Using parent classes from MySongs.js to scope these */
+
 .playlistView .albumPage {
   max-width: 1400px;
   margin: 0 auto;
@@ -67,8 +63,6 @@
   color: #895674;
   font-weight: 600;
 }
-
-/* --- Row Styles for MySongs page --- */
 
 .my-song-row {
   display: flex;
@@ -97,6 +91,7 @@
   height: 100px;
   border-radius: 8px;
   background: #AD7D9B;
+  border: 3px solid #895674;
   flex-shrink: 0;
   object-fit: cover;
   display: block;

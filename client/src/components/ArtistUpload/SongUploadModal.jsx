@@ -42,7 +42,6 @@ export default function SongUploadModal({ onSuccess, onClose }) {
             />
           </div>
           <div className="form-field">
-            <label htmlFor="audio-file">Audio File</label>
             <div
               className="upload-box upload-box-compact"
               tabIndex={0}
