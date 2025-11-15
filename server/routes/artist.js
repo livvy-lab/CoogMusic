@@ -9,7 +9,6 @@ export async function handleArtistRoutes(req, res) {
   const { pathname } = new URL(req.url, `http://${req.headers.host}`);
   const method = req.method;
 
-
   try {
     if (method === "GET" && pathname === "/artists") {
       const [rows] = await db.query(
@@ -47,6 +46,39 @@ export async function handleArtistRoutes(req, res) {
       return json(res, 200, rows);
     }
 
+    const mSongs = pathname.match(/^\/artists\/(\d+)\/songs\/?$/);
+    if (method === "GET" && mSongs) {
+      const artistId = Number(mSongs[1]);
+
+      const [rows] = await db.query(
+        `
+        SELECT
+          s.SongID,
+          s.Title,
+          s.DurationSeconds,
+          s.ReleaseDate,
+          s.cover_media_id,
+          a.ArtistID,
+          a.ArtistName,
+          al.AlbumID,
+          COALESCE(al.Title, 'Single') AS AlbumName
+          -- We no longer calculate streamCount or likeCount here
+          -- The frontend will get this from the analytics endpoint
+        FROM Song s
+        JOIN Song_Artist sa ON s.SongID = sa.SongID AND COALESCE(sa.IsDeleted, 0) = 0
+        JOIN Artist a ON sa.ArtistID = a.ArtistID AND COALESCE(a.IsDeleted, 0) = 0
+        LEFT JOIN Album_Track at ON s.SongID = at.SongID
+        LEFT JOIN Album al ON at.AlbumID = al.AlbumID AND COALESCE(al.IsDeleted, 0) = 0
+        WHERE sa.ArtistID = ?
+          AND COALESCE(s.IsDeleted, 0) = 0
+        GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.cover_media_id, a.ArtistID, a.ArtistName, al.AlbumID, al.Title
+        ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
+        `,
+        [artistId]
+      );
+      return json(res, 200, rows);
+    }
+
     const mGet = pathname.match(/^\/artists\/(\d+)\/?$/);
     if (method === "GET" && mGet) {
       const artistId = Number(mGet[1]);
@@ -69,23 +101,37 @@ export async function handleArtistRoutes(req, res) {
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
-        const {
-          AccountID = null, ArtistName = "", DateCreated = null,
-          PFP = null, Bio = null, image_media_id = null,
-        } = JSON.parse(body || "{}");
+        try {
+          const {
+            AccountID = null,
+            ArtistName = "",
+            DateCreated = null,
+            PFP = null,
+            Bio = null,
+            image_media_id = null,
+          } = JSON.parse(body || "{}");
 
-        const [r] = await db.query(
-          `
-          INSERT INTO Artist (AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id)
-          VALUES (?, ?, ?, ?, ?, ?)
-          `,
-          [AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id]
-        );
-
-        return json(res, 201, {
-          ArtistID: r.insertId, AccountID, ArtistName, DateCreated,
-          PFP, Bio, image_media_id, IsDeleted: 0,
-        });
+          const [r] = await db.query(
+            `
+            INSERT INTO Artist (AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id)
+            VALUES (?, ?, ?, ?, ?, ?)
+            `,
+            [AccountID, ArtistName, DateCreated, PFP, Bio, image_media_id]
+          );
+          return json(res, 201, {
+            ArtistID: r.insertId,
+            AccountID,
+            ArtistName,
+            DateCreated,
+            PFP,
+            Bio,
+            image_media_id,
+            IsDeleted: 0,
+          });
+        } catch (err) {
+          console.error("POST /artists error:", err);
+          return json(res, 400, { error: "Invalid request" });
+        }
       });
       return;
     }
@@ -96,32 +142,50 @@ export async function handleArtistRoutes(req, res) {
       let body = "";
       req.on("data", (c) => (body += c));
       req.on("end", async () => {
-        const {
-          AccountID = null, ArtistName = "", DateCreated = null,
-          PFP = null, Bio = null, image_media_id = null,
-        } = JSON.parse(body || "{}");
+        try {
+          const {
+            AccountID = null,
+            ArtistName = "",
+            DateCreated = null,
+            PFP = null,
+            Bio = null,
+            image_media_id = null,
+          } = JSON.parse(body || "{}");
 
-        const [r] = await db.query(
-          `
-          UPDATE Artist
-             SET AccountID = ?, ArtistName = ?, DateCreated = ?,
-                 PFP = ?, Bio = ?, image_media_id = ?
-           WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0
-          `,
-          [
-            AccountID, ArtistName, DateCreated, PFP,
-            Bio, image_media_id, artistId,
-          ]
-        );
+          const [r] = await db.query(
+            `
+            UPDATE Artist
+               SET AccountID = ?, ArtistName = ?, DateCreated = ?,
+                   PFP = ?, Bio = ?, image_media_id = ?
+             WHERE ArtistID = ? AND COALESCE(IsDeleted,0) = 0
+            `,
+            [
+              AccountID,
+              ArtistName,
+              DateCreated,
+              PFP,
+              Bio,
+              image_media_id,
+              artistId,
+            ]
+          );
+          if (!r.affectedRows)
+            return json(res, 404, { error: "Artist not found" });
 
-        if (!r.affectedRows)
-          return json(res, 404, { error: "Artist not found" });
-
-        return json(res, 200, {
-          ArtistID: artistId, AccountID, ArtistName, DateCreated,
-          PFP, Bio, image_media_id,
-          message: "Artist updated successfully",
-        });
+          return json(res, 200, {
+            ArtistID: artistId,
+            AccountID,
+            ArtistName,
+            DateCreated,
+            PFP,
+            Bio,
+            image_media_id,
+            message: "Artist updated successfully",
+          });
+        } catch (err) {
+          console.error("PUT /artists/:id error:", err);
+          return json(res, 400, { error: "Invalid request" });
+        }
       });
       return;
     }
@@ -140,7 +204,7 @@ export async function handleArtistRoutes(req, res) {
 
     // fallback if no other route in this file matches
     return json(res, 404, { error: "Route not found in artist.js" });
-
+    
   } catch (err) {
     console.error(
       "artist route error:",

@@ -197,7 +197,17 @@ export default function ArtistAnalytics() {
                 <tr key={i}>
                   <td>{row.songTitle}</td>
                   <td>{row.album}</td>
-                  <td>{String(row.releaseDate).slice(0, 10)}</td>
+                  <td>
+                    {new Date(
+                      row.releaseDate 
+                        ? `${String(row.releaseDate).slice(0, 10)}T00:00:00Z` 
+                        : Date.now()
+                    ).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}
+                </td>
                   <td>{row.totalStreams}</td>
                   <td>{row.totalLikes}</td>
                   <td>{row.playlistAdds}</td>

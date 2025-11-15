@@ -85,7 +85,7 @@ export async function handleArtistAnalyticsRoutes(req, res) {
       const [songs] = await db.query(`
         SELECT
           S.Title AS songTitle,
-          COALESCE(Alb.Title, '-') AS album,
+          COALESCE(Alb.Title, 'Single') AS album,
           S.ReleaseDate AS releaseDate,
           COUNT(DISTINCT CASE 
             WHEN (? IS NULL OR LH.ListenedDate >= ?) AND (? IS NULL OR LH.ListenedDate <= ?)
