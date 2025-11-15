@@ -1,3 +1,7 @@
+/* =================================== */
+/* "My Songs" Page Styles      */
+/* =================================== */
+
 .my-songs-page-title {
   font-family: 'Inter', sans-serif;
   font-size: clamp(26px, 3vw, 36px);
@@ -23,7 +27,7 @@
   min-width: 300px;
   border: 4px solid #895674;
   border-radius: 15px;
-  background: #fffafe;
+  background: #fffcff;
   color: #782355;
 }
 .my-songs-search::placeholder {
@@ -37,6 +41,7 @@
   color: #895674;
 }
 
+/* Using parent classes from MySongs.js to scope these */
 .playlistView .albumPage {
   max-width: 1400px;
   margin: 0 auto;
@@ -55,33 +60,6 @@
   padding: 16px;
 }
 
-.songTitleImageWrap {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-
-.songCoverImage {
-  width: 100px;
-  height: 100px;
-  border-radius: 8px;
-  background: #AD7D9B;
-  flex-shrink: 0;
-  object-fit: cover;
-  display: block;
-}
-
-.songInfo {
-  display: flex;
-}
-
-.songTitle {
-  font-family: 'Inter', sans-serif;
-  color: #782355;
-  font-weight: 700;
-  font-size: 1.5rem;
-}
-
 .noTracks {
   font-family: 'Inter', sans-serif;
   padding: 32px;
@@ -90,7 +68,9 @@
   font-weight: 600;
 }
 
-.likedRow {
+/* --- Row Styles for MySongs page --- */
+
+.my-song-row {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -103,10 +83,37 @@
   padding: 20px 24px;
   margin-bottom: 16px;
   border: 5px solid #895674;
-  background-color: #FFF0FD;
+  background-color: #fffafc;
 }
 
-.songMetaInfo {
+.ms-title-image-wrap {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.ms-cover-image {
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  background: #AD7D9B;
+  flex-shrink: 0;
+  object-fit: cover;
+  display: block;
+}
+
+.ms-info {
+  display: flex;
+}
+
+.ms-title {
+  font-family: 'Inter', sans-serif;
+  color: #782355;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.ms-meta-info {
   display: flex;
   flex-wrap: wrap; 
   justify-content: flex-end;
@@ -116,42 +123,38 @@
   flex-shrink: 0;
 }
 
-.song-meta-item {
+.ms-meta-item {
   font-family: 'Inter', sans-serif;
   display: inline-flex;
   gap: 6px;
   align-items: center;
 }
 
-.song-meta-item strong {
+.ms-meta-item strong {
   font-family: 'Inter', sans-serif;
   color: #782355;
   font-weight: 600;
 }
 
 @media (max-width: 900px) {
-  .likedRow {
+  .my-song-row {
     flex-direction: column;
     align-items: flex-start;
     padding: 16px;
   }
   
-  .songMetaInfo {
+  .ms-meta-info {
     justify-content: flex-start;
     gap: 10px 16px;
     font-size: 1rem;
   }
 
-  .songTitle {
+  .ms-title {
     font-size: 1.3rem;
   }
 
-  .songCoverImage {
+  .ms-cover-image {
     width: 80px;
     height: 80px;
   }
-}
-
-.likedRow:nth-child(even) {
-  background-color: #FFF0FD;
 }

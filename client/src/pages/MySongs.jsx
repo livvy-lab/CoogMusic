@@ -12,15 +12,12 @@ function todayOffset(days = 0) {
   return d.toISOString().slice(0, 10);
 }
 
-
 function createSongKey(title, album) {
   const cleanTitle = title?.trim().toLowerCase() || "unknown_title";
   let cleanAlbum = album?.trim().toLowerCase() || "single";
-
   if (cleanAlbum === "null" || cleanAlbum === "") {
     cleanAlbum = "single";
   }
-  
   return `${cleanTitle}::${cleanAlbum}`;
 }
 
@@ -115,6 +112,7 @@ export default function MySongs() {
         const formatted = songListData.map((row) => {
           const key = createSongKey(row.Title, row.AlbumName);
           const analytics = analyticsMap.get(key);
+          
           const dateStr = row.ReleaseDate 
             ? String(row.ReleaseDate).slice(0, 10) 
             : null;
@@ -125,18 +123,14 @@ export default function MySongs() {
             artist: row.ArtistName || "Unknown Artist",
             artistId: row.ArtistID || null,
             album: row.AlbumName,
-            
             added: new Date(dateStr ? `${dateStr}T00:00:00Z` : Date.now()),
-            
             duration: row.DurationSeconds
               ? `${Math.floor(row.DurationSeconds / 60)}:${String(
                   row.DurationSeconds % 60
                 ).padStart(2, "0")}`
               : "0:00",
-            
             streams: analytics ? analytics.streams : 0,
             likes: analytics ? analytics.likes : 0,
-
             cover_media_id: row.cover_media_id || null,
           };
         });
@@ -250,43 +244,43 @@ export default function MySongs() {
                   return (
                     <div
                       key={t.SongID || i}
-                      className="likedRow"
+                      className="my-song-row"
                       onClick={() => handlePlay(t)}
                       style={{ cursor: "pointer" }}
                     >
-                      <div className="songTitleImageWrap">
+                      <div className="ms-title-image-wrap">
                         {coverUrl ? (
                           <img
                             src={coverUrl}
                             alt={t.title}
-                            className="songCoverImage"
+                            className="ms-cover-image"
                           />
                         ) : (
-                          <div className="songCoverImage placeholder" />
+                          <div className="ms-cover-image" />
                         )}
-                        <div className="songInfo">
-                          <span className="songTitle">{t.title}</span>
+                        <div className="ms-info">
+                          <span className="ms-title">{t.title}</span>
                         </div>
                       </div>
 
-                      <div className="songMetaInfo">
-                        <span className="song-meta-item">
+                      <div className="ms-meta-info">
+                        <span className="ms-meta-item">
                           <strong>Album:</strong> {t.album}
                         </span>
-                        <span className="song-meta-item">
+                        <span className="ms-meta-item">
                           <strong>Uploaded:</strong> {t.added.toLocaleDateString("en-US", {
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           })}
                         </span>
-                        <span className="song-meta-item">
+                        <span className="ms-meta-item">
                           <strong>Likes:</strong> {t.likes}
                         </span>
-                        <span className="song-meta-item">
+                        <span className="ms-meta-item">
                           <strong>Streams:</strong> {t.streams}
                         </span>
-                        <span className="song-meta-item">
+                        <span className="ms-meta-item">
                           <strong>Length:</strong> {t.duration}
                         </span>
                       </div>
