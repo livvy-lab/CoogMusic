@@ -171,6 +171,14 @@ export default function ArtistsPerspective() {
               <img src={albumIcon} alt="" />
               <span>Create Album</span>
             </button>
+            <button className="action-btn" onClick={() => navigate('/my-songs')}>
+              <img src={heartIcon} alt="" />
+              <span>Manage Songs</span>
+            </button>
+            <button className="action-btn" onClick={() => navigate('/my-albums')}>
+              <img src={albumIcon} alt="" />
+              <span>Manage Albums</span>
+            </button>
           </div>
         </div>
 

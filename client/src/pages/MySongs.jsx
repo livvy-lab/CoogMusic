@@ -199,6 +199,29 @@ export default function MySongs() {
     })();
   };
 
+  const handleTakeDown = async (songId, songTitle, e) => {
+    e.stopPropagation();
+    
+    if (!confirm(`Are you sure you want to take down "${songTitle}"? This cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/songs/${songId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to take down song");
+
+      // Remove from local state
+      setTracks((prev) => prev.filter((t) => t.SongID !== songId));
+      alert(`"${songTitle}" has been taken down successfully.`);
+    } catch (err) {
+      console.error("Error taking down song:", err);
+      alert("Failed to take down song. Please try again.");
+    }
+  };
+
   if ((loading || isInitLoading) && !tracks.length) {
     return (
       <PageLayout>
@@ -284,6 +307,14 @@ export default function MySongs() {
                           <strong>Length:</strong> {t.duration}
                         </span>
                       </div>
+
+                      <button
+                        className="ms-take-down-btn"
+                        onClick={(e) => handleTakeDown(t.SongID, t.title, e)}
+                        title="Take down this song"
+                      >
+                        Take Down
+                      </button>
                     </div>
                   );
                 })

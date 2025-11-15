@@ -29,6 +29,7 @@ import PlaylistView from "./pages/PlaylistView";
 import Playlists from "./pages/Playlists";
 import MyAds from "./pages/MyAds";
 import MySongs from "./pages/MySongs";
+import MyAlbums from "./pages/MyAlbums";
 import ArtistAnalytics from "./pages/ArtistAnalytics";
 import ListenerAnalytics from "./pages/ListenerAnalytics";
 import AdminReportReview from "./pages/AdminReportReview";
@@ -89,6 +90,7 @@ function AppContent() {
           <Route path="/upload/album" element={<RequireArtist><CreateAlbum /></RequireArtist>} />
           <Route path="/artist-analytics" element={<ArtistAnalytics />} />
           <Route path="/my-songs" element={<RequireArtist><MySongs /></RequireArtist>} />
+          <Route path="/my-albums" element={<RequireArtist><MyAlbums /></RequireArtist>} />
           
           {/* Public listener profile (search links point to /listeners/:id) */}
           <Route path="/listeners/:id" element={<ListenerPublic />} />

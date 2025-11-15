@@ -1,4 +1,4 @@
-.my-songs-page-title {
+.my-albums-page-title {
   font-family: 'Inter', sans-serif;
   font-size: clamp(26px, 3vw, 36px);
   font-weight: 800;
@@ -7,16 +7,7 @@
   text-align: center;
 }
 
-.list-controls-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 20px;
-  padding: 8px 16px 20px;
-}
-
-.my-songs-search {
+.my-albums-search {
   font-family: 'Inter', sans-serif;
   padding: 12px 18px;
   font-size: 16px;
@@ -26,45 +17,19 @@
   background: #fffcff;
   color: #782355;
 }
-.my-songs-search::placeholder {
+
+.my-albums-search::placeholder {
   color: #ad7d9b;
 }
 
-.my-songs-total {
+.my-albums-total {
   font-family: 'Inter', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #895674;
 }
 
-
-.playlistView .albumPage {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 1.5rem 2rem;
-}
-
-.albumCard {
-  font-family: 'Inter', sans-serif;
-  background: #FFF0FD;
-  border: 5px solid #895674;
-  border-radius: 20px;
-  padding: 24px;
-}
-
-.listCard {
-  padding: 16px;
-}
-
-.noTracks {
-  font-family: 'Inter', sans-serif;
-  padding: 32px;
-  text-align: center;
-  color: #895674;
-  font-weight: 600;
-}
-
-.my-song-row {
+.my-album-row {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -80,17 +45,17 @@
   background-color: #fffafc;
 }
 
-.my-song-row:hover {
+.my-album-row:hover {
   background-color: #fff0f8;
 }
 
-.ms-title-image-wrap {
+.ma-title-image-wrap {
   display: flex;
   align-items: center;
   gap: 20px;
 }
 
-.ms-cover-image {
+.ma-cover-image {
   width: 100px;
   height: 100px;
   border-radius: 8px;
@@ -101,18 +66,18 @@
   display: block;
 }
 
-.ms-info {
+.ma-info {
   display: flex;
 }
 
-.ms-title {
+.ma-title {
   font-family: 'Inter', sans-serif;
   color: #782355;
   font-weight: 700;
   font-size: 1.5rem;
 }
 
-.ms-meta-info {
+.ma-meta-info {
   display: flex;
   flex-wrap: wrap; 
   justify-content: flex-end;
@@ -122,20 +87,20 @@
   flex-shrink: 0;
 }
 
-.ms-meta-item {
+.ma-meta-item {
   font-family: 'Inter', sans-serif;
   display: inline-flex;
   gap: 6px;
   align-items: center;
 }
 
-.ms-meta-item strong {
+.ma-meta-item strong {
   font-family: 'Inter', sans-serif;
   color: #782355;
   font-weight: 600;
 }
 
-.ms-take-down-btn {
+.ma-take-down-btn {
   font-family: 'Inter', sans-serif;
   padding: 10px 20px;
   font-size: 14px;
@@ -149,34 +114,34 @@
   flex-shrink: 0;
 }
 
-.ms-take-down-btn:hover {
+.ma-take-down-btn:hover {
   background: #c9302c;
   border-color: #ac2925;
   transform: translateY(-1px);
 }
 
-.ms-take-down-btn:active {
+.ma-take-down-btn:active {
   transform: translateY(0);
 }
 
 @media (max-width: 900px) {
-  .my-song-row {
+  .my-album-row {
     flex-direction: column;
     align-items: flex-start;
     padding: 16px;
   }
   
-  .ms-meta-info {
+  .ma-meta-info {
     justify-content: flex-start;
     gap: 10px 16px;
     font-size: 1rem;
   }
 
-  .ms-title {
+  .ma-title {
     font-size: 1.3rem;
   }
 
-  .ms-cover-image {
+  .ma-cover-image {
     width: 80px;
     height: 80px;
   }
