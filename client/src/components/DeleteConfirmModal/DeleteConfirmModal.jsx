@@ -35,7 +35,7 @@ export default function DeleteConfirmModal({
         </div>
         
         <div className="modal-body">
-          <p>Are you sure you want to take down:</p>
+          <p>Are you sure you want to remove:</p>
           <p className="song-title-highlight">"{songTitle}"</p>
           <p className="warning-text">This action cannot be undone.</p>
         </div>
@@ -53,7 +53,7 @@ export default function DeleteConfirmModal({
             onClick={handleConfirm}
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Take Down"}
+            {isDeleting ? "Deleting..." : "Remove"}
           </button>
         </div>
       </div>

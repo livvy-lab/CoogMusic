@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "./CreatePlaylistModal.css";
 import { API_BASE_URL } from "../../config/api";
 import EditPlaylistCoverModal from "./EditPlaylistCoverModal";
+import DeleteConfirmModal from "../DeleteConfirmModal/DeleteConfirmModal";
 import { Trash2, Image as ImageIcon, Save } from "lucide-react";
 
 export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUpdated }) {
@@ -12,6 +13,7 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [openCoverModal, setOpenCoverModal] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState(null); // { songId, title } or null
 
   useEffect(() => {
     setName(playlist?.Name || "");
@@ -54,8 +56,16 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
   }
 
   async function removeTrack(songId) {
+    // legacy: this function is now triggered by the modal confirm handler.
+    // Keep for backward compatibility but prefer using `handleConfirmRemove` instead.
     if (!playlist?.PlaylistID || !songId) return;
-    if (!window.confirm('Remove this song from playlist?')) return;
+    setConfirmTarget({ songId, title: (localTracks.find(t => String(t.SongID) === String(songId)) || {}).title || '' });
+  }
+
+  // Called when the user confirms deletion in DeleteConfirmModal
+  async function handleConfirmRemove() {
+    if (!playlist?.PlaylistID || !confirmTarget?.songId) return;
+    const songId = confirmTarget.songId;
     try {
       const res = await fetch(`${API_BASE_URL}/playlist_tracks/${playlist.PlaylistID}/${songId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove song');
@@ -65,7 +75,10 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
       onUpdated?.(playlist, next);
       try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: 'Song removed from playlist', type: 'success' } })); } catch(e){}
     } catch (e) {
-      alert(e.message || 'Could not remove song');
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: e.message || 'Could not remove song', type: 'error' } })); } catch(e){}
+    } finally {
+      // close modal regardless
+      setConfirmTarget(null);
     }
   }
 
@@ -142,6 +155,13 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
             setOpenCoverModal(false);
           }} />
         )}
+        
+        <DeleteConfirmModal
+          isOpen={!!confirmTarget}
+          onClose={() => setConfirmTarget(null)}
+          onConfirm={handleConfirmRemove}
+          songTitle={confirmTarget?.title}
+        />
       </div>
     </div>
   );
