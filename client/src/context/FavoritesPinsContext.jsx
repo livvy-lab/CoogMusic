@@ -100,14 +100,35 @@ export function FavoritesPinsProvider({ children }) {
     const listenerId = u?.listenerId ?? u?.ListenerID;
     if (!listenerId) return;
 
-    const willUnpin = pinnedSongId === songId;
-    setPinnedSongId(willUnpin ? null : songId);
+    const sid = Number(songId);
+    if (!Number.isFinite(sid) || sid <= 0) return;
 
-  fetch(`${API_BASE_URL}/pin`, {
-      method: willUnpin ? "DELETE" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ listenerId, songId }),
-    }).catch(() => {});
+    const willUnpin = pinnedSongId === sid;
+    // optimistic update
+    setPinnedSongId(willUnpin ? null : sid);
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/pin`, {
+        method: willUnpin ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listenerId, songId: sid }),
+      });
+
+      if (res.ok) {
+        // show success toast
+        try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: willUnpin ? 'Song unpinned from your profile' : 'Song pinned to your profile', type: 'success' } })); } catch(e) {}
+      } else {
+        // revert optimistic update
+        setPinnedSongId(willUnpin ? sid : null);
+        const data = await res.json().catch(() => null);
+        const errMsg = data?.error || 'Failed to update pinned song';
+        try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: errMsg, type: 'error' } })); } catch(e) {}
+      }
+    } catch (err) {
+      // network or unexpected error: revert optimistic update
+      setPinnedSongId(willUnpin ? sid : null);
+      try { window.dispatchEvent(new CustomEvent('appToast', { detail: { message: err?.message || 'Failed to update pinned song', type: 'error' } })); } catch(e) {}
+    }
   }
 
   const value = useMemo(() => ({
