@@ -55,6 +55,7 @@ export default function NavigationBar() {
             <Link 
               className="navLink" 
               to={isArtist ? "/artist-dashboard" : "/home"}
+              to={isAdmin ? "/admin-home" : (isArtist ? "/artist-dashboard" : "/home")}
             >
               <img src={homeIcon} alt="" className="navIcon" />
               <span>Home</span>

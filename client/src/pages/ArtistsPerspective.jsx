@@ -12,12 +12,14 @@ import uploadIcon from '../assets/icons/upload-icon.svg';
 import megaphoneIcon from '../assets/icons/megaphone-icon.svg';
 import albumIcon from '../assets/icons/album-icon.svg';
 import heartIcon from '../assets/icons/heart-icon.svg';
+import uploadSongIcon from '../assets/navigation_icons/uploadsong.svg';
 
 export default function ArtistsPerspective() {
   const navigate = useNavigate();
   const { playSong } = usePlayer();
   const [artistId, setArtistId] = useState(null);
   const [artistName, setArtistName] = useState('Artist');
+  const [artistImageUrl, setArtistImageUrl] = useState(null);
   const [totalStreams, setTotalStreams] = useState(0);
   const [followerCount, setFollowerCount] = useState(0);
   const [monthlyListeners, setMonthlyListeners] = useState(0);
@@ -25,7 +27,7 @@ export default function ArtistsPerspective() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Try to resolve the artist name from the logged-in account
+    // Try to resolve the artist ID from the logged-in account
     const user = getUser();
     if (!user || !user.accountId) return;
 
@@ -34,29 +36,43 @@ export default function ArtistsPerspective() {
 
     async function loadArtist() {
       try {
-  const res = await fetch(`${API_BASE_URL}/artists`, { signal });
+        const res = await fetch(`${API_BASE_URL}/artists`, { signal });
         if (!res.ok) return;
         const artists = await res.json();
 
         // server returns AccountID in Artist rows
         const found = artists.find(a => String(a.AccountID) === String(user.accountId));
-        if (found && found.ArtistName) {
-          setArtistName(found.ArtistName);
+        if (found && found.ArtistID) {
           setArtistId(found.ArtistID);
+          // Fetch artist profile data using the same endpoint as ArtistCard
+          fetchArtistProfile(found.ArtistID, signal);
           // Fetch all stats for this artist
-          if (found.ArtistID) {
-            fetchTotalStreams(found.ArtistID, signal);
-            fetchFollowerCount(found.ArtistID, signal);
-            fetchMonthlyListeners(found.ArtistID, signal);
-            fetchTopSongs(found.ArtistID, signal);
-          }
+          fetchTotalStreams(found.ArtistID, signal);
+          fetchFollowerCount(found.ArtistID, signal);
+          fetchMonthlyListeners(found.ArtistID, signal);
+          fetchTopSongs(found.ArtistID, signal);
         } else if (user.name) {
           setArtistName(user.name);
         }
       } catch (err) {
-        if (err.name !== 'AbortError') console.error('Failed to load artist name', err);
+        if (err.name !== 'AbortError') console.error('Failed to load artist data', err);
       } finally {
         setLoading(false);
+      }
+    }
+
+    async function fetchArtistProfile(id, signal) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/artists/${id}/profile`, { signal });
+        if (!res.ok) return;
+        const data = await res.json();
+        // Set artist name
+        if (data.ArtistName) setArtistName(data.ArtistName);
+        // Use pfpSignedUrl (preferred), pfpUrl, or PFP (fallback) - same as ArtistCard
+        const imageUrl = data.pfpSignedUrl || data.pfpUrl || data.PFP;
+        if (imageUrl) setArtistImageUrl(imageUrl);
+      } catch (err) {
+        if (err.name !== 'AbortError') console.error('Failed to load artist profile', err);
       }
     }
 
@@ -114,7 +130,14 @@ export default function ArtistsPerspective() {
   return (
     <PageLayout>
       <div className="artist-dashboard">
-        <h1 className="welcome-title">Welcome back, {artistName}</h1>
+        <div className="welcome-row">
+          {artistImageUrl ? (
+            <img src={artistImageUrl} alt={artistName} className="artist-avatar" />
+          ) : (
+            <div className="artist-avatar placeholder" aria-label="No profile image">🎤</div>
+          )}
+          <h1 className="welcome-title">Welcome back, {artistName}</h1>
+        </div>
 
         {/* Stats Grid */}
         <div className="stats-grid">
@@ -172,7 +195,7 @@ export default function ArtistsPerspective() {
               <span>Create Album</span>
             </button>
             <button className="action-btn" onClick={() => navigate('/my-songs')}>
-              <img src={heartIcon} alt="" />
+              <span className="qa-icon qa-icon--upload-song" aria-hidden="true" />
               <span>Manage Songs</span>
             </button>
             <button className="action-btn" onClick={() => navigate('/my-albums')}>
