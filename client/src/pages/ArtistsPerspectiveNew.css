@@ -12,6 +12,33 @@
   margin-bottom: 32px;
 }
 
+/* Row containing avatar + title */
+.welcome-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.artist-avatar {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #BDA0AE;
+  background: #E9D2DF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #612C4B;
+  flex-shrink: 0;
+}
+
+.artist-avatar.placeholder {
+  font-weight: 600;
+}
+
 /* Stats Grid */
 .stats-grid {
   display: grid;
@@ -106,6 +133,30 @@
   width: 24px;
   height: 24px;
   object-fit: contain;
+}
+
+/* Quick Actions: consistent icon color via CSS mask */
+.qa-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  background-color: #612C4B; /* match text/icon color */
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.qa-icon--upload-song {
+  -webkit-mask-image: url('../assets/navigation_icons/uploadsong.svg');
+  mask-image: url('../assets/navigation_icons/uploadsong.svg');
+}
+
+/* On hover, slightly deepen the icon color to match tile hover */
+.action-btn:hover .qa-icon {
+  background-color: #4B2C3D;
 }
 
 /* Top Songs */
