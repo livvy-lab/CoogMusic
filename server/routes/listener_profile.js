@@ -5,7 +5,6 @@ export async function handleListenerProfile(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
-  // CORS (keep global CORS too if you have it)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -49,7 +48,7 @@ export async function handleListenerProfile(req, res) {
       favArtists = rows.map(r => ({
         ArtistID: r.ArtistID,
         ArtistName: r.ArtistName,
-        rank: r.FavRank,       // expose as "rank" to the client
+        rank: r.FavRank,
         PFP: r.PFP ?? null
       }));
     } catch (e) {
@@ -62,7 +61,8 @@ export async function handleListenerProfile(req, res) {
     if (listener.PinnedSongID) {
       try {
         const [ps] = await db.query(
-          `SELECT s.SongID, s.Title,
+          `SELECT s.SongID, s.Title, 
+                  MIN(a.ArtistID) AS ArtistID,
                   COALESCE(GROUP_CONCAT(DISTINCT a.ArtistName ORDER BY a.ArtistName SEPARATOR ', '), '') AS Artists
              FROM Song s
         LEFT JOIN Song_Artist sa ON sa.SongID = s.SongID
@@ -79,7 +79,6 @@ export async function handleListenerProfile(req, res) {
     }
 
     // 4) Pinned playlist (guard + IsDeleted)
-    // Include cover_media_id so the client can resolve a cover URL via /media/:id
     let pinnedPlaylist = null;
     if (listener.PinnedPlaylistID) {
       try {
@@ -99,7 +98,6 @@ export async function handleListenerProfile(req, res) {
     // 5) Counts (defensive about Follows schema)
     let followers = 0, following = 0, playlists = 0, songs = 0;
 
-    // Try the “typeful” schema first
     try {
       const [[followersCountRow]] = await db.query(
         `SELECT COUNT(*) AS cnt
@@ -117,7 +115,6 @@ export async function handleListenerProfile(req, res) {
       );
       following = followingCountRow.cnt ?? 0;
     } catch (eTypeful) {
-      // Fallback to simple Follows schema: FollowerID / FolloweeID / IsDeleted
       console.warn("[profile] Follows typeful schema failed; falling back:", eTypeful.message);
       try {
         const [[followersCountRow]] = await db.query(

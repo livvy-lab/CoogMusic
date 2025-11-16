@@ -112,6 +112,15 @@
   font-size: clamp(14px, 1.3vw, 18px);
   color: #4b2c3d;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pc__songsIcon {
+  width: clamp(18px, 1.8vw, 24px);
+  height: clamp(18px, 1.8vw, 24px);
+  object-fit: contain;
 }
 
 /* ====== Responsive ====== */

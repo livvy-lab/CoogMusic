@@ -1,30 +1,17 @@
-// server/routes/likes_pins.js
 import db from "../db.js";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-/**
- * Unified router:
- *  - GET  /songs/status?listenerId=&ids=1,2,3       → { favorites: number[], pinnedSongId: number|null }
- *  - POST /likes    { listenerId, songId }          → like a song
- *  - DELETE /likes  { listenerId, songId }          → unlike a song
- *  - POST /pin      { listenerId, songId }          → pin a song
- *  - DELETE /pin    { listenerId }                  → unpin song
- *
- * Favorite Artists (join table ListenerArtistPin):
- *  - GET    /listeners/:listenerId/pins/artists
- *  - POST   /listeners/:listenerId/pins/artists     { artistId }  (max 3)
- *  - DELETE /listeners/:listenerId/pins/artists/:artistId
- *
- * Pinned Playlist (must be public; cannot be Liked Songs):
- *  - GET    /listeners/:listenerId/pins/playlist
- *  - POST   /listeners/:listenerId/pins/playlist    { playlistId }
- *  - DELETE /listeners/:listenerId/pins/playlist
- */
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || "us-east-1",
+});
+const S3_BUCKET = process.env.S3_BUCKET_NAME || "coog-music";
+
 export async function handleLikesPins(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
-  const p = url.pathname.replace(/\/+$/, ""); // strip trailing slashes
+  const p = url.pathname.replace(/\/+$/, "");
   const m = req.method;
 
-  // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -38,9 +25,6 @@ export async function handleLikesPins(req, res) {
   };
 
   try {
-    // ───────────────────────────────────────────────
-    // SONG likes + pinned song
-    // ───────────────────────────────────────────────
     if (p === "/songs/status" && m === "GET") {
       const listenerId = Number(url.searchParams.get("listenerId"));
       const ids = (url.searchParams.get("ids") || "")
@@ -48,20 +32,12 @@ export async function handleLikesPins(req, res) {
 
       if (!listenerId) return send(200, { favorites: [], pinnedSongId: null });
 
-
       let favorites = [];
       if (ids.length) {
-  // Diagnostic: print all liked songs for this listener
-  const [allRows] = await db.query('SELECT * FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1', [listenerId]);
-  console.log('[LIKES_PINS] All liked songs for listener', listenerId, allRows);
-
-  const sql = `SELECT SongID FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1 AND SongID IN (${ids.map(() => "?").join(",")})`;
-  const params = [listenerId, ...ids];
-  console.log("[LIKES_PINS] /songs/status SQL:", sql);
-  console.log("[LIKES_PINS] /songs/status params:", params);
-  const [rows] = await db.query(sql, params);
-  console.log("[LIKES_PINS] /songs/status DB rows:", rows);
-  favorites = rows.map(r => r.SongID);
+        const sql = `SELECT SongID FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1 AND SongID IN (${ids.map(() => "?").join(",")})`;
+        const params = [listenerId, ...ids];
+        const [rows] = await db.query(sql, params);
+        favorites = rows.map(r => r.SongID);
       }
 
       const [pinRow] = await db.query(
@@ -128,14 +104,14 @@ export async function handleLikesPins(req, res) {
       return;
     }
 
-    // ───────────────────────────────────────────────
-    // FAVORITE ARTISTS (join table)
-    // ───────────────────────────────────────────────
-
-    // GET pinned artists
     let mList = p.match(/^\/listeners\/(\d+)\/pins\/artists$/);
     if (m === "GET" && mList) {
       const listenerId = Number(mList[1]);
+      
+      if (!S3_BUCKET) {
+        console.error("S3_BUCKET_NAME environment variable is not set.");
+        return send(500, { error: "Server configuration error" });
+      }
 
       const [rows] = await db.query(
         `SELECT a.ArtistID, a.ArtistName, a.PFP, a.Bio, lap.CreatedAt
@@ -145,11 +121,35 @@ export async function handleLikesPins(req, res) {
          ORDER BY lap.CreatedAt DESC`,
         [listenerId]
       );
+      
+      const signedRows = await Promise.all(
+        rows.map(async (row) => {
+          if (row.PFP && row.PFP.includes(S3_BUCKET)) {
+            try {
+              const url = new URL(row.PFP);
+              const key = url.pathname.startsWith('/') ? url.pathname.substring(1) : url.pathname;
 
-      return send(200, rows); // [] if none
+              const command = new GetObjectCommand({
+                Bucket: S3_BUCKET,
+                Key: key,
+              });
+              
+              const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+              row.PFP = signedUrl;
+            } catch (err) {
+              console.error("Error generating signed URL for key:", row.PFP, err);
+              row.PFP = null;
+            }
+          } else if (row.PFP) {
+            row.PFP = null;
+          }
+          return row;
+        })
+      );
+
+      return send(200, signedRows);
     }
 
-    // POST pin artist (max 3)
     let mPost = p.match(/^\/listeners\/(\d+)\/pins\/artists$/);
     if (m === "POST" && mPost) {
       const listenerId = Number(mPost[1]);
@@ -183,7 +183,6 @@ export async function handleLikesPins(req, res) {
       return;
     }
 
-    // DELETE unpin artist
     let mDel = p.match(/^\/listeners\/(\d+)\/pins\/artists\/(\d+)$/);
     if (m === "DELETE" && mDel) {
       const listenerId = Number(mDel[1]);
@@ -198,11 +197,6 @@ export async function handleLikesPins(req, res) {
       return send(200, { ok: true });
     }
 
-    // ───────────────────────────────────────────────
-    // PINNED PLAYLIST (public only; never IsLikedSongs)
-    // ───────────────────────────────────────────────
-
-    // GET pinned playlist
     let mpGet = p.match(/^\/listeners\/(\d+)\/pins\/playlist$/);
     if (m === "GET" && mpGet) {
       const listenerId = Number(mpGet[1]);
@@ -226,7 +220,6 @@ export async function handleLikesPins(req, res) {
       return send(200, playlist);
     }
 
-    // POST pin playlist (validate public, not deleted, not IsLikedSongs)
     let mpPost = p.match(/^\/listeners\/(\d+)\/pins\/playlist$/);
     if (m === "POST" && mpPost) {
       const listenerId = Number(mpPost[1]);
@@ -258,13 +251,12 @@ export async function handleLikesPins(req, res) {
           );
           return send(201, { ok: true });
         } catch {
-          return send(400, { error: "BAD_JSON" });
+          return send(4400, { error: "BAD_JSON" });
         }
       });
       return;
     }
 
-    // DELETE unpin playlist
     let mpDel = p.match(/^\/listeners\/(\d+)\/pins\/playlist$/);
     if (m === "DELETE" && mpDel) {
       const listenerId = Number(mpDel[1]);
@@ -275,7 +267,6 @@ export async function handleLikesPins(req, res) {
       return send(200, { ok: true });
     }
 
-    // No match → let other routers try
     return;
   } catch (e) {
     console.error("likes_pins route error:", e?.sqlMessage || e);

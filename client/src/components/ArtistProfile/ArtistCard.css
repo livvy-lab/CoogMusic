@@ -13,7 +13,7 @@
   box-shadow: 0 5px 0 #6e4760;
 }
 
-/* Avatar */
+/* avatar */
 .artistCard__avatarWrap {
   display: grid;
   place-items: center;
@@ -35,13 +35,22 @@
   display: block;
 }
 
-/* Info */
+/* info */
 .artistCard__info {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start; 
   gap: 8px;
+}
+
+/* new heading row */
+.artistCard__headingRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 8px;
 }
 
 .artistCard__name {
@@ -61,7 +70,51 @@
   transform: translateX(var(--optical-nudge));
 }
 
-/* Songs badge */
+.artistCard__stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin: 8px 0;
+  --optical-nudge: 6px;
+  transform: translateX(var(--optical-nudge));
+}
+
+.artistCard__stats button {
+  min-width: clamp(120px, 12vw, 160px);
+  font-size: clamp(15px, 1.4vw, 18px);
+  background: #895674;
+  color: #FFDAF0;
+  border: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  cursor: pointer;
+}
+
+.artistCard__stats button:hover {
+  background: #a46e8b;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0,0,0,.18);
+}
+
+.artistCard__stats button:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.artistCard__stats button:disabled {
+  background: #d3a6bb;
+  color: #6e4760;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+}
+
+
+/* songs badge */
 .artistCard__songs {
   position: absolute;
   top: 16px;
@@ -71,7 +124,7 @@
   color: #6e4760;
 }
 
-/* Favorite button styles */
+/* favorite button styles */
 .artistCard__fav {
   position: absolute;
   right: 26px;
@@ -107,7 +160,6 @@
   filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.1));
 }
 
-/* Active (favorited) */
 .artistCard__fav.is-active {
   background: #ffd1e6;
 }
@@ -117,7 +169,7 @@
   filter: drop-shadow(0 0 4px rgba(255, 79, 163, 0.5));
 }
 
-/* Responsive */
+/* responsive */
 @media (max-width: 720px) {
   .artistCard {
     grid-template-columns: clamp(120px, 28vw, 160px) 1fr;
@@ -140,6 +192,7 @@
   }
 }
 
+/* follow button styles */
 .pc__followBtn {
   min-width: 140px;
   font-size: 18px;
@@ -178,18 +231,31 @@
   background: #c377a5;
 }
 
+/* report button styles */
 .pc__reportBtn {
-  background: #d58cb0;
-  color: #fff;
-  border: none;
-  border-radius: 13px;
-  padding: 0.5em 1.6em;
-  font-weight: bold;
-  font-size: 1.1em;
+  min-width: 140px;
+  height: 44.5px;
+  font-size: 18px;
+  font-family: inherit;
+  background: #AF578A;
+  color: #FFDAF0;
+  border: 0;
+  padding: 10px 24px;
+  border-radius: 12px;
+  font-weight: 800;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+  letter-spacing: 0.03em;
   margin-left: 12px;
 }
 .pc__reportBtn:hover {
-  background: #be477a;
+  background: #c377a5;
+  color: #fff;
+  transform: translateY(-2px) scale(1.04);
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+}
+
+.pc__reportBtn:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
 }

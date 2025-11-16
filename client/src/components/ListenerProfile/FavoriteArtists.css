@@ -11,10 +11,10 @@
   margin: 0;
   padding-top: 0;
   --circle: clamp(100px, 20vw, 180px);
-  overflow: visible; /* Allow hover overflow */
+  overflow: visible;
 }
 
-/* Title sits above row and aligns with circles */
+/* Title */
 .fa .playlistSection__title {
   font-size: clamp(26px, 2vw, 32px);
   font-weight: 800;
@@ -24,17 +24,17 @@
   padding-left: 8px;
 }
 
-/* Flex layout for 3 circles */
+/* Grid */
 .fa__grid {
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: 0;
-  overflow: visible; /* prevents hover clipping */
+  overflow: visible;
 }
 
-/* Single artist item (clickable link or button) */
+/* Single artist item */
 .fa__item {
   position: relative;
   display: flex;
@@ -51,15 +51,12 @@
   transition: color 0.2s ease;
 }
 
-/* Circle wrapper */
 .fa__ring {
   width: var(--circle);
   height: var(--circle);
   border-radius: 50%;
-  border: 5px solid var(--plum);
-  background: #e7c4d6;
   overflow: hidden;
-  transition: transform 0.18s ease, border-color 0.2s ease, background 0.2s ease;
+  transition: transform 0.18s ease;
   transform-origin: center;
   will-change: transform;
 }
@@ -70,6 +67,10 @@
   height: 100%;
   object-fit: cover;
   border-radius: 50%;
+  border: 5px solid var(--plum);
+  background: #e7c4d6;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
 /* Placeholder (for missing images) */
@@ -82,31 +83,38 @@
   color: #fff;
   font-weight: 800;
   font-size: clamp(32px, 5vw, 40px);
+  border: 5px solid var(--plum);
+  background: #e7c4d6;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
 }
 
 /* Artist name text */
 .fa__name {
   font-weight: 700;
   font-size: clamp(16px, 1.4vw, 20px);
-  color: white;
-  opacity: 0.95;
+  color: var(--plum);
   transition: color 0.2s ease;
 }
 
 /* Hover animations */
 .fa__item:hover {
   color: var(--plum);
-  z-index: 10; /* bring forward */
+  z-index: 10;
 }
 
 .fa__item:hover .fa__ring {
   transform: scale(1.08);
+}
+
+.fa__item:hover .fa__avatar,
+.fa__item:hover .fa__placeholder {
   border-color: var(--pink-50);
-  background: #ffd8ec;
 }
 
 .fa__item:hover .fa__name {
-  color: var(--plum);
+  color: white;
+  opacity: 0.95;
 }
 
 /* Remove link underlines always */

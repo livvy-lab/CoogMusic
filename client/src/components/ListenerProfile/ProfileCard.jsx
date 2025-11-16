@@ -4,6 +4,7 @@ import { getUser } from "../../lib/userStorage";
 import { API_BASE_URL } from "../../config/api";
 import { AchievementProvider } from "../../context/AchievementContext";
 import "./ProfileCard.css";
+import musicIcon from "../../assets/music_icon.svg";
 
 export default function ProfileCard({ listenerId: propListenerId = null, publicView = false }) {
   const navigate = useNavigate();
@@ -300,7 +301,10 @@ export default function ProfileCard({ listenerId: propListenerId = null, publicV
             </button>
           </div>
         </div>
-        <div className="pc__songs">🎵 {counts.songs} songs</div>
+        <div className="pc__songs">
+          <img src={musicIcon} alt="" className="pc__songsIcon" />
+          {counts.songs} songs
+        </div>
       </section>
     </AchievementProvider>
   );

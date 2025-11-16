@@ -42,18 +42,14 @@
   border-radius: 20px;
   border: 5px solid var(--stroke);
   box-shadow: 0 5px 0 var(--shadow);
-  background: #d7b5c655; /* base tone ~ AD7D9B @35% opacity */
+  background: #ecc8da;
   transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
-}
-
-.nr__card:nth-child(even) {
-  background: #d7b5c61a; /* same color @10% opacity */
 }
 
 .nr__card:hover {
   transform: translateY(-3px);
   box-shadow: 0 7px 0 var(--shadow);
-  background: #d7b5c685; /* slightly darker on hover */
+  background: #e0a5c3;
 }
 
 .nr__img {

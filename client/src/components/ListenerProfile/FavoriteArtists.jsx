@@ -30,10 +30,15 @@ export default function FavoriteArtists({ listenerId, onSelect }) {
         const res = await fetch(`${API_BASE_URL}/listeners/${id}/profile`, { signal: ctrl.signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        console.log("[FavoriteArtists] Raw data from /profile:", data);
+
         let favs = Array.isArray(data?.favorites?.artists) ? data.favorites.artists : [];
         if (!favs.length) {
           const r2 = await fetch(`${API_BASE_URL}/listeners/${id}/pins/artists`, { signal: ctrl.signal });
-          if (r2.ok) favs = await r2.json();
+          if (r2.ok) {
+            favs = await r2.json();
+            console.log("[FavoriteArtists] Raw data from /pins/artists:", favs);
+          }
         }
         const norm = favs.map(normalize).filter(Boolean);
         if (!alive) return;
@@ -43,7 +48,10 @@ export default function FavoriteArtists({ listenerId, onSelect }) {
         setArtists(filled.slice(0, 3));
       } catch (e) {
         if (!alive) return;
+        
+        console.error("[FavoriteArtists] Failed to load data:", e);
         setError(e.message || "Failed to load");
+        
       } finally {
         if (alive) setLoading(false);
       }

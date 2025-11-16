@@ -52,17 +52,24 @@ export default function NavigationBar() {
               <img src={dashboardIcon} alt="" className="navTitleIcon" />
               <span>Dashboard</span>
             </div>
-            <Link className="navLink" to="/home">
+            <Link 
+              className="navLink" 
+              to={isArtist ? "/artist-dashboard" : "/home"}
+            >
               <img src={homeIcon} alt="" className="navIcon" />
               <span>Home</span>
             </Link>
-            <Link className="navLink" to="/subscription">
-              <img src={subscriptionIcon} alt="" className="navIcon" />
-              <span>Subscription</span>
-            </Link>
+
+            {!isArtist && (
+              <Link className="navLink" to="/subscription">
+                <img src={subscriptionIcon} alt="" className="navIcon" />
+                <span>Subscription</span>
+              </Link>
+            )}
+
             <Link className="navLink" to={isArtist ? "/artist-analytics" : "/listener-analytics"}>
               <img src={analyticsIcon} alt="" className="navIcon" />
-              <span>My Analytics</span>
+              <span>Performance Report</span>
             </Link>
           </nav>
 
@@ -78,10 +85,15 @@ export default function NavigationBar() {
               <img src={socialIcon} alt="" className="navTitleIcon" />
               <span>Social</span>
             </div>
-            <Link className="navLink" to="/profile">
+            
+            <Link 
+              className="navLink" 
+              to={(isArtist && (user?.artistId ?? user?.ArtistID)) ? `/artist/${user.artistId ?? user.ArtistID}` : "/profile"}
+            >
               <img src={profileIcon} alt="" className="navIcon" />
               <span>My Profile</span>
             </Link>
+
             <Link className="navLink" to="/edit-profile">
               <img src={editIcon} alt="" className="navIcon" />
               <span>Edit Profile</span>
@@ -97,19 +109,33 @@ export default function NavigationBar() {
               <img src={libraryIcon} alt="" className="navTitleIcon" />
               <span>Library</span>
             </div>
-            <Link className="navLink" to="/likedsongs">
-              <img src={favoritesIcon} alt="" className="navIcon" />
-              <span>Favorite Tracks</span>
-            </Link>
-            <Link className="navLink" to="/me/playlists">
-              <img src={playlistsIcon} alt="" className="navIcon navIcon--playlists" />
-              <span>Playlists</span>
-            </Link>
+            {!isArtist ? (
+              <>
+                <Link className="navLink" to="/likedsongs">
+                  <img src={favoritesIcon} alt="" className="navIcon" />
+                  <span>Favorite Tracks</span>
+                </Link>
+                <Link className="navLink" to="/me/playlists">
+                  <img src={playlistsIcon} alt="" className="navIcon navIcon--playlists" />
+                  <span>Playlists</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link className="navLink" to="/my-songs"> 
+                  <img src={uploadSongIcon} alt="" className="navIcon" />
+                  <span>My Songs</span>
+                </Link>
+                <Link className="navLink" to="/upload/album">
+                  <img src={albumIcon} alt="" className="navIcon" />
+                  <span>Albums</span>
+                </Link>
+              </>
+            )}
           </nav>
-
           {isArtist && (
             <nav className="navSection">
-              <div className="navTitle">Artist</div>
+              <div className="navTitle">Publish</div>
               <Link className="navLink" to="/my-ads">
                 <img src={advertisementsIcon} alt="" className="navIcon" />
                 <span>My Ads</span>

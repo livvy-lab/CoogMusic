@@ -1,6 +1,8 @@
 import db from "../db.js";
 import { parse } from "url";
 
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds - industry standard for valid stream
+
 export async function handleArtistAnalyticsRoutes(req, res) {
   const url = parse(req.url, true);
   const match = url.pathname.match(/^\/analytics\/artist\/(\d+)\/(summary|init)/);
@@ -51,12 +53,18 @@ export async function handleArtistAnalyticsRoutes(req, res) {
 
     try {
       const [[{ totalStreams = 0 }]] = await db.query(`
-        SELECT COUNT(*) AS totalStreams FROM Listen_History LH
-        JOIN Song_Artist SA ON LH.SongID = SA.SongID
+        SELECT COUNT(*) AS totalStreams 
+        FROM Play P
+        JOIN Song S ON P.SongID = S.SongID
+        JOIN Song_Artist SA ON S.SongID = SA.SongID
         WHERE SA.ArtistID = ?
-          AND (? IS NULL OR LH.ListenedDate >= ?) 
-          AND (? IS NULL OR LH.ListenedDate <= ?);
-      `, [artistId, startDate, startDate, endDate, endDate]);
+          AND COALESCE(P.IsDeleted, 0) = 0
+          AND COALESCE(S.IsDeleted, 0) = 0
+          AND COALESCE(SA.IsDeleted, 0) = 0
+          AND P.MsPlayed >= ?
+          AND (? IS NULL OR DATE(P.PlayedAt) >= ?) 
+          AND (? IS NULL OR DATE(P.PlayedAt) <= ?);
+      `, [artistId, STREAM_MS_THRESHOLD, startDate, startDate, endDate, endDate]);
       
       const [[{ totalLikes = 0 }]] = await db.query(`
         SELECT COUNT(*) AS totalLikes FROM Liked_Song LS
@@ -85,11 +93,13 @@ export async function handleArtistAnalyticsRoutes(req, res) {
       const [songs] = await db.query(`
         SELECT
           S.Title AS songTitle,
-          COALESCE(Alb.Title, '-') AS album,
+          COALESCE(Alb.Title, 'Single') AS album,
           S.ReleaseDate AS releaseDate,
           COUNT(DISTINCT CASE 
-            WHEN (? IS NULL OR LH.ListenedDate >= ?) AND (? IS NULL OR LH.ListenedDate <= ?)
-            THEN LH.EventID 
+            WHEN (? IS NULL OR DATE(P.PlayedAt) >= ?) 
+             AND (? IS NULL OR DATE(P.PlayedAt) <= ?)
+             AND P.MsPlayed >= ?
+            THEN P.PlayID 
             ELSE NULL 
           END) AS totalStreams,
           (SELECT COUNT(*) FROM Liked_Song LS WHERE LS.SongID = S.SongID) AS totalLikes,
@@ -98,14 +108,16 @@ export async function handleArtistAnalyticsRoutes(req, res) {
         JOIN Song_Artist SA ON S.SongID = SA.SongID
         LEFT JOIN Album_Track AT ON S.SongID = AT.SongID
         LEFT JOIN Album Alb ON AT.AlbumID = Alb.AlbumID
-        LEFT JOIN Listen_History LH ON S.SongID = LH.SongID
+        LEFT JOIN Play P ON S.SongID = P.SongID AND COALESCE(P.IsDeleted, 0) = 0
         WHERE SA.ArtistID = ?
+          AND COALESCE(S.IsDeleted, 0) = 0
+          AND COALESCE(SA.IsDeleted, 0) = 0
           ${album ? "AND Alb.AlbumID = ?" : ""}
           ${song ? "AND S.Title LIKE ?" : ""}
         GROUP BY S.SongID, album, S.ReleaseDate
         ORDER BY ${sortSQL} ${orderSQL}
       `, 
-        [startDate, startDate, endDate, endDate, artistId]
+        [startDate, startDate, endDate, endDate, STREAM_MS_THRESHOLD, artistId]
           .concat(album ? [album] : [])
           .concat(song ? [`%${song}%`] : [])
       );

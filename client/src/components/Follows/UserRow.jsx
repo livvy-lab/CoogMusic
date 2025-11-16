@@ -23,6 +23,8 @@ export default function UserRow({
   const isOwnProfile =
     String(user.id) === String(currentUserId) && user.type === currentUserType;
 
+  const isArtist = currentUserType === "Artist";
+
   return (
     <div
       className="user-row"
@@ -44,8 +46,9 @@ export default function UserRow({
         </div>
       </div>
       <div>
-        {!isOwnProfile &&
-          (isFollowing ? (
+        
+        {!isArtist && !isOwnProfile && (
+          isFollowing ? (
             <button className="following-btn" onClick={onUnfollow}>
               Following
             </button>
@@ -53,7 +56,9 @@ export default function UserRow({
             <button className="follow-btn" onClick={onFollow}>
               Follow
             </button>
-          ))}
+          )
+        )}
+
       </div>
     </div>
   );

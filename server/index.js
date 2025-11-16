@@ -147,13 +147,11 @@ const server = http.createServer(async (req, res) => {
       await handleAchievements(req, res);
      return;
     }
-    // ───────────────────────────────────────────────
-    // Plays + Login
-    // ───────────────────────────────────────────────
-    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) { await handlePlayRoutes(req, res); return; }
-    if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }
-
-    // ───────────────────────────────────────────────
+    // ───────────────────────────────────────────────
+    // Plays + Login
+    // ───────────────────────────────────────────────
+    if (pathname.startsWith("/plays")) { await handlePlayRoutes(req, res); return; }
+    if (pathname.startsWith("/login")) { await handleLogin(req, res); return; }    // ───────────────────────────────────────────────
     // Likes + Pins (songs + artists join table)
     // ───────────────────────────────────────────────
     if (
