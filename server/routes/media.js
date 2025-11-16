@@ -68,63 +68,73 @@ export async function handleMediaRoutes(req, res) {
       res.end(JSON.stringify({ mediaId: row.MediaID, url: row.url, mime: row.mime }));
       return;
     }
-    // POST /media (upload image) - supports both S3 and local paths
+
+    // POST /media (upload image OR audio) - supports both S3 and local paths
     if (pathname === "/media" && method === "POST") {
+      const allowedMimes = [
+        "image/png", "image/jpeg", "image/webp", "image/jpg", "image/gif",
+        "audio/mpeg", "audio/mp3", "audio/wav", "audio/ogg", "audio/aac", "audio/flac"
+      ];
+
       if (!BUCKET || !process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID) {
         // Fall back to local storage if S3 not configured
         const { fields, files } = await parseMultipart(req, {
-          destDir: "uploads/images",
-          allowed: ["image/png", "image/jpeg", "image/webp"]
+          destDir: "uploads/media",
+          allowed: allowedMimes
         });
         console.log('[media] parseMultipart result (local):', { fields, files });
         
-        const image = files.image || files.file || files.upload;
-        if (!image?.filepath) {
+        const file = files.image || files.audio || files.file || files.upload;
+        if (!file?.filepath) {
           res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "No image file provided" }));
+          res.end(JSON.stringify({ error: "No file provided" }));
           return;
         }
 
         // Store local path in Media table
-        const relPath = `/uploads/images/${path.basename(image.filepath)}`;
+        const relPath = `/uploads/media/${path.basename(file.filepath)}`;
         const [result] = await db.query(
           "INSERT INTO Media (storage_provider, url, mime, created_at) VALUES (?, ?, ?, NOW())",
-          ["local", relPath, image.mimetype]
+          ["local", relPath, file.mimetype]
         );
 
         res.writeHead(201, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ 
           mediaId: result.insertId,
           url: relPath,
-          mime: image.mimetype
+          mime: file.mimetype
         }));
         return;
       }
 
       // S3 storage (preferred when configured)
       const { fields, files } = await parseMultipart(req, {
-        allowed: ["image/png", "image/jpeg", "image/webp"]
+        allowed: allowedMimes
       });
       console.log('[media] parseMultipart result (s3):', { fields, files });
 
-      const image = files.image || files.file || files.upload;
-      if (!image?.filepath) {
+      const file = files.image || files.audio || files.file || files.upload;
+      if (!file?.filepath) {
         res.writeHead(400, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "No image file provided" }));
+        res.end(JSON.stringify({ error: "No file provided" }));
         return;
       }
 
+      // Determine folder based on mime type
+      const isAudio = file.mimetype.startsWith("audio/");
+      const folder = isAudio ? "audio" : "images";
+
       // Upload to S3
-      const ext = path.extname(image.originalFilename || "");
-      const base = slug(path.basename(image.originalFilename || "image", ext)) || "image";
-      const s3key = `images/${base}_${randomUUID()}${ext}`;
+      const ext = path.extname(file.originalFilename || "");
+      const base = slug(path.basename(file.originalFilename || "file", ext)) || "file";
+      const s3key = `${folder}/${base}_${randomUUID()}${ext}`;
 
       await s3.send(
         new PutObjectCommand({
           Bucket: BUCKET,
           Key: s3key,
-          Body: fs.createReadStream(image.filepath),
-          ContentType: image.mimetype,
+          Body: fs.createReadStream(file.filepath),
+          ContentType: file.mimetype,
           CacheControl: "public, max-age=31536000, immutable"
         })
       );
@@ -139,7 +149,7 @@ export async function handleMediaRoutes(req, res) {
       // Store S3 details in Media table
       const [result] = await db.query(
         "INSERT INTO Media (storage_provider, bucket, s3_key, url, mime, created_at) VALUES (?, ?, ?, ?, ?, NOW())",
-        ["aws-s3", BUCKET, s3key, canonical, image.mimetype]
+        ["aws-s3", BUCKET, s3key, canonical, file.mimetype]
       );
 
       res.writeHead(201, { "Content-Type": "application/json" });
@@ -147,7 +157,7 @@ export async function handleMediaRoutes(req, res) {
         mediaId: result.insertId,
         url,
         canonical,
-        mime: image.mimetype,
+        mime: file.mimetype,
         s3: { bucket: BUCKET, key: s3key }
       }));
       return;
@@ -284,7 +294,7 @@ export async function handleMediaRoutes(req, res) {
       // handle local fallback
       if (row.storage_provider === 'local') {
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ url: row.localUrl })); // Send the local path
+        res.end(JSON.stringify({ url: row.localUrl }));
         return;
       }
 
@@ -296,7 +306,7 @@ export async function handleMediaRoutes(req, res) {
           return;
         }
         const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
-        const url = await getSignedUrl(s3, cmd, { expiresIn: 900 }); // 15-minute link
+        const url = await getSignedUrl(s3, cmd, { expiresIn: 900 });
 
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify({ url: url }));
@@ -304,7 +314,7 @@ export async function handleMediaRoutes(req, res) {
       }
       
       // fallback for unknown provider
-      res.writeHead(4404, { "Content-Type": "application/json" });
+      res.writeHead(404, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ error: "Media has no valid URL" }));
       return;
     }
@@ -314,6 +324,7 @@ export async function handleMediaRoutes(req, res) {
     res.end(JSON.stringify({ error: "Media route not found" }));
 
   } catch (e) {
+    console.error("[media] Error:", e);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({
       error: e.message || "server_error",

@@ -4,7 +4,7 @@ import { parse } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
@@ -19,7 +19,7 @@ export async function handleSongRoutes(req, res) {
   const method = req.method;
 
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
 
@@ -40,10 +40,10 @@ export async function handleSongRoutes(req, res) {
       FROM Song_Artist sa
       JOIN Artist ar ON ar.ArtistID = sa.ArtistID AND COALESCE(ar.IsDeleted,0)=0
       WHERE sa.SongID = s.SongID AND COALESCE(sa.IsDeleted,0)=0
-      ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtID
+      ORDER BY CASE sa.Role WHEN 'Primary' THEN 0 ELSE 1 END, ar.ArtistID
       LIMIT 1
     )
-  `.replace("ar.ArtID","ar.ArtistID");
+  `;
 
   const SELECT_CORE = `
     s.SongID,
@@ -63,10 +63,9 @@ export async function handleSongRoutes(req, res) {
 
   try {
     if (pathname === "/songs/latest" && method === "GET") {
-      const limit =
-        Number.isInteger(Number(query?.limit)) && Number(query.limit) > 0
-          ? Math.min(Number(query.limit), 50)
-          : 10;
+      const limit = Number.isInteger(Number(query?.limit)) && Number(query.limit) > 0
+        ? Math.min(Number(query.limit), 50)
+        : 10;
 
       const [rows] = await db.query(
         `
@@ -98,7 +97,6 @@ export async function handleSongRoutes(req, res) {
       res.end(JSON.stringify(rows));
       return;
     }
-    // ================ END MODIFIED BLOCK ================
 
     if (pathname === "/songs" && method === "GET") {
       const genreId = query?.genreId ? Number(query.genreId) : null;
@@ -165,7 +163,8 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    if (/^\/songs\/\d+$/.test(pathname) && method === "GET") {
+    const songIdRegex = /^\/songs\/\d+$/;
+    if (songIdRegex.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
       const [rows] = await db.query(
         `
@@ -190,7 +189,8 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
-    if (/^\/songs\/\d+\/stream\/?$/.test(pathname) && method === "GET") {
+    const streamRegex = /^\/songs\/\d+\/stream\/?$/;
+    if (streamRegex.test(pathname) && method === "GET") {
       const id = Number(pathname.split("/")[2]);
 
       const [rows] = await db.query(
@@ -230,7 +230,6 @@ export async function handleSongRoutes(req, res) {
       const cmd = new GetObjectCommand({ Bucket: row.bucket, Key: row.s3_key });
       const url = await getSignedUrl(s3, cmd, { expiresIn: 900 });
 
-      // Generate signed URL for cover image if available
       let coverUrl = null;
       if (row.CoverBucket && row.CoverS3Key) {
         try {
@@ -310,7 +309,8 @@ export async function handleSongRoutes(req, res) {
             SongID: result.insertId, Title, DurationSeconds: duration,
             ReleaseDate: ReleaseDate || null, GenreID: genreId, IsDeleted: 0
           }));
-        } catch {
+        } catch (err) {
+          console.error("Error in POST /songs:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
@@ -334,20 +334,39 @@ export async function handleSongRoutes(req, res) {
 
             if (key === "DurationSeconds") {
               const d = Number(value);
-              if (!Number.isInteger(d) || d < 0) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" })); return; }
-              updates.push(`${key} = ?`); params.push(d);
+              if (!Number.isInteger(d) || d < 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" }));
+                return;
+              }
+              updates.push(`${key} = ?`);
+              params.push(d);
             } else if (key === "GenreID") {
               const gid = Number(value);
-              if (!Number.isInteger(gid) || gid <= 0) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "GenreID must be a positive integer" })); return; }
+              if (!Number.isInteger(gid) || gid <= 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
+                return;
+              }
               const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [gid]);
-              if (!g.length) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "GenreID does not exist" })); return; }
-              updates.push(`GenreID = ?`); params.push(gid);
+              if (!g.length) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID does not exist" }));
+                return;
+              }
+              updates.push(`${key} = ?`);
+              params.push(gid);
             } else {
-              updates.push(`${key} = ?`); params.push(value ?? null);
+              updates.push(`${key} = ?`);
+              params.push(value ?? null);
             }
           }
 
-          if (!updates.length) { res.writeHead(400, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "No valid fields provided to update" })); return; }
+          if (!updates.length) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "No valid fields provided to update" }));
+            return;
+          }
 
           params.push(id);
           const [result] = await db.query(
@@ -355,11 +374,98 @@ export async function handleSongRoutes(req, res) {
             params
           );
 
-          if (!result.affectedRows) { res.writeHead(404, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "Song not found" })); return; }
+          if (!result.affectedRows) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Song not found" }));
+            return;
+          }
 
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ SongID: id, message: "Song updated successfully" }));
-        } catch {
+        } catch (err) {
+          console.error("Error in PUT /songs:", err);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+        }
+      });
+      return;
+    }
+
+    if (pathname.startsWith("/songs/") && method === "PATCH") {
+      const id = pathname.split("/")[2];
+      let body = "";
+      req.on("data", chunk => (body += chunk));
+      req.on("end", async () => {
+        try {
+          const fields = JSON.parse(body || "{}");
+          const validCols = ["Title", "DurationSeconds", "ReleaseDate", "GenreID", "audio_media_id", "cover_media_id"];
+          const updates = [];
+          const params = [];
+
+          for (const [key, value] of Object.entries(fields)) {
+            if (!validCols.includes(key)) continue;
+
+            if (key === "DurationSeconds") {
+              const d = Number(value);
+              if (!Number.isInteger(d) || d < 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" }));
+                return;
+              }
+              updates.push(`${key} = ?`);
+              params.push(d);
+            } else if (key === "GenreID") {
+              const gid = Number(value);
+              if (!Number.isInteger(gid) || gid <= 0) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
+                return;
+              }
+              const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [gid]);
+              if (!g.length) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: "GenreID does not exist" }));
+                return;
+              }
+              updates.push(`${key} = ?`);
+              params.push(gid);
+            } else if (key === "audio_media_id" || key === "cover_media_id") {
+              const mid = value ? Number(value) : null;
+              if (value && (!Number.isInteger(mid) || mid <= 0)) {
+                res.writeHead(400, { "Content-Type": "application/json" });
+                res.end(JSON.stringify({ error: `${key} must be a positive integer or null` }));
+                return;
+              }
+              updates.push(`${key} = ?`);
+              params.push(mid);
+            } else {
+              updates.push(`${key} = ?`);
+              params.push(value ?? null);
+            }
+          }
+
+          if (!updates.length) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "No valid fields provided to update" }));
+            return;
+          }
+
+          params.push(id);
+          const [result] = await db.query(
+            `UPDATE Song SET ${updates.join(", ")} WHERE SongID = ? AND IsDeleted = 0`,
+            params
+          );
+
+          if (!result.affectedRows) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Song not found" }));
+            return;
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ SongID: id, message: "Song updated successfully" }));
+        } catch (err) {
+          console.error("Error in PATCH /songs:", err);
           res.writeHead(400, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
@@ -370,7 +476,11 @@ export async function handleSongRoutes(req, res) {
     if (pathname.startsWith("/songs/") && method === "DELETE") {
       const id = pathname.split("/")[2];
       const [result] = await db.query(`UPDATE Song SET IsDeleted = 1 WHERE SongID = ?`, [id]);
-      if (!result.affectedRows) { res.writeHead(404, {"Content-Type":"application/json"}); res.end(JSON.stringify({ error: "Song not found or already deleted" })); return; }
+      if (!result.affectedRows) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ error: "Song not found or already deleted" }));
+        return;
+      }
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify({ message: "Song soft deleted successfully" }));
       return;

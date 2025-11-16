@@ -1,0 +1,167 @@
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(120, 35, 85, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  font-family: 'Inter', sans-serif;
+  background: #FFF0FD;
+  border: 5px solid #895674;
+  border-radius: 20px;
+  padding: 0;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 12px 40px rgba(120, 35, 85, 0.4);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 28px;
+  border-bottom: 3px solid #895674;
+}
+
+.modal-header h2 {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #782355;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 2.5rem;
+  color: #895674;
+  cursor: pointer;
+  padding: 0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, transform 0.2s;
+  font-weight: 300;
+}
+
+.modal-close-btn:hover {
+  color: #782355;
+  transform: rotate(90deg);
+}
+
+.modal-close-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.modal-body {
+  padding: 28px;
+  color: #895674;
+  text-align: center;
+}
+
+.modal-body p {
+  font-family: 'Inter', sans-serif;
+  margin: 0 0 12px 0;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.song-title-highlight {
+  color: #782355;
+  font-weight: 700;
+  font-size: 1.25rem;
+  margin: 20px 0 !important;
+}
+
+.warning-text {
+  color: #d9534f;
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-top: 20px !important;
+}
+
+.modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 20px 28px;
+  border-top: 3px solid #895674;
+  justify-content: flex-end;
+}
+
+.modal-footer button {
+  font-family: 'Inter', sans-serif;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+}
+
+.btn-cancel {
+  background: #AD7D9B;
+  color: #ffffff;
+  border-color: #895674;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #895674;
+  border-color: #782355;
+  transform: translateY(-1px);
+}
+
+.btn-confirm-delete {
+  background: #d9534f;
+  color: #ffffff;
+  border-color: #c9302c;
+}
+
+.btn-confirm-delete:hover:not(:disabled) {
+  background: #c9302c;
+  border-color: #ac2925;
+  transform: translateY(-1px);
+}
+
+.modal-footer button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal-footer button:active {
+  transform: translateY(0);
+}

@@ -1,6 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
+import DeleteConfirmModal from "../components/DeleteConfirmModal/DeleteConfirmModal";
+import EditSongModal from "../components/EditSongModal/EditSongModal";
 import "./MySongs.css";
 import { API_BASE_URL } from "../config/api";
 import { getUser } from "../lib/userStorage";
@@ -29,9 +31,12 @@ export default function MySongs() {
   const [search, setSearch] = useState("");
   const { playSong } = usePlayer();
   const [covers, setCovers] = useState({});
-
   const [isInitLoading, setIsInitLoading] = useState(true);
   const [startDate, setStartDate] = useState(null);
+
+  // Modal states
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, song: null });
+  const [editModal, setEditModal] = useState({ isOpen: false, song: null });
 
   useEffect(() => {
     try {
@@ -83,7 +88,7 @@ export default function MySongs() {
           sort: "songTitle",
           order: "asc",
         }).toString();
-        
+
         const songListUrl = `${API_BASE_URL}/artists/${artistInfo.id}/songs`;
         const analyticsUrl = `${API_BASE_URL}/analytics/artist/${artistInfo.id}/summary?${params}`;
 
@@ -112,11 +117,11 @@ export default function MySongs() {
         const formatted = songListData.map((row) => {
           const key = createSongKey(row.Title, row.AlbumName);
           const analytics = analyticsMap.get(key);
-          
-          const dateStr = row.ReleaseDate 
-            ? String(row.ReleaseDate).slice(0, 10) 
+
+          const dateStr = row.ReleaseDate
+            ? String(row.ReleaseDate).slice(0, 10)
             : null;
-          
+
           return {
             SongID: row.SongID,
             title: row.Title,
@@ -199,23 +204,102 @@ export default function MySongs() {
     })();
   };
 
-  const handleTakeDown = async (songId, songTitle, e) => {
+  const handleEdit = (song, e) => {
     e.stopPropagation();
-    
-    if (!confirm(`Are you sure you want to take down "${songTitle}"? This cannot be undone.`)) {
-      return;
+    setEditModal({ isOpen: true, song });
+  };
+
+  const handleEditSuccess = () => {
+    if (artistInfo.id && startDate) {
+      (async () => {
+        try {
+          setLoading(true);
+          const params = new URLSearchParams({
+            startDate: startDate,
+            endDate: todayOffset(0),
+            sort: "songTitle",
+            order: "asc",
+          }).toString();
+
+          const songListUrl = `${API_BASE_URL}/artists/${artistInfo.id}/songs`;
+          const analyticsUrl = `${API_BASE_URL}/analytics/artist/${artistInfo.id}/summary?${params}`;
+
+          const [songListRes, analyticsRes] = await Promise.all([
+            fetch(songListUrl),
+            fetch(analyticsUrl),
+          ]);
+
+          if (!songListRes.ok) throw new Error("Failed to fetch song list");
+          if (!analyticsRes.ok) throw new Error("Failed to fetch analytics");
+
+          const songListData = await songListRes.json();
+          const analyticsData = await analyticsRes.json();
+
+          const analyticsMap = new Map();
+          if (analyticsData.songs) {
+            for (const song of analyticsData.songs) {
+              const key = createSongKey(song.songTitle, song.album);
+              analyticsMap.set(key, {
+                streams: song.totalStreams,
+                likes: song.totalLikes,
+              });
+            }
+          }
+
+          const formatted = songListData.map((row) => {
+            const key = createSongKey(row.Title, row.AlbumName);
+            const analytics = analyticsMap.get(key);
+
+            const dateStr = row.ReleaseDate
+              ? String(row.ReleaseDate).slice(0, 10)
+              : null;
+
+            return {
+              SongID: row.SongID,
+              title: row.Title,
+              artist: row.ArtistName || "Unknown Artist",
+              artistId: row.ArtistID || null,
+              album: row.AlbumName,
+              added: new Date(dateStr ? `${dateStr}T00:00:00Z` : Date.now()),
+              duration: row.DurationSeconds
+                ? `${Math.floor(row.DurationSeconds / 60)}:${String(
+                    row.DurationSeconds % 60
+                  ).padStart(2, "0")}`
+                : "0:00",
+              streams: analytics ? analytics.streams : 0,
+              likes: analytics ? analytics.likes : 0,
+              cover_media_id: row.cover_media_id || null,
+            };
+          });
+
+          setTracks(formatted);
+        } catch (err) {
+          console.error("Error refreshing songs:", err);
+        } finally {
+          setLoading(false);
+        }
+      })();
     }
+  };
+
+  const handleTakeDown = (song, e) => {
+    e.stopPropagation();
+    setDeleteModal({ isOpen: true, song });
+  };
+
+  const confirmTakeDown = async () => {
+    const { song } = deleteModal;
+    if (!song) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/songs/${songId}`, {
+      const res = await fetch(`${API_BASE_URL}/songs/${song.SongID}`, {
         method: "DELETE",
       });
 
       if (!res.ok) throw new Error("Failed to take down song");
 
-      // Remove from local state
-      setTracks((prev) => prev.filter((t) => t.SongID !== songId));
-      alert(`"${songTitle}" has been taken down successfully.`);
+      setTracks((prev) => prev.filter((t) => t.SongID !== song.SongID));
+      setDeleteModal({ isOpen: false, song: null });
     } catch (err) {
       console.error("Error taking down song:", err);
       alert("Failed to take down song. Please try again.");
@@ -269,7 +353,10 @@ export default function MySongs() {
                       key={t.SongID || i}
                       className="my-song-row"
                       onClick={() => handlePlay(t)}
-                      style={{ cursor: "pointer" }}
+                      style={{
+                        cursor: "pointer",
+                        position: "relative"
+                      }}
                     >
                       <div className="ms-title-image-wrap">
                         {coverUrl ? (
@@ -308,13 +395,22 @@ export default function MySongs() {
                         </span>
                       </div>
 
-                      <button
-                        className="ms-take-down-btn"
-                        onClick={(e) => handleTakeDown(t.SongID, t.title, e)}
-                        title="Take down this song"
-                      >
-                        Take Down
-                      </button>
+                      <div className="ms-actions">
+                        <button
+                          className="ms-edit-btn"
+                          onClick={(e) => handleEdit(t, e)}
+                          title="Edit this song"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          className="ms-take-down-btn"
+                          onClick={(e) => handleTakeDown(t, e)}
+                          title="Take down this song"
+                        >
+                          Take Down
+                        </button>
+                      </div>
                     </div>
                   );
                 })
@@ -323,6 +419,20 @@ export default function MySongs() {
           </section>
         </div>
       </div>
+
+      <DeleteConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, song: null })}
+        onConfirm={confirmTakeDown}
+        songTitle={deleteModal.song?.title}
+      />
+
+      <EditSongModal
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, song: null })}
+        onSuccess={handleEditSuccess}
+        song={editModal.song}
+      />
     </PageLayout>
   );
 }

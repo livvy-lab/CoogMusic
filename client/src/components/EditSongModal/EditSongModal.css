@@ -1,0 +1,236 @@
+.edit-song-modal {
+  max-width: 380px;
+  min-width: 0;
+  width: 98vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  font-size: 0.92rem;
+  border-radius: 14px;
+}
+
+.modal-header {
+  padding: 9px 15px;
+  border-bottom: 2px solid #895674;
+}
+
+.modal-header h2 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #782355;
+  margin: 0;
+}
+
+.modal-close-btn {
+  font-size: 1.3rem;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: #895674;
+}
+
+.edit-song-modal .modal-body {
+  padding: 14px 15px;
+  text-align: left;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  font-family: 'Inter', sans-serif;
+  display: block;
+  margin-bottom: 6px;
+  color: #782355;
+  font-weight: 600;
+  font-size: 0.98rem;
+}
+
+.form-group input[type="text"] {
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  padding: 8px 10px;
+  background: #fffcff;
+  border: 2px solid #895674;
+  border-radius: 8px;
+  color: #782355;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.form-group input[type="text"]:focus {
+  outline: none;
+  border-color: #782355;
+  box-shadow: 0 0 0 2px rgba(120, 35, 85, 0.08);
+}
+
+.form-group input[type="text"]::placeholder {
+  color: #ad7d9b;
+}
+
+.form-group input[type="text"]:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
+  gap: 6px;
+}
+
+.genre-tag {
+  font-family: 'Inter', sans-serif;
+  padding: 5px 10px;
+  background: #fffcff;
+  border: 2px solid #895674;
+  border-radius: 14px;
+  color: #895674;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.genre-tag:hover:not(:disabled) {
+  background: #fff0f8;
+  border-color: #782355;
+  transform: translateY(-1px);
+}
+
+.genre-tag.selected {
+  background: #782355;
+  border-color: #782355;
+  color: #ffffff;
+}
+
+.genre-tag:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.file-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.cover-preview {
+  width: 70px;
+  height: 70px;
+  border-radius: 7px;
+  overflow: hidden;
+  border: 2px solid #895674;
+  background: #AD7D9B;
+}
+
+.cover-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-label {
+  font-family: 'Inter', sans-serif;
+  display: inline-block;
+  padding: 7px 12px;
+  background: #fffcff;
+  border: 2px solid #895674;
+  border-radius: 8px;
+  color: #782355;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  font-size: 0.91rem;
+}
+
+.file-label:hover {
+  background: #fff0f8;
+  border-color: #782355;
+  transform: translateY(-1px);
+}
+
+.file-input:disabled + .file-label {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-message {
+  font-family: 'Inter', sans-serif;
+  padding: 8px 10px;
+  background: #ffe0e0;
+  border: 2px solid #d9534f;
+  border-radius: 8px;
+  color: #c9302c;
+  margin-bottom: 11px;
+  font-size: 0.90rem;
+  font-weight: 600;
+}
+
+.btn-submit {
+  background: #782355;
+  color: #ffffff;
+  border-color: #895674;
+  padding: 7px 17px;
+  font-size: 0.98rem;
+  border-radius: 7px;
+}
+
+.btn-submit:hover:not(:disabled) {
+  background: #5f1c43;
+  border-color: #782355;
+}
+
+.btn-cancel {
+  background: #AD7D9B;
+  color: #fff;
+  border-color: #895674;
+  padding: 7px 17px;
+  font-size: 0.98rem;
+  border-radius: 7px;
+}
+
+.btn-cancel:hover:not(:disabled) {
+  background: #895674;
+  border-color: #782355;
+}
+
+/* Scrollbar styling for modal */
+.edit-song-modal::-webkit-scrollbar {
+  width: 6px;
+}
+
+.edit-song-modal::-webkit-scrollbar-track {
+  background: #fffcff;
+  border-radius: 6px;
+}
+
+.edit-song-modal::-webkit-scrollbar-thumb {
+  background: #AD7D9B;
+  border-radius: 6px;
+  border: 1px solid #fffcff;
+}
+
+.edit-song-modal::-webkit-scrollbar-thumb:hover {
+  background: #895674;
+}
+
+@media (max-width: 500px) {
+  .edit-song-modal {
+    max-width: 99vw;
+    min-width: 0;
+    padding: 0;
+  }
+  .cover-preview {
+    width: 44px;
+    height: 44px;
+  }
+}

@@ -37,7 +37,6 @@
   color: #895674;
 }
 
-
 .playlistView .albumPage {
   max-width: 1400px;
   margin: 0 auto;
@@ -65,16 +64,17 @@
 }
 
 .my-song-row {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 20px;
   transition: background-color 0.2s ease;
   color: #782355;
   border-radius: 10px;
-  padding: 20px 24px;
+  padding: 20px 24px 80px 24px;
   margin-bottom: 16px;
   border: 5px solid #895674;
   background-color: #fffafc;
@@ -114,7 +114,7 @@
 
 .ms-meta-info {
   display: flex;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px 24px;
   font-size: 1.05rem;
@@ -135,49 +135,78 @@
   font-weight: 600;
 }
 
+.ms-actions {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.ms-edit-btn,
 .ms-take-down-btn {
   font-family: 'Inter', sans-serif;
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: #d9534f;
-  border: 2px solid #c9302c;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
   flex-shrink: 0;
+  border: 2px solid;
+  transition: all 0.2s ease;
 }
 
+.ms-edit-btn {
+  color: #ffffff;
+  background: #782355;
+  border-color: #895674;
+}
+.ms-edit-btn:hover {
+  background: #5f1c43;
+  border-color: #782355;
+  transform: translateY(-1px);
+}
+.ms-edit-btn:active {
+  transform: translateY(0);
+}
+
+.ms-take-down-btn {
+  color: #ffffff;
+  background: #d9534f;
+  border-color: #c9302c;
+}
 .ms-take-down-btn:hover {
   background: #c9302c;
   border-color: #ac2925;
   transform: translateY(-1px);
 }
-
 .ms-take-down-btn:active {
   transform: translateY(0);
 }
+
 
 @media (max-width: 900px) {
   .my-song-row {
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px;
+    padding: 16px 16px 100px 16px;
   }
-  
   .ms-meta-info {
     justify-content: flex-start;
     gap: 10px 16px;
     font-size: 1rem;
   }
-
   .ms-title {
     font-size: 1.3rem;
   }
-
   .ms-cover-image {
     width: 80px;
     height: 80px;
+  }
+  .ms-actions {
+    left: 16px;
+    bottom: 16px;
+    flex-direction: column;
+    gap: 12px;
   }
 }
