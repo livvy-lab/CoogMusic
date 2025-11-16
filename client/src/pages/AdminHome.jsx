@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { API_BASE_URL } from "../config/api";
 import usersIcon from "../assets/icons/users-icon.svg";
@@ -62,6 +62,7 @@ function RecentUserCard({ user }) {
 }
 
 export default function AdminHome() {
+  const navigate = useNavigate();
   const [unresolvedReports, setUnresolvedReports] = useState("-");
   const [unverifiedArtists, setUnverifiedArtists] = useState("-");
   const [subscribedListeners, setSubscribedListeners] = useState("-");
@@ -112,7 +113,17 @@ export default function AdminHome() {
           <div className="dashboard-card card-reports">
             <div className="card-title">Unresolved Reports</div>
             <div className="card-number">{unresolvedReports}</div>
-            <div className="card-exclaim">
+            <div
+              className="card-exclaim"
+              role="button"
+              title="View unresolved reports"
+              aria-label="Go to report review"
+              tabIndex={0}
+              onClick={() => navigate("/report-review")}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") navigate("/report-review");
+              }}
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
