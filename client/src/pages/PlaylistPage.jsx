@@ -60,7 +60,8 @@ export default function PlaylistPage() {
               row.DurationSeconds % 60
             ).padStart(2, "0")}`
           : "0:00",
-        date: new Date(row.ReleaseDate).toLocaleDateString("en-US", {
+        // Use the date the song was added to the playlist when available
+        date: new Date(row.DateSongAdded || row.ReleaseDate || Date.now()).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric",
