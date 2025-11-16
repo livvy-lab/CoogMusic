@@ -8,6 +8,7 @@ const Subscription = () => {
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [error, setError] = useState(null);
 
   const isSubscribed = !!activeSubscription;
@@ -104,11 +105,7 @@ const Subscription = () => {
       return;
     }
 
-    // show confirmation dialog
-    const confirmed = window.confirm('Are you sure you want to unsubscribe and revert to the free plan?');
-    if (!confirmed) {
-      return; // user cancelled
-    }
+    // confirmation handled by in-page modal
 
     setLoading(true);
     setError(null);
@@ -177,7 +174,7 @@ const Subscription = () => {
             </div>
             <button
               className={`plan-button ${!isSubscribed ? 'current' : 'revert-free'}`}
-              onClick={isSubscribed ? handleUnsubscribe : undefined}
+              onClick={() => { if (isSubscribed && !loading) setShowConfirm(true); }}
               disabled={loading || !isSubscribed}
             >
               {!isSubscribed ? 'Current Plan' : (loading ? 'Processing...' : 'Cancel Subscription')}
@@ -227,6 +224,34 @@ const Subscription = () => {
         </div>
 
         {error && <div className="subscription-error">{error}</div>}
+
+        {/* Confirmation Modal */}
+        {showConfirm && (
+          <div className="sub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cancel-title">
+            <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 id="cancel-title">Cancel subscription?</h3>
+              <p>Are you sure you want to cancel the subscription and change back to the Free plan? Ads will be shown again and premium features will be disabled.</p>
+              <div className="sub-modal-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => setShowConfirm(false)}
+                  aria-label="Keep subscription"
+                >
+                  Keep Subscription
+                </button>
+                <button
+                  className="btn-danger"
+                  onClick={async () => { try { await handleUnsubscribe(); } finally { setShowConfirm(false); } }}
+                  aria-label="Confirm cancel subscription"
+                >
+                  Yes, Cancel
+                </button>
+              </div>
+            </div>
+            {/* clicking overlay closes */}
+            <button className="sub-modal-backdrop" aria-label="Close" onClick={() => setShowConfirm(false)} />
+          </div>
+        )}
       </div>
     </PageLayout>
   );

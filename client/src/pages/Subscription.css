@@ -190,6 +190,79 @@
 }
 
 
+/* ===== Modal (in-page confirmation) ===== */
+.sub-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+}
+
+/* Separate clickable backdrop so clicks outside close the modal */
+.sub-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: transparent; /* keep screen brightness unchanged */
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: default;
+  z-index: 1000; /* ensure backdrop stays below modal panel */
+}
+
+.sub-modal {
+  position: relative;
+  width: min(92vw, 560px);
+  background: #ffe8f5;
+  border: 5px solid #895674;
+  border-radius: 18px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  padding: 24px 28px;
+  color: #782355;
+  z-index: 1001; /* place modal above backdrop */
+}
+
+.sub-modal h3 {
+  margin: 0 0 10px 0;
+  font-size: 1.6rem;
+  color: #782355;
+}
+
+.sub-modal p {
+  margin: 0 0 18px 0;
+  color: #895674;
+  line-height: 1.4;
+}
+
+.sub-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.btn-secondary,
+.btn-danger {
+  border: 3px solid #895674;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer; /* show hand cursor on both modal buttons */
+}
+
+.btn-secondary {
+  background: #f7ddec;
+  color: #782355;
+}
+.btn-secondary:hover { background: #f1cfe3; }
+
+.btn-danger {
+  background: #8b1858;
+  color: #fff;
+}
+.btn-danger:hover { background: #6d1245; }
+
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .plans-container {
