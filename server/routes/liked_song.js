@@ -34,9 +34,9 @@ export async function handleLikedSongRoutes(req, res) {
           s.DurationSeconds,
           s.ReleaseDate,
           s.cover_media_id,
-          s.ArtistID,
           COALESCE(al.Title, 'Unknown Album') AS Album,
           GROUP_CONCAT(DISTINCT ar.ArtistName ORDER BY ar.ArtistName SEPARATOR ', ') AS ArtistName,
+          MIN(ar.ArtistID) AS ArtistID,
           ls.LikedDate
         FROM Liked_Song ls
         JOIN Song s ON ls.SongID = s.SongID
@@ -45,7 +45,7 @@ export async function handleLikedSongRoutes(req, res) {
         LEFT JOIN Song_Artist sa ON s.SongID = sa.SongID
         LEFT JOIN Artist ar ON sa.ArtistID = ar.ArtistID
         WHERE ls.ListenerID = ? AND ls.IsLiked = 1
-        GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.cover_media_id, s.ArtistID, al.Title, ls.LikedDate
+        GROUP BY s.SongID, s.Title, s.DurationSeconds, s.ReleaseDate, s.cover_media_id, al.Title, ls.LikedDate
         ORDER BY ls.LikedDate DESC;
       `, [listenerId]);
 
@@ -120,7 +120,7 @@ export async function handleLikedSongRoutes(req, res) {
             console.log(`🔄 [LIKED_SONG] Toggling IsLiked from ${currentIsLiked} to ${newIsLiked}`);
             try {
               const result = await db.query(
-                "UPDATE Liked_Song SET IsLiked = ?, LikedDate = CURDATE() WHERE ListenerID = ? AND SongID = ?",
+                "UPDATE Liked_Song SET IsLiked = ?, LikedDate = NOW() WHERE ListenerID = ? AND SongID = ?",
                 [newIsLiked, listenerId, songId]
               );
               console.log(`✅ [LIKED_SONG] Successfully toggled IsLiked to ${newIsLiked}, affected rows:`, result[0]?.affectedRows);
@@ -134,7 +134,7 @@ export async function handleLikedSongRoutes(req, res) {
             console.log(`➕ [LIKED_SONG] Inserting new record - ListenerID=${listenerId}, SongID=${songId}, IsLiked=1`);
             try {
               const result = await db.query(
-                "INSERT INTO Liked_Song (ListenerID, SongID, LikedDate, IsLiked) VALUES (?, ?, CURDATE(), 1)",
+                "INSERT INTO Liked_Song (ListenerID, SongID, LikedDate, IsLiked) VALUES (?, ?, NOW(), 1)",
                 [listenerId, songId]
               );
               console.log(`✅ [LIKED_SONG] Successfully inserted record with IsLiked=1, insertId:`, result[0]?.insertId);

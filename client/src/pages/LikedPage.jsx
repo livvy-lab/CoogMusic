@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { usePlayer } from "../context/PlayerContext.jsx";
 import { Play, Shuffle, Clock3, Heart } from "lucide-react";
 import PageLayout from "../components/PageLayout/PageLayout.jsx";
@@ -17,11 +17,13 @@ export default function LikedPage() {
   const { playList, playSong, playShuffled } = usePlayer();
   const favCtx = useFavPins() || {};
   const navigate = useNavigate();
+  const location = useLocation();
 
   // --- Fetch liked songs
   async function fetchLikedSongs() {
     try {
       console.log(`🎵 [LikedPage] Fetching liked songs for listenerId: ${listenerId}`);
+      console.log(`🎵 [LikedPage] Current user:`, user);
   const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs`);
       console.log(`🎵 [LikedPage] Response status:`, res.status);
       if (!res.ok) throw new Error("Failed to fetch liked songs");
@@ -65,8 +67,7 @@ export default function LikedPage() {
           : "N/A",
       }));
 
-      // sort newest first
-      formatted.sort((a, b) => new Date(b.date) - new Date(a.date));
+      // Backend already orders by LikedDate DESC, so use that order directly
       setTracks(formatted);
 
       // If backend provided media IDs (not direct URLs) attempt to resolve them
@@ -184,21 +185,36 @@ export default function LikedPage() {
   }
 
   useEffect(() => {
-    fetchLikedSongs();
+    console.log('🎵 [LikedPage] listenerId changed, fetching...', listenerId);
+    if (listenerId) {
+      fetchLikedSongs();
+    }
   }, [listenerId]);
+
+  // Refetch when navigating TO this page
+  useEffect(() => {
+    console.log('🎵 [LikedPage] Component mounted or location changed, fetching...');
+    if (listenerId) {
+      fetchLikedSongs();
+    }
+  }, [location.pathname]);
 
   // Refetch when navigating back to this page
   useEffect(() => {
-    const handleFocus = () => fetchLikedSongs();
+    const handleFocus = () => {
+      console.log('🎵 [LikedPage] Window focused, refetching...');
+      if (listenerId) {
+        fetchLikedSongs();
+      }
+    };
     window.addEventListener('focus', handleFocus);
-    // Also fetch when component mounts/remounts (navigation)
-    fetchLikedSongs();
     return () => window.removeEventListener('focus', handleFocus);
-  }, []);
+  }, [listenerId]);
 
   // update list when likes change elsewhere (music bar)
   useEffect(() => {
     function onLikedChanged(e) {
+      console.log('🎵 [LikedPage] likedChanged event received:', e.detail);
       const { songId, liked } = e.detail || {};
       if (!songId) return;
       if (!liked) {
@@ -206,6 +222,7 @@ export default function LikedPage() {
         setTracks((prev) => prev.filter((t) => t.SongID !== songId));
       } else {
         // refresh whole list (safe and simple)
+        console.log('🎵 [LikedPage] Song was liked, refetching list...');
         fetchLikedSongs();
       }
     }
@@ -265,7 +282,10 @@ export default function LikedPage() {
 
           <div className="tableBody">
             {tracks.length === 0 ? (
-              <p style={{ padding: "1rem", color: "#aaa" }}>No liked songs found.</p>
+              <div style={{ padding: "2rem", textAlign: "center", color: "#aaa" }}>
+                <p style={{ fontSize: "1.1rem", marginBottom: "0.5rem" }}>No liked songs yet</p>
+                <p style={{ fontSize: "0.9rem" }}>Start liking songs by clicking the ♥ icon while browsing</p>
+              </div>
             ) : (
                       tracks.map((t, i) => (
                         <div
