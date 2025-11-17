@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from "../../config/api";
 import "./AlbumForm.css";
@@ -9,25 +9,21 @@ export default function AlbumForm() {
   const [formData, setFormData] = useState({
     title: "",
     artistId: "",
-    description: "",
-    genres: [],
+    description: ""
   });
   const [tracks, setTracks] = useState([]); // {title, audioFile, genreIds, tempId}
   const [showSongUploadModal, setShowSongUploadModal] = useState(false);
-
   const [cover, setCover] = useState(null);
   const [loading, setLoading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [availableGenres, setAvailableGenres] = useState([]);
-  const [showGenreDropdown, setShowGenreDropdown] = useState(false);
-  
   const [notification, setNotification] = useState({ type: "", message: "" });
 
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
       const id = stored?.artistId ?? stored?.ArtistID ?? null;
-      if (id) setFormData((data) => ({ ...data, artistId: String(id) }));
+      if (id) setFormData(data => ({ ...data, artistId: String(id) }));
     } catch {}
   }, []);
 
@@ -57,24 +53,8 @@ export default function AlbumForm() {
     setCover(selectedFile);
   };
 
-  const toggleGenre = (genreId) => {
-    setFormData((prev) => ({
-      ...prev,
-      genres: prev.genres.includes(genreId)
-        ? prev.genres.filter((id) => id !== genreId)
-        : [...prev.genres, genreId],
-    }));
-  };
-
-  const removeGenre = (genreId) => {
-    setFormData((prev) => ({
-      ...prev,
-      genres: prev.genres.filter((id) => id !== genreId),
-    }));
-  };
-
   const handleAddSong = (track) => {
-    setTracks((tracks) => [
+    setTracks(tracks => [
       ...tracks,
       { ...track, tempId: Date.now() + Math.random() },
     ]);
@@ -85,18 +65,29 @@ export default function AlbumForm() {
     setTracks(tracks.filter((t) => t.tempId !== tempId));
   };
 
+  // Compute unique album genres as the set of all song genreIds
+  const allAlbumGenres = useMemo(() => Array.from(
+    new Set([].concat(...tracks.map(t => t.genreIds || [])))
+  ), [tracks]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNotification({ type: "", message: "" });
 
-    if (!formData.title || !formData.artistId) {
-      setNotification({ type: "error", message: "Please fill in Title and Artist." });
+    // Custom validation checks
+    if (!formData.title.trim()) {
+      setNotification({ type: "error", message: "Please enter an album title." });
+      return;
+    }
+    if (!formData.artistId) {
+      setNotification({ type: "error", message: "Artist ID missing. Please log in again." });
       return;
     }
     if (tracks.length === 0) {
       setNotification({ type: "error", message: "Please add at least one track to the album." });
       return;
     }
+    // All checks passed, start loading
     setLoading(true);
 
     try {
@@ -122,7 +113,6 @@ export default function AlbumForm() {
         songFormData.append("artistId", formData.artistId);
         songFormData.append("audio", audioFile);
         songFormData.append("genres", JSON.stringify(genreIds));
-        
         const songRes = await fetch(`${API_BASE_URL}/upload/song`, {
           method: "POST",
           body: songFormData,
@@ -141,9 +131,9 @@ export default function AlbumForm() {
       const albumData = {
         title: formData.title,
         artistId: parseInt(formData.artistId),
-        releaseDate: new Date().toISOString().split("T")[0], 
+        releaseDate: new Date().toISOString().split("T")[0],
         coverMediaId: coverMediaId,
-        genres: formData.genres,
+        genres: allAlbumGenres,
         tracks: uploadedTracks.map((track, idx) => ({
           songId: track.songId,
           trackNumber: idx + 1,
@@ -163,7 +153,6 @@ export default function AlbumForm() {
 
       const { albumId } = await uploadRes.json();
       navigate(`/albums/${albumId}`);
-
     } catch (err) {
       console.error("Album creation failed:", err);
       setNotification({ type: "error", message: `Failed to create album: ${err.message}` });
@@ -187,8 +176,8 @@ export default function AlbumForm() {
             </button>
           </div>
         )}
-
-        <form onSubmit={handleSubmit} className="album-form">
+        {/* Added noValidate to disable browser default validation popups */}
+        <form onSubmit={handleSubmit} className="album-form" noValidate>
           <div className="album-layout">
             <div className="album-cover-section">
               <div
@@ -240,6 +229,19 @@ export default function AlbumForm() {
                     <div key={track.tempId} className="track-item">
                       <span>
                         {index + 1}. {track.title}
+                        {track.genreIds && track.genreIds.length > 0 && (
+                          <span style={{marginLeft:8, fontWeight:400, color:'#895674', fontSize:13}}>
+                            (
+                            {track.genreIds
+                              .map(
+                                gid =>
+                                  (availableGenres.find(g => g.GenreID === gid) || {}).Name ||
+                                  gid
+                              )
+                              .join(", ")}
+                            )
+                          </span>
+                        )}
                       </span>
                       <button
                         type="button"
@@ -272,51 +274,24 @@ export default function AlbumForm() {
                     setFormData({ ...formData, title: e.target.value })
                   }
                   placeholder="Enter album title"
-                  required
                 />
               </div>
               <div className="form-field">
-                <label>Genre</label>
-                <div className="genre-selector">
-                  <div className="selected-genres">
-                    {formData.genres.map((genreId) => {
-                      const genre = availableGenres.find(
-                        (g) => g.GenreID === genreId
-                      );
+                <label>Genres</label>
+                <div className="genre-grid" style={{margin: "8px 0 12px 0"}}>
+                  {allAlbumGenres.length === 0 ? (
+                    <div style={{ color: "#895674", fontStyle: "italic" }}>
+                      None
+                    </div>
+                  ) : (
+                    allAlbumGenres.map((genreId) => {
+                      const genre = availableGenres.find((g) => g.GenreID === genreId);
                       return genre ? (
-                        <span key={genreId} className="genre-tag">
+                        <span className="genre-tag selected" key={genreId}>
                           {genre.Name}
-                          <button
-                            type="button"
-                            onClick={() => removeGenre(genreId)}
-                            className="genre-tag-remove"
-                          >
-                            ×
-                          </button>
                         </span>
                       ) : null;
-                    })}
-                    <button
-                      type="button"
-                      className="add-genre-btn"
-                      onClick={() => setShowGenreDropdown(!showGenreDropdown)}
-                    >
-                      + Add Genre
-                    </button>
-                  </div>
-                  {showGenreDropdown && (
-                    <div className="genre-dropdown">
-                      {availableGenres.map((genre) => (
-                        <label key={genre.GenreID} className="genre-option">
-                          <input
-                            type="checkbox"
-                            checked={formData.genres.includes(genre.GenreID)}
-                            onChange={() => toggleGenre(genre.GenreID)}
-                          />
-                          <span>{genre.Name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    })
                   )}
                 </div>
               </div>
@@ -342,13 +317,13 @@ export default function AlbumForm() {
             </div>
           </div>
         </form>
+        {showSongUploadModal && (
+          <SongUploadModal
+            onSuccess={handleAddSong}
+            onClose={() => setShowSongUploadModal(false)}
+          />
+        )}
       </div>
-      {showSongUploadModal && (
-        <SongUploadModal
-          onSuccess={handleAddSong}
-          onClose={() => setShowSongUploadModal(false)}
-        />
-      )}
     </>
   );
 }

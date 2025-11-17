@@ -54,7 +54,6 @@ export default function NavigationBar() {
             </div>
             <Link 
               className="navLink" 
-              to={isArtist ? "/artist-dashboard" : "/home"}
               to={isAdmin ? "/admin-home" : (isArtist ? "/artist-dashboard" : "/home")}
             >
               <img src={homeIcon} alt="" className="navIcon" />
@@ -127,7 +126,7 @@ export default function NavigationBar() {
                   <img src={uploadSongIcon} alt="" className="navIcon" />
                   <span>My Songs</span>
                 </Link>
-                <Link className="navLink" to="/upload/album">
+                <Link className="navLink" to="/my-albums">
                   <img src={albumIcon} alt="" className="navIcon" />
                   <span>Albums</span>
                 </Link>
