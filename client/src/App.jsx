@@ -35,6 +35,7 @@ import ListenerAnalytics from "./pages/ListenerAnalytics";
 import AdminReportReview from "./pages/AdminReportReview";
 import AdminHome from "./pages/AdminHome";
 import RequireAdmin from "./components/Auth/RequireAdmin";
+import AlbumView from "./pages/AlbumView";
 
 import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
@@ -94,6 +95,9 @@ function AppContent() {
           
           {/* Public listener profile (search links point to /listeners/:id) */}
           <Route path="/listeners/:id" element={<ListenerPublic />} />
+
+          {/* Album view route */}
+          <Route path="/albums/:id" element={<AlbumView />} />
 
           {/* Song routes */}
           <Route path="/song" element={<Song />} />
