@@ -1,10 +1,20 @@
-.my-albums-page-title {
+.my-albums-page-title,
+.create-album-title {
   font-family: 'Inter', sans-serif;
   font-size: clamp(26px, 3vw, 36px);
   font-weight: 800;
   color: #782355;
   margin: 40px 0 10px 0;
   text-align: center;
+}
+
+.list-controls-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 8px 16px 20px;
 }
 
 .my-albums-search {
@@ -17,7 +27,6 @@
   background: #fffcff;
   color: #782355;
 }
-
 .my-albums-search::placeholder {
   color: #ad7d9b;
 }
@@ -29,17 +38,44 @@
   color: #895674;
 }
 
+.playlistView .albumPage {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.5rem 2rem;
+}
+
+.albumCard {
+  font-family: 'Inter', sans-serif;
+  background: #FFF0FD;
+  border: 5px solid #895674;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+.listCard {
+  padding: 16px;
+}
+
+.noTracks {
+  font-family: 'Inter', sans-serif;
+  padding: 32px;
+  text-align: center;
+  color: #895674;
+  font-weight: 600;
+}
+
 .my-album-row {
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
   gap: 20px;
   transition: background-color 0.2s ease;
   color: #782355;
   border-radius: 10px;
-  padding: 20px 24px;
+  padding: 20px 24px 80px 24px;
   margin-bottom: 16px;
   border: 5px solid #895674;
   background-color: #fffafc;
@@ -79,7 +115,7 @@
 
 .ma-meta-info {
   display: flex;
-  flex-wrap: wrap; 
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 12px 24px;
   font-size: 1.05rem;
@@ -93,33 +129,57 @@
   gap: 6px;
   align-items: center;
 }
-
 .ma-meta-item strong {
   font-family: 'Inter', sans-serif;
   color: #782355;
   font-weight: 600;
 }
 
+.ma-row-controls {
+  position: absolute;
+  left: 24px;
+  bottom: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+.ma-edit-btn,
 .ma-take-down-btn {
   font-family: 'Inter', sans-serif;
   padding: 10px 20px;
   font-size: 14px;
   font-weight: 600;
-  color: #ffffff;
-  background: #d9534f;
-  border: 2px solid #c9302c;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s ease;
   flex-shrink: 0;
+  border: 2px solid;
+  transition: all 0.2s ease;
 }
 
+.ma-edit-btn {
+  color: #ffffff;
+  background: #782355;
+  border-color: #895674;
+}
+.ma-edit-btn:hover {
+  background: #5f1c43;
+  border-color: #782355;
+  transform: translateY(-1px);
+}
+.ma-edit-btn:active {
+  transform: translateY(0);
+}
+
+.ma-take-down-btn {
+  color: #ffffff;
+  background: #d9534f;
+  border-color: #c9302c;
+}
 .ma-take-down-btn:hover {
   background: #c9302c;
   border-color: #ac2925;
   transform: translateY(-1px);
 }
-
 .ma-take-down-btn:active {
   transform: translateY(0);
 }
@@ -128,21 +188,24 @@
   .my-album-row {
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px;
+    padding: 16px 16px 100px 16px;
   }
-  
   .ma-meta-info {
     justify-content: flex-start;
     gap: 10px 16px;
     font-size: 1rem;
   }
-
   .ma-title {
     font-size: 1.3rem;
   }
-
   .ma-cover-image {
     width: 80px;
     height: 80px;
+  }
+  .ma-row-controls {
+    left: 16px;
+    bottom: 16px;
+    flex-direction: column;
+    gap: 12px;
   }
 }

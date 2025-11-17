@@ -4,6 +4,7 @@ import { parse } from "url";
 export async function handleAlbumRoutes(req, res) {
   const url = parse(req.url, true);
   const idMatch = url.pathname.match(/^\/albums\/(\d+)$/);
+  const tracksMatch = url.pathname.match(/^\/albums\/(\d+)\/tracks$/);
   const artistSinglesMatch = url.pathname.match(/^\/artists\/(\d+)\/songs\/singles$/);
 
   try {
@@ -12,8 +13,10 @@ export async function handleAlbumRoutes(req, res) {
       const [songs] = await db.query(
         `SELECT DISTINCT s.SongID, s.Title
          FROM Song s
+         INNER JOIN Song_Artist sa ON s.SongID = sa.SongID
          LEFT JOIN Album_Track at ON s.SongID = at.SongID
-         WHERE s.ArtistID = ?
+         WHERE sa.ArtistID = ?
+           AND sa.IsDeleted = 0
            AND s.IsDeleted = 0
            AND at.AlbumID IS NULL
          ORDER BY s.ReleaseDate DESC, s.Title`,
@@ -24,6 +27,23 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
+    // --- Get all tracks for a specific album ---
+    if (req.method === "GET" && tracksMatch) {
+      const albumId = tracksMatch[1];
+      const [tracks] = await db.query(
+        `SELECT s.SongID, s.Title, s.DurationSeconds, at.TrackNumber
+         FROM Album_Track at
+         JOIN Song s ON at.SongID = s.SongID
+         WHERE at.AlbumID = ? AND s.IsDeleted = 0
+         ORDER BY at.TrackNumber`,
+        [albumId]
+      );
+      res.writeHead(200, { "Content-Type": "application/json" });
+      res.end(JSON.stringify(tracks));
+      return;
+    }
+
+    // --- All albums
     if (req.method === "GET" && url.pathname === "/albums") {
       const [rows] = await db.query("SELECT * FROM Album WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -31,6 +51,7 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
+    // --- Get album by ID
     if (req.method === "GET" && idMatch) {
       const albumId = idMatch[1];
       const [rows] = await db.query(
@@ -47,6 +68,7 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
+    // --- Create new album
     if (req.method === "POST" && url.pathname === "/albums") {
       let body = "";
       req.on("data", chunk => body += chunk);
@@ -84,10 +106,12 @@ export async function handleAlbumRoutes(req, res) {
             [title, releaseDate, coverMediaId]
           );
           const albumId = albumRes.insertId;
+          
           await connection.query(
             "INSERT INTO Album_Artist (AlbumID, ArtistID) VALUES (?, ?)",
             [albumId, artistId]
           );
+          
           if (Array.isArray(genres) && genres.length > 0) {
             const genreValues = genres.map(genreId => [albumId, Number(genreId)]);
             await connection.query(
@@ -95,6 +119,7 @@ export async function handleAlbumRoutes(req, res) {
               [genreValues]
             );
           }
+          
           if (Array.isArray(tracks) && tracks.length > 0) {
             const trackValues = tracks.map(track => [
               albumId,
@@ -128,35 +153,160 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
+    // --- PATCH album (partial update: cover, title, etc.)
+    if (req.method === "PATCH" && idMatch) {
+      const albumId = idMatch[1];
+      let body = "";
+      req.on("data", chunk => body += chunk);
+      req.on("end", async () => {
+        let updateData;
+        try {
+          updateData = JSON.parse(body);
+        } catch {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON" }));
+          return;
+        }
+        
+        const allowed = ["Title", "ReleaseDate", "cover_media_id", "Description"];
+        const setParts = [];
+        const vals = [];
+        
+        for (const key of allowed) {
+          if (key in updateData) {
+            setParts.push(`${key} = ?`);
+            vals.push(updateData[key]);
+          }
+        }
+        
+        if (!setParts.length) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "No fields to patch" }));
+          return;
+        }
+        
+        vals.push(albumId);
+        
+        try {
+          const [result] = await db.query(
+            `UPDATE Album SET ${setParts.join(', ')} WHERE AlbumID = ? AND IsDeleted = 0`,
+            vals
+          );
+          
+          if (result.affectedRows === 0) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Album not found" }));
+            return;
+          }
+          
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ 
+            AlbumID: albumId, 
+            ...updateData, 
+            message: "Album updated successfully" 
+          }));
+        } catch (err) {
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ 
+            error: "Failed to update album",
+            sqlError: err.sqlMessage 
+          }));
+        }
+      });
+      return;
+    }
+
+    // --- PUT album (full update) ---
     if (req.method === "PUT" && idMatch) {
       const albumId = idMatch[1];
       let body = "";
       req.on("data", chunk => body += chunk);
       req.on("end", async () => {
-        const { Title, ReleaseDate, cover_media_id } = JSON.parse(body);
-        const [result] = await db.query(
-          "UPDATE Album SET Title = ?, ReleaseDate = ?, cover_media_id = ? WHERE AlbumID = ? AND IsDeleted = 0",
-          [Title, ReleaseDate, cover_media_id, albumId]
-        );
+        try {
+          const { Title, ReleaseDate, cover_media_id } = JSON.parse(body);
+          const [result] = await db.query(
+            "UPDATE Album SET Title = ?, ReleaseDate = ?, cover_media_id = ? WHERE AlbumID = ? AND IsDeleted = 0",
+            [Title, ReleaseDate, cover_media_id, albumId]
+          );
 
-        if (result.affectedRows === 0) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Album not found" }));
-          return;
+          if (result.affectedRows === 0) {
+            res.writeHead(404, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "Album not found" }));
+            return;
+          }
+
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            AlbumId: albumId,
+            Title,
+            ReleaseDate,
+            cover_media_id,
+            message: "Album updated successfully"
+          }));
+        } catch (err) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
         }
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({
-          AlbumId: albumId,
-          Title,
-          ReleaseDate,
-          cover_media_id,
-          message: "Album updated successfully"
-        }));
       });
       return;
     }
 
+    if (req.method === "PUT" && tracksMatch) {
+      const albumId = tracksMatch[1];
+      let body = "";
+      req.on("data", chunk => body += chunk);
+      req.on("end", async () => {
+        let data;
+        try {
+          data = JSON.parse(body);
+        } catch (e) {
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+          return;
+        }
+
+        const { trackSongIds = [] } = data; 
+        
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+
+        try {
+          // 1. Delete all existing tracks for this album
+          await connection.query("DELETE FROM Album_Track WHERE AlbumID = ?", [albumId]);
+
+          // 2. Insert new tracks if any
+          if (Array.isArray(trackSongIds) && trackSongIds.length > 0) {
+            const trackValues = trackSongIds.map((songId, index) => [
+              albumId,
+              Number(songId),
+              index + 1 // Re-calculate track number
+            ]);
+            
+            await connection.query(
+              "INSERT INTO Album_Track (AlbumID, SongID, TrackNumber) VALUES ?",
+              [trackValues]
+            );
+          }
+
+          await connection.commit();
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ message: "Album tracks updated successfully" }));
+
+        } catch (err) {
+          await connection.rollback();
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            error: err.message || "Failed to update tracks",
+            sqlError: err.sqlMessage
+          }));
+        } finally {
+          connection.release();
+        }
+      });
+      return;
+    }
+
+    // Delete album (soft delete)
     if (req.method === "DELETE" && idMatch) {
       const albumId = idMatch[1];
       const [result] = await db.query(
@@ -178,6 +328,7 @@ export async function handleAlbumRoutes(req, res) {
     res.end(JSON.stringify({ error: "Album endpoint not found" }));
 
   } catch (err) {
+    console.error("Error handling album routes:", err);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Internal server error" }));
   }

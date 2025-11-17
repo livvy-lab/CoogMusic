@@ -1,4 +1,3 @@
-// server/routes/song.js
 import db from "../db.js";
 import { parse } from "url";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
@@ -259,60 +258,78 @@ export async function handleSongRoutes(req, res) {
       return;
     }
 
+    // --- UPDATED: POST /songs - Removed ArtistID from Song table INSERT ---
     if (pathname === "/songs" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
+        const connection = await db.getConnection();
+        await connection.beginTransaction();
+        
         try {
-          const { Title, DurationSeconds, ReleaseDate, GenreID } = JSON.parse(body || "{}");
+          const { Title, ArtistID, audio_media_id, GenreIDs = [] } = JSON.parse(body || "{}");
 
+          // 1. Validate required fields from client
           const missing = [];
           if (!Title) missing.push("Title");
-          if (DurationSeconds === undefined || DurationSeconds === null) missing.push("DurationSeconds");
-          if (GenreID === undefined) missing.push("GenreID");
+          if (!ArtistID) missing.push("ArtistID");
+          if (!audio_media_id) missing.push("audio_media_id");
 
           if (missing.length) {
+            await connection.rollback();
+            connection.release();
             res.writeHead(400, { "Content-Type": "application/json" });
             res.end(JSON.stringify({ error: `Missing required field(s): ${missing.join(", ")}` }));
             return;
           }
+          
+          // 2. Provide defaults for fields not sent by client
+          const duration = 180; // Default duration
+          const releaseDate = new Date().toISOString().split("T")[0]; // Default to today
+          const primaryGenreID = GenreIDs[0] || null; // Use first genre as primary, or null
 
-          const duration = Number(DurationSeconds);
-          if (!Number.isInteger(duration) || duration < 0) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "DurationSeconds must be a non-negative integer" }));
-            return;
+          // 3. Create the Song (ArtistID REMOVED from INSERT)
+          const [result] = await connection.query(
+            `INSERT INTO Song (Title, DurationSeconds, ReleaseDate, GenreID, audio_media_id, IsDeleted)
+             VALUES (?, ?, ?, ?, ?, 0)`,
+            [Title, duration, releaseDate, primaryGenreID, audio_media_id]
+          );
+          const songId = result.insertId;
+
+          // 4. Create entries in Song_Genre table
+          if (Array.isArray(GenreIDs) && GenreIDs.length > 0) {
+            const genreValues = GenreIDs.map(genreId => [songId, Number(genreId), 0]);
+            await connection.query(
+              "INSERT INTO Song_Genre (SongID, GenreID, IsDeleted) VALUES ?",
+              [genreValues]
+            );
           }
-
-          const genreId = Number(GenreID);
-          if (!Number.isInteger(genreId) || genreId <= 0) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "GenreID must be a positive integer" }));
-            return;
-          }
-
-          const [g] = await db.query(`SELECT 1 FROM Genre WHERE GenreID = ?`, [genreId]);
-          if (!g.length) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ error: "GenreID does not exist" }));
-            return;
-          }
-
-          const [result] = await db.query(
-            `INSERT INTO Song (Title, DurationSeconds, ReleaseDate, GenreID, IsDeleted)
-             VALUES (?, ?, ?, ?, 0)`,
-            [Title, duration, ReleaseDate || null, genreId]
+          
+          // 5. Create entry in Song_Artist table (THIS is where artist relationship is stored)
+          await connection.query(
+            "INSERT INTO Song_Artist (SongID, ArtistID, Role, IsDeleted) VALUES (?, ?, 'Primary', 0)",
+            [songId, ArtistID]
           );
 
+          await connection.commit();
           res.writeHead(201, { "Content-Type": "application/json" });
           res.end(JSON.stringify({
-            SongID: result.insertId, Title, DurationSeconds: duration,
-            ReleaseDate: ReleaseDate || null, GenreID: genreId, IsDeleted: 0
+            SongID: songId, 
+            Title, 
+            DurationSeconds: duration,
+            ReleaseDate: releaseDate, 
+            GenreIDs: GenreIDs, 
+            IsDeleted: 0,
+            ArtistID: ArtistID, 
+            audio_media_id: audio_media_id
           }));
         } catch (err) {
+          await connection.rollback();
           console.error("Error in POST /songs:", err);
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid JSON body" }));
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Failed to create song", sqlError: err.sqlMessage }));
+        } finally {
+          connection.release();
         }
       });
       return;

@@ -2,11 +2,16 @@ import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/api";
 import "./SongUploadModal.css";
 
-export default function SongUploadModal({ onSuccess, onClose }) {
+export default function SongUploadModal({ 
+  onSuccess, 
+  onClose, 
+  errorMsg, 
+  isSubmitting 
+}) {
   const [title, setTitle] = useState("");
   const [audioFile, setAudioFile] = useState(null);
   const [audioName, setAudioName] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // For internal validation
   const [availableGenres, setAvailableGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
 
@@ -50,8 +55,11 @@ export default function SongUploadModal({ onSuccess, onClose }) {
       return;
     }
     onSuccess({ title, audioFile, genreIds: selectedGenres });
-    setTitle(""); setAudioFile(null); setAudioName(""); setError(""); setSelectedGenres([]);
+    
   };
+
+  // Combine internal validation error with external network error
+  const displayError = error || errorMsg;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -68,13 +76,15 @@ export default function SongUploadModal({ onSuccess, onClose }) {
                 value={title}
                 placeholder="Enter song title"
                 onChange={e => { setTitle(e.target.value); setError(""); }}
+                disabled={isSubmitting} // Use prop
               />
             </div>
             <div className="form-group upload-group" style={{marginBottom:0}}>
               <div
                 className={`upload-box${audioFile ? " has-file" : ""}`}
                 tabIndex={0}
-                onClick={() => document.getElementById("audio-file").click()}
+                onClick={() => !isSubmitting && document.getElementById("audio-file").click()}
+                style={isSubmitting ? { cursor: 'not-allowed' } : {}}
               >
                 <div className="upload-content">
                   <div className="upload-icon">
@@ -93,6 +103,7 @@ export default function SongUploadModal({ onSuccess, onClose }) {
                     style={{ display: "none" }}
                     onChange={handleAudioChange}
                     accept={SUPPORTED_FILES.split(", ").map(f => `audio/${f.replace(".", "")}`).join(",")}
+                    disabled={isSubmitting} // Use prop
                   />
                 </div>
               </div>
@@ -113,6 +124,7 @@ export default function SongUploadModal({ onSuccess, onClose }) {
                       type="button"
                       className={`genre-capsule${selectedGenres.includes(genre.GenreID) ? " selected" : ""}`}
                       onClick={() => toggleGenre(genre.GenreID)}
+                      disabled={isSubmitting} // Use prop
                     >
                       {genre.Name}
                     </button>
@@ -121,15 +133,15 @@ export default function SongUploadModal({ onSuccess, onClose }) {
               </div>
             </div>
             <div className="modal-actions">
-              {error && 
+              {displayError && 
                 <div className="error-message">
-                  {error}
+                  {displayError}
                 </div>
               }
-              <button type="submit" className="btn-primary">
-                Add Track
+              <button type="submit" className="btn-primary" disabled={isSubmitting}>
+                {isSubmitting ? "Uploading..." : "Add Track"}
               </button>
-              <button type="button" className="btn-secondary" onClick={onClose}>
+              <button type="button" className="btn-secondary" onClick={onClose} disabled={isSubmitting}>
                 Cancel
               </button>
             </div>

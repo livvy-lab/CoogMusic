@@ -4,6 +4,8 @@ import PageLayout from "../components/PageLayout/PageLayout";
 import "./MyAlbums.css";
 import { API_BASE_URL } from "../config/api";
 import { getUser } from "../lib/userStorage";
+import EditAlbumModal from "../components/EditAlbumModal/EditAlbumModal";
+import DeleteAlbumConfirmModal from "../components/DeleteConfirmModal/DeleteAlbumModal";
 
 export default function MyAlbums() {
   const [albums, setAlbums] = useState([]);
@@ -12,6 +14,9 @@ export default function MyAlbums() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [covers, setCovers] = useState({});
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedAlbum, setSelectedAlbum] = useState(null);
 
   useEffect(() => {
     try {
@@ -25,48 +30,41 @@ export default function MyAlbums() {
         setLoading(false);
       }
     } catch (err) {
-      console.error("Error loading user info", err);
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!artistInfo.id) return;
-
     async function fetchAlbums() {
       try {
         setLoading(true);
         const res = await fetch(`${API_BASE_URL}/artists/${artistInfo.id}/albums`);
-        
         if (!res.ok) throw new Error("Failed to fetch albums");
-
         const data = await res.json();
-
         const formatted = data.map((row) => ({
           AlbumID: row.AlbumID,
           title: row.Title || "Untitled",
+          description: row.Description || "",
+          artist_id: artistInfo.id,
           releaseDate: row.ReleaseDate ? new Date(row.ReleaseDate) : null,
           trackCount: row.TrackCount || 0,
           cover_media_id: row.cover_media_id || null,
         }));
-
         setAlbums(formatted);
       } catch (err) {
-        console.error("Error fetching albums:", err);
+        // silent/error display
       } finally {
         setLoading(false);
       }
     }
-
     fetchAlbums();
   }, [artistInfo.id]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
-      const needed = albums
-        .map((a) => a.cover_media_id)
-        .filter((id) => id && !(id in covers));
+      const needed = albums.map((a) => a.cover_media_id).filter((id) => id && !(id in covers));
       const uniqueNeeded = [...new Set(needed)];
       if (!uniqueNeeded.length) return;
       const results = await Promise.all(
@@ -90,9 +88,7 @@ export default function MyAlbums() {
         return next;
       });
     })();
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, [albums, covers]);
 
   const filteredAlbums = useMemo(() => {
@@ -106,26 +102,34 @@ export default function MyAlbums() {
     navigate(`/albums/${albumId}`);
   };
 
-  const handleTakeDown = async (albumId, albumTitle, e) => {
-    e.stopPropagation();
-    
-    if (!confirm(`Are you sure you want to take down "${albumTitle}"? This will also take down all songs in this album. This cannot be undone.`)) {
-      return;
-    }
+  const openEditModal = (album) => {
+    setSelectedAlbum(album);
+    setEditModalOpen(true);
+  };
+  const openDeleteModal = (album) => {
+    setSelectedAlbum(album);
+    setDeleteModalOpen(true);
+  };
 
+  const handleEditAlbumSuccess = () => {
+    setEditModalOpen(false);
+    setSelectedAlbum(null);
+    // Refresh albums
+    setTimeout(() => {
+      window.location.reload();
+    }, 500);
+  };
+
+  const handleDeleteAlbumConfirmed = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/albums/${albumId}`, {
+      const res = await fetch(`${API_BASE_URL}/albums/${selectedAlbum.AlbumID}`, {
         method: "DELETE",
       });
-
       if (!res.ok) throw new Error("Failed to take down album");
-
-      // Remove from local state
-      setAlbums((prev) => prev.filter((a) => a.AlbumID !== albumId));
-      alert(`"${albumTitle}" has been taken down successfully.`);
-    } catch (err) {
-      console.error("Error taking down album:", err);
-      alert("Failed to take down album. Please try again.");
+      setAlbums((prev) => prev.filter((a) => a.AlbumID !== selectedAlbum.AlbumID));
+      setDeleteModalOpen(false);
+      setSelectedAlbum(null);
+    } catch {
     }
   };
 
@@ -133,7 +137,7 @@ export default function MyAlbums() {
     return (
       <PageLayout>
         <div className="albumPage">
-          <h2>Loading your albums...</h2>
+          <h2 style={{color: "#B04495"}}>Loading your albums...</h2>
         </div>
       </PageLayout>
     );
@@ -141,7 +145,7 @@ export default function MyAlbums() {
 
   return (
     <PageLayout>
-      <h1 className="my-albums-page-title">My Albums</h1>
+      <h1 className="my-albums-page-title create-album-title">My Albums</h1>
       <div className="playlistView">
         <div className="albumPage">
           <section className="albumCard listCard">
@@ -157,11 +161,10 @@ export default function MyAlbums() {
                 Total Albums: {filteredAlbums.length}
               </span>
             </div>
-
             <div className="tableBody">
-              {loading && <p className="noTracks">Loading...</p>}
+              {loading && <p className="noTracks" style={{color:"#B04495"}}>Loading...</p>}
               {!loading && filteredAlbums.length === 0 ? (
-                <p className="noTracks">
+                <p className="noTracks" style={{color:"#B04495"}}>
                   {search
                     ? "No albums match your search."
                     : "You haven't created any albums yet."}
@@ -192,7 +195,6 @@ export default function MyAlbums() {
                           <span className="ma-title">{a.title}</span>
                         </div>
                       </div>
-
                       <div className="ma-meta-info">
                         <span className="ma-meta-item">
                           <strong>Tracks:</strong> {a.trackCount}
@@ -208,14 +210,19 @@ export default function MyAlbums() {
                             : "Not set"}
                         </span>
                       </div>
-
-                      <button
-                        className="ma-take-down-btn"
-                        onClick={(e) => handleTakeDown(a.AlbumID, a.title, e)}
-                        title="Take down this album"
-                      >
-                        Take Down
-                      </button>
+                      <div className="ma-row-controls">
+                        <button
+                          className="ma-edit-btn"
+                          type="button"
+                          title="Edit album"
+                          onClick={e => { e.stopPropagation(); openEditModal(a); }}
+                        >Edit</button>
+                        <button
+                          className="ma-take-down-btn"
+                          onClick={e => { e.stopPropagation(); openDeleteModal(a); }}
+                          title="Take down this album"
+                        >Take Down</button>
+                      </div>
                     </div>
                   );
                 })
@@ -224,6 +231,18 @@ export default function MyAlbums() {
           </section>
         </div>
       </div>
+      <EditAlbumModal
+        isOpen={editModalOpen}
+        onClose={() => { setEditModalOpen(false); setSelectedAlbum(null); }}
+        onSuccess={handleEditAlbumSuccess}
+        album={selectedAlbum}
+      />
+      <DeleteAlbumConfirmModal
+        isOpen={deleteModalOpen}
+        onClose={() => { setDeleteModalOpen(false); setSelectedAlbum(null); }}
+        onConfirm={handleDeleteAlbumConfirmed}
+        albumTitle={selectedAlbum?.title}
+      />
     </PageLayout>
   );
 }
