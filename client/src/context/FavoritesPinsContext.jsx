@@ -36,7 +36,24 @@ export function FavoritesPinsProvider({ children }) {
       // normalize favorites to numbers to avoid string/number mismatch
       const favs = Array.isArray(j.favorites) ? j.favorites.map(x => Number(x)).filter(Boolean) : [];
       console.log('✅ [FavoritesPins] Setting favoriteIds:', favs);
-      setFavoriteIds(new Set(favs));
+      
+      // Merge new favorites with existing ones instead of replacing
+      setFavoriteIds(prev => {
+        const next = new Set(prev);
+        // Add all favorites from the response
+        favs.forEach(id => next.add(id));
+        // Remove any songs from the queried IDs that are NOT in the favorites
+        if (idsParam.length > 0) {
+          idsParam.forEach(id => {
+            const numId = Number(id);
+            if (!favs.includes(numId)) {
+              next.delete(numId);
+            }
+          });
+        }
+        return next;
+      });
+      
       setPinnedSongId(j.pinnedSongId ? Number(j.pinnedSongId) : null);
     } catch (e) {
       console.error('❌ [FavoritesPins] Hydrate error:', e);
