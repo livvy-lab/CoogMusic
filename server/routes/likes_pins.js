@@ -17,7 +17,11 @@ export async function handleLikesPins(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (m === "OPTIONS") { res.writeHead(204); res.end(); return; }
+  if (m === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   const send = (status, body) => {
     if (!res.writableEnded) {
@@ -30,16 +34,23 @@ export async function handleLikesPins(req, res) {
     if (p === "/songs/status" && m === "GET") {
       const listenerId = Number(url.searchParams.get("listenerId"));
       const ids = (url.searchParams.get("ids") || "")
-        .split(",").map(s => s.trim()).filter(Boolean).map(Number);
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map(Number);
 
       if (!listenerId) return send(200, { favorites: [], pinnedSongId: null });
 
       let favorites = [];
       if (ids.length) {
-        const sql = `SELECT SongID FROM Liked_Song WHERE ListenerID = ? AND IsLiked = 1 AND SongID IN (${ids.map(() => "?").join(",")})`;
-        const params = [listenerId, ...ids];
-        const [rows] = await db.query(sql, params);
-        favorites = rows.map(r => r.SongID);
+        const [rows] = await db.query(
+          `SELECT SongID FROM Liked_Song
+           WHERE ListenerID = ? AND SongID IN (${ids
+             .map(() => "?")
+             .join(",")})`,
+          [listenerId, ...ids]
+        );
+        favorites = rows.map((r) => r.SongID);
       }
 
       const [pinRow] = await db.query(
@@ -52,11 +63,13 @@ export async function handleLikesPins(req, res) {
     }
 
     if (p === "/likes" && (m === "POST" || m === "DELETE")) {
-      let body = ""; req.on("data", c => body += c);
+      let body = "";
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         try {
           const { listenerId, songId } = JSON.parse(body || "{}");
-          if (!listenerId || !songId) return send(400, { error: "listenerId and songId required" });
+          if (!listenerId || !songId)
+            return send(400, { error: "listenerId and songId required" });
 
           if (m === "POST") {
             await db.query(
@@ -80,7 +93,8 @@ export async function handleLikesPins(req, res) {
     }
 
     if (p === "/pin" && (m === "POST" || m === "DELETE")) {
-      let body = ""; req.on("data", c => body += c);
+      let body = "";
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         try {
           const { listenerId, songId } = JSON.parse(body || "{}");
@@ -109,7 +123,7 @@ export async function handleLikesPins(req, res) {
     let mList = p.match(/^\/listeners\/(\d+)\/pins\/artists$/);
     if (m === "GET" && mList) {
       const listenerId = Number(mList[1]);
-      
+
       if (!S3_BUCKET) {
         console.error("S3_BUCKET_NAME environment variable is not set.");
         return send(500, { error: "Server configuration error" });
@@ -123,23 +137,31 @@ export async function handleLikesPins(req, res) {
          ORDER BY lap.CreatedAt DESC`,
         [listenerId]
       );
-      
+
       const signedRows = await Promise.all(
         rows.map(async (row) => {
           if (row.PFP && row.PFP.includes(S3_BUCKET)) {
             try {
               const url = new URL(row.PFP);
-              const key = url.pathname.startsWith('/') ? url.pathname.substring(1) : url.pathname;
+              const key = url.pathname.startsWith("/")
+                ? url.pathname.substring(1)
+                : url.pathname;
 
               const command = new GetObjectCommand({
                 Bucket: S3_BUCKET,
                 Key: key,
               });
-              
-              const signedUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
+
+              const signedUrl = await getSignedUrl(s3, command, {
+                expiresIn: 3600,
+              });
               row.PFP = signedUrl;
             } catch (err) {
-              console.error("Error generating signed URL for key:", row.PFP, err);
+              console.error(
+                "Error generating signed URL for key:",
+                row.PFP,
+                err
+              );
               row.PFP = null;
             }
           } else if (row.PFP) {
@@ -156,7 +178,8 @@ export async function handleLikesPins(req, res) {
     if (m === "POST" && mPost) {
       const listenerId = Number(mPost[1]);
 
-      let body = ""; req.on("data", c => body += c);
+      let body = "";
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         try {
           const { artistId } = JSON.parse(body || "{}");
@@ -166,7 +189,8 @@ export async function handleLikesPins(req, res) {
             `SELECT COUNT(*) AS c FROM ListenerArtistPin WHERE ListenerID = ?`,
             [listenerId]
           );
-          if ((cntRows?.[0]?.c ?? 0) >= 3) return send(409, { error: "PIN_LIMIT_REACHED" });
+          if ((cntRows?.[0]?.c ?? 0) >= 3)
+            return send(409, { error: "PIN_LIMIT_REACHED" });
 
           await db.query(
             `INSERT IGNORE INTO ListenerArtistPin (ListenerID, ArtistID)
@@ -226,7 +250,8 @@ export async function handleLikesPins(req, res) {
     if (m === "POST" && mpPost) {
       const listenerId = Number(mpPost[1]);
 
-      let body = ""; req.on("data", c => body += c);
+      let body = "";
+      req.on("data", (c) => (body += c));
       req.on("end", async () => {
         try {
           const { playlistId } = JSON.parse(body || "{}");

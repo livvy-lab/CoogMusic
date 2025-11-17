@@ -81,12 +81,6 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
-    if (pathname === "/healthz") {
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ ok: true }));
-      return;
-    }
-
     if (pathname.startsWith("/uploads/")) {
       const filePath = path.join(
         path.resolve("."),
@@ -102,7 +96,7 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(404);
       res.end();
       return;
-    } // ─────────────────────────────────────────────── // Uploads & Media endpoints // ───────────────────────────────────────────────
+    }
 
     if (pathname.startsWith("/upload/")) {
       await handleUploadRoutes(req, res);
@@ -111,18 +105,13 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/pfp")) {
       await handlePfpRoutes(req, res);
       return;
-    } // Route media endpoints (upload + media lookup + song/album cover association)
+    }
 
     if (
-      pathname.startsWith("/media") ||
+      pathname === "/media" ||
       /^\/(?:songs|albums)\/\d+\/cover$/.test(pathname)
     ) {
       await handleMediaRoutes(req, res);
-      return;
-    }
-
-    if (pathname.startsWith("/api/soft_delete")) {
-      await handleSoftDeleteRoutes(req, res);
       return;
     }
 
@@ -146,7 +135,7 @@ const server = http.createServer(async (req, res) => {
       }
       await handleSetArtistAvatar(req, res, Number(id));
       return;
-    } // ─────────────────────────────────────────────── // Listener + Artist profile routes // ───────────────────────────────────────────────
+    }
 
     if (/^\/listeners\/\d+\/profile$/.test(pathname)) {
       await handleListenerProfile(req, res);
@@ -162,22 +151,16 @@ const server = http.createServer(async (req, res) => {
       await handleArtistProfileRoutes(req, res);
       return;
     }
-    if (pathname.startsWith("/achievements/listener/")) {
-      req.url = pathname.replace("/achievements", "");
-      await handleAchievements(req, res);
-      return;
-    }
-    // ───────────────────────────────────────────────
-    // Plays + Login
-    // ───────────────────────────────────────────────
-    if (pathname.startsWith("/plays")) {
+
+    if (pathname === "/plays" || /^\/plays\/streams\/\d+$/.test(pathname)) {
       await handlePlayRoutes(req, res);
       return;
     }
     if (pathname.startsWith("/login")) {
       await handleLogin(req, res);
       return;
-    } // ─────────────────────────────────────────────── // Likes + Pins (songs + artists join table) // ───────────────────────────────────────────────
+    }
+
     if (
       pathname.startsWith("/songs/status") ||
       pathname.startsWith("/likes") ||
@@ -188,8 +171,14 @@ const server = http.createServer(async (req, res) => {
       await handleLikesPins(req, res);
       return;
     }
+
     if (pathname.startsWith("/search")) {
       await handleSearchRoutes(req, res);
+      return;
+    }
+
+    if (pathname.startsWith("/achievements/listener/")) {
+      await handleAchievements(req, res);
       return;
     }
 
@@ -311,7 +300,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/users/recent") {
       await handleRecentUsersRoutes(req, res);
       return;
-    } // ─────────────────────────────────────────────── // Fallback // ───────────────────────────────────────────────
+    }
 
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Endpoint not found" }));
@@ -322,6 +311,4 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-server.listen(PORT, "0.0.0.0", () =>
-  console.log(`Server running on port ${PORT}`)
-);
+server.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

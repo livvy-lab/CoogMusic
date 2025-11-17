@@ -85,7 +85,7 @@ export async function handleListenerProfile(req, res) {
     if (listener.PinnedPlaylistID) {
       try {
         const [pp] = await db.query(
-          `SELECT p.PlaylistID, p.Name AS Name, p.Description, p.cover_media_id
+          `SELECT p.PlaylistID, p.Name AS Name, p.Description
              FROM Playlist p
             WHERE p.PlaylistID = ? AND p.IsDeleted = 0`,
           [listener.PinnedPlaylistID]
@@ -97,11 +97,7 @@ export async function handleListenerProfile(req, res) {
       }
     }
 
-    // 5) Counts (defensive about Follows schema)
-    let followers = 0,
-      following = 0,
-      playlists = 0,
-      songs = 0;
+    let followers = 0, following = 0, playlists = 0, songs = 0;
 
     try {
       const [[followersCountRow]] = await db.query(

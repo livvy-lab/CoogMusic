@@ -73,32 +73,28 @@
   display: block;
 }
 
-/* Track Thumbnail Placeholder */
-.tt__art {
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  background: #5b2f46;
-  box-shadow: inset 0 0 0 4px rgba(137, 86, 116, 0.35);
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+/* track name text */
+.tt__name {
+  flex: 1;
+  font-size: clamp(16px, 1.4vw, 18px);
+  font-weight: 600;
+  color: #5b2f46;
 }
 
-.adCard__label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--stroke);
-  opacity: 0.8;
+/* plays text on the right */
+.tt__plays {
+  font-size: clamp(14px, 1.2vw, 16px);
+  font-weight: 500;
+  color: #895674;
 }
 
-.adCard__title {
-  margin: 0;
-  font-weight: 800;
-  font-size: clamp(14px, 1.3vw, 16px);
-  color: var(--accent);
+/* slim scrollbar to match the little bar in your mock */
+.tt__card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tt__card::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .tt__card::-webkit-scrollbar-thumb {
