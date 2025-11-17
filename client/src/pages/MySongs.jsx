@@ -8,11 +8,13 @@ import { API_BASE_URL } from "../config/api";
 import { getUser } from "../lib/userStorage";
 import { usePlayer } from "../context/PlayerContext";
 
+
 function todayOffset(days = 0) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   return d.toISOString().slice(0, 10);
 }
+
 
 function createSongKey(title, album) {
   const cleanTitle = title?.trim().toLowerCase() || "unknown_title";
@@ -22,6 +24,21 @@ function createSongKey(title, album) {
   }
   return `${cleanTitle}::${cleanAlbum}`;
 }
+
+
+// Check if a song is part of any album
+const checkIfSongInAlbum = async (songId) => {
+  try {
+    const res = await fetch(`${API_BASE_URL}/songs/${songId}/albums`);
+    if (!res.ok) return [];
+    const albums = await res.json();
+    return Array.isArray(albums) ? albums : [];
+  } catch (err) {
+    console.error("Error checking if song is in album:", err);
+    return [];
+  }
+};
+
 
 export default function MySongs() {
   const [tracks, setTracks] = useState([]);
@@ -34,9 +51,11 @@ export default function MySongs() {
   const [isInitLoading, setIsInitLoading] = useState(true);
   const [startDate, setStartDate] = useState(null);
 
+
   // Modal states
-  const [deleteModal, setDeleteModal] = useState({ isOpen: false, song: null });
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, song: null, albumsRestriction: null, type: null });
   const [editModal, setEditModal] = useState({ isOpen: false, song: null });
+
 
   useEffect(() => {
     try {
@@ -54,6 +73,7 @@ export default function MySongs() {
       setLoading(false);
     }
   }, []);
+
 
   useEffect(() => {
     const artistId = getUser()?.artistId;
@@ -75,12 +95,15 @@ export default function MySongs() {
       });
   }, []);
 
+
   useEffect(() => {
     if (!artistInfo.id || isInitLoading || !startDate) return;
+
 
     async function fetchData() {
       try {
         setLoading(true);
+
 
         const params = new URLSearchParams({
           startDate: startDate,
@@ -89,19 +112,24 @@ export default function MySongs() {
           order: "asc",
         }).toString();
 
+
         const songListUrl = `${API_BASE_URL}/artists/${artistInfo.id}/songs`;
         const analyticsUrl = `${API_BASE_URL}/analytics/artist/${artistInfo.id}/summary?${params}`;
+
 
         const [songListRes, analyticsRes] = await Promise.all([
           fetch(songListUrl),
           fetch(analyticsUrl),
         ]);
 
+
         if (!songListRes.ok) throw new Error("Failed to fetch song list");
         if (!analyticsRes.ok) throw new Error("Failed to fetch analytics");
 
+
         const songListData = await songListRes.json();
         const analyticsData = await analyticsRes.json();
+
 
         const analyticsMap = new Map();
         if (analyticsData.songs) {
@@ -114,13 +142,16 @@ export default function MySongs() {
           }
         }
 
+
         const formatted = songListData.map((row) => {
           const key = createSongKey(row.Title, row.AlbumName);
           const analytics = analyticsMap.get(key);
 
+
           const dateStr = row.ReleaseDate
             ? String(row.ReleaseDate).slice(0, 10)
             : null;
+
 
           return {
             SongID: row.SongID,
@@ -140,6 +171,7 @@ export default function MySongs() {
           };
         });
 
+
         setTracks(formatted);
       } catch (err) {
         console.error("Error fetching combined artist songs:", err);
@@ -149,6 +181,7 @@ export default function MySongs() {
     }
     fetchData();
   }, [artistInfo.id, isInitLoading, startDate]);
+
 
   useEffect(() => {
     let alive = true;
@@ -184,12 +217,14 @@ export default function MySongs() {
     };
   }, [tracks, covers]);
 
+
   const filteredTracks = useMemo(() => {
     if (!search) return tracks;
     return tracks.filter((t) =>
       t.title.toLowerCase().includes(search.toLowerCase())
     );
   }, [tracks, search]);
+
 
   const handlePlay = (track) => {
     (async () => {
@@ -204,10 +239,27 @@ export default function MySongs() {
     })();
   };
 
-  const handleEdit = (song, e) => {
+
+  // 🎯 UPDATED: Check if song is in album before editing
+  const handleEdit = async (song, e) => {
     e.stopPropagation();
+    
+    const albums = await checkIfSongInAlbum(song.SongID);
+    
+    if (albums.length > 0) {
+      // Show delete modal with edit restriction message
+      setDeleteModal({ 
+        isOpen: true, 
+        song, 
+        albumsRestriction: albums,
+        type: 'edit'
+      });
+      return;
+    }
+    
     setEditModal({ isOpen: true, song });
   };
+
 
   const handleEditSuccess = () => {
     if (artistInfo.id && startDate) {
@@ -221,19 +273,24 @@ export default function MySongs() {
             order: "asc",
           }).toString();
 
+
           const songListUrl = `${API_BASE_URL}/artists/${artistInfo.id}/songs`;
           const analyticsUrl = `${API_BASE_URL}/analytics/artist/${artistInfo.id}/summary?${params}`;
+
 
           const [songListRes, analyticsRes] = await Promise.all([
             fetch(songListUrl),
             fetch(analyticsUrl),
           ]);
 
+
           if (!songListRes.ok) throw new Error("Failed to fetch song list");
           if (!analyticsRes.ok) throw new Error("Failed to fetch analytics");
 
+
           const songListData = await songListRes.json();
           const analyticsData = await analyticsRes.json();
+
 
           const analyticsMap = new Map();
           if (analyticsData.songs) {
@@ -246,13 +303,16 @@ export default function MySongs() {
             }
           }
 
+
           const formatted = songListData.map((row) => {
             const key = createSongKey(row.Title, row.AlbumName);
             const analytics = analyticsMap.get(key);
 
+
             const dateStr = row.ReleaseDate
               ? String(row.ReleaseDate).slice(0, 10)
               : null;
+
 
             return {
               SongID: row.SongID,
@@ -272,6 +332,7 @@ export default function MySongs() {
             };
           });
 
+
           setTracks(formatted);
         } catch (err) {
           console.error("Error refreshing songs:", err);
@@ -282,29 +343,51 @@ export default function MySongs() {
     }
   };
 
-  const handleTakeDown = (song, e) => {
+
+  // Check if song is in album before deleting
+  const handleTakeDown = async (song, e) => {
     e.stopPropagation();
-    setDeleteModal({ isOpen: true, song });
+    
+    const albums = await checkIfSongInAlbum(song.SongID);
+    
+    if (albums.length > 0) {
+      // Show delete modal with delete restriction message
+      setDeleteModal({ 
+        isOpen: true, 
+        song, 
+        albumsRestriction: albums,
+        type: 'delete'
+      });
+      return;
+    }
+    
+    // Normal delete confirmation
+    setDeleteModal({ isOpen: true, song, albumsRestriction: null, type: 'delete' });
   };
+
 
   const confirmTakeDown = async () => {
     const { song } = deleteModal;
     if (!song) return;
+
 
     try {
       const res = await fetch(`${API_BASE_URL}/songs/${song.SongID}`, {
         method: "DELETE",
       });
 
+
       if (!res.ok) throw new Error("Failed to take down song");
 
+
       setTracks((prev) => prev.filter((t) => t.SongID !== song.SongID));
-      setDeleteModal({ isOpen: false, song: null });
+      setDeleteModal({ isOpen: false, song: null, albumsRestriction: null, type: null });
     } catch (err) {
       console.error("Error taking down song:", err);
       alert("Failed to take down song. Please try again.");
     }
   };
+
 
   if ((loading || isInitLoading) && !tracks.length) {
     return (
@@ -315,6 +398,7 @@ export default function MySongs() {
       </PageLayout>
     );
   }
+
 
   return (
     <PageLayout>
@@ -334,6 +418,7 @@ export default function MySongs() {
                 Total Songs: {filteredTracks.length}
               </span>
             </div>
+
 
             <div className="tableBody">
               {(loading || isInitLoading) && <p className="noTracks">Loading...</p>}
@@ -373,6 +458,7 @@ export default function MySongs() {
                         </div>
                       </div>
 
+
                       <div className="ms-meta-info">
                         <span className="ms-meta-item">
                           <strong>Album:</strong> {t.album}
@@ -394,6 +480,7 @@ export default function MySongs() {
                           <strong>Length:</strong> {t.duration}
                         </span>
                       </div>
+
 
                       <div className="ms-actions">
                         <button
@@ -420,12 +507,16 @@ export default function MySongs() {
         </div>
       </div>
 
+
       <DeleteConfirmModal
         isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal({ isOpen: false, song: null })}
+        onClose={() => setDeleteModal({ isOpen: false, song: null, albumsRestriction: null, type: null })}
         onConfirm={confirmTakeDown}
         songTitle={deleteModal.song?.title}
+        albumsRestriction={deleteModal.albumsRestriction}
+        type={deleteModal.type}
       />
+
 
       <EditSongModal
         isOpen={editModal.isOpen}

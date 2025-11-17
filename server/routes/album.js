@@ -27,13 +27,21 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
-    // --- Get all tracks for a specific album ---
     if (req.method === "GET" && tracksMatch) {
       const albumId = tracksMatch[1];
       const [tracks] = await db.query(
-        `SELECT s.SongID, s.Title, s.DurationSeconds, at.TrackNumber
+        `SELECT 
+          s.SongID, 
+          s.Title, 
+          s.DurationSeconds, 
+          s.cover_media_id,
+          at.TrackNumber,
+          a.ArtistName,
+          a.ArtistID
          FROM Album_Track at
          JOIN Song s ON at.SongID = s.SongID
+         LEFT JOIN Song_Artist sa ON s.SongID = sa.SongID AND sa.Role = 'Primary' AND COALESCE(sa.IsDeleted, 0) = 0
+         LEFT JOIN Artist a ON sa.ArtistID = a.ArtistID AND COALESCE(a.IsDeleted, 0) = 0
          WHERE at.AlbumID = ? AND s.IsDeleted = 0
          ORDER BY at.TrackNumber`,
         [albumId]
@@ -51,11 +59,17 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
-    // --- Get album by ID
     if (req.method === "GET" && idMatch) {
       const albumId = idMatch[1];
       const [rows] = await db.query(
-        "SELECT * FROM Album WHERE AlbumID = ? AND IsDeleted = 0",
+        `SELECT 
+          a.*,
+          ar.ArtistName,
+          ar.ArtistID
+         FROM Album a
+         LEFT JOIN Album_Artist aa ON a.AlbumID = aa.AlbumID
+         LEFT JOIN Artist ar ON aa.ArtistID = ar.ArtistID AND COALESCE(ar.IsDeleted, 0) = 0
+         WHERE a.AlbumID = ? AND a.IsDeleted = 0`,
         [albumId]
       );
       if (rows.length === 0) {
@@ -251,6 +265,7 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
+    // --- PUT album tracks (replaces all tracks)
     if (req.method === "PUT" && tracksMatch) {
       const albumId = tracksMatch[1];
       let body = "";
@@ -306,7 +321,7 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
-    // Delete album (soft delete)
+    // --- Delete album (soft delete)
     if (req.method === "DELETE" && idMatch) {
       const albumId = idMatch[1];
       const [result] = await db.query(
@@ -323,7 +338,7 @@ export async function handleAlbumRoutes(req, res) {
       return;
     }
 
-    // Default 404
+    // --- Default 404
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Album endpoint not found" }));
 
