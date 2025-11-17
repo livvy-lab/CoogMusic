@@ -46,6 +46,7 @@ html, body, #root {
   display: flex;
   justify-content: center;   /* centers horizontally */
   align-items: center;
+  gap: 20px;
   margin-bottom: 20px;
 }
 
