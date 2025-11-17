@@ -6,6 +6,7 @@ import SongUploadModal from "./SongUploadModal";
 
 
 
+
 export default function AlbumForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ export default function AlbumForm() {
 
 
 
+
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
@@ -30,6 +32,7 @@ export default function AlbumForm() {
       if (id) setFormData(data => ({ ...data, artistId: String(id) }));
     } catch {}
   }, []);
+
 
 
 
@@ -46,6 +49,7 @@ export default function AlbumForm() {
     };
     fetchGenres();
   }, []);
+
 
 
 
@@ -71,6 +75,7 @@ export default function AlbumForm() {
 
 
 
+
   const handleAddSong = (track) => {
     setTracks(tracks => [
       ...tracks,
@@ -81,9 +86,11 @@ export default function AlbumForm() {
 
 
 
+
   const handleRemoveSong = (tempId) => {
     setTracks(tracks.filter((t) => t.tempId !== tempId));
   };
+
 
 
 
@@ -94,9 +101,11 @@ export default function AlbumForm() {
 
 
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNotification({ type: "", message: "" });
+
 
 
 
@@ -118,6 +127,7 @@ export default function AlbumForm() {
 
 
 
+
     try {
       let coverMediaId = null;
       if (cover) {
@@ -132,6 +142,7 @@ export default function AlbumForm() {
         coverMediaId = mediaId;
         console.log("Cover uploaded with mediaId:", coverMediaId);
       }
+
 
 
 
@@ -161,6 +172,7 @@ export default function AlbumForm() {
           body: songFormData,
         });
 
+
         console.log(`Response status for song ${idx + 1}:`, songRes.status);
         
         if (!songRes.ok) {
@@ -180,10 +192,12 @@ export default function AlbumForm() {
 
 
 
+
       const albumData = {
         title: formData.title,
         artistId: parseInt(formData.artistId),
         releaseDate: new Date().toISOString().split("T")[0],
+        description: formData.description.trim(), // ← ADDED: Include description
         coverMediaId: coverMediaId,
         genres: allAlbumGenres,
         tracks: uploadedTracks.map((track, idx) => ({
@@ -192,6 +206,7 @@ export default function AlbumForm() {
         })),
       };
 
+      console.log("Creating album with data:", albumData); // ← Added logging to verify
 
 
       const uploadRes = await fetch(`${API_BASE_URL}/albums`, {
@@ -202,10 +217,12 @@ export default function AlbumForm() {
 
 
 
+
       if (!uploadRes.ok) {
         const err = await uploadRes.json();
         throw new Error(err.error || "Failed to create album");
       }
+
 
 
 
@@ -218,6 +235,7 @@ export default function AlbumForm() {
       setLoading(false);
     }
   };
+
 
 
 

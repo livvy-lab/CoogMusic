@@ -8,6 +8,7 @@ import EditAlbumModal from "../components/EditAlbumModal/EditAlbumModal";
 import DeleteAlbumConfirmModal from "../components/DeleteConfirmModal/DeleteAlbumModal";
 
 
+
 export default function MyAlbums() {
   const [albums, setAlbums] = useState([]);
   const [artistInfo, setArtistInfo] = useState({ id: null, name: "You" });
@@ -18,6 +19,7 @@ export default function MyAlbums() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
+
 
 
   useEffect(() => {
@@ -35,6 +37,7 @@ export default function MyAlbums() {
       setLoading(false);
     }
   }, []);
+
 
 
   const fetchAlbums = async (artistId) => {
@@ -61,10 +64,12 @@ export default function MyAlbums() {
   };
 
 
+
   useEffect(() => {
     if (!artistInfo.id) return;
     fetchAlbums(artistInfo.id);
   }, [artistInfo.id]);
+
 
 
   useEffect(() => {
@@ -98,6 +103,7 @@ export default function MyAlbums() {
   }, [albums, covers]);
 
 
+
   const filteredAlbums = useMemo(() => {
     if (!search) return albums;
     return albums.filter((a) =>
@@ -106,9 +112,11 @@ export default function MyAlbums() {
   }, [albums, search]);
 
 
+
   const handleAlbumClick = (albumId) => {
     navigate(`/albums/${albumId}`);
   };
+
 
 
   const openEditModal = (album) => {
@@ -121,11 +129,13 @@ export default function MyAlbums() {
   };
 
 
+
   const handleEditAlbumSuccess = async () => {
     setEditModalOpen(false);
     setSelectedAlbum(null);
     await fetchAlbums(artistInfo.id);
   };
+
 
 
   const handleDeleteAlbumConfirmed = async () => {
@@ -142,6 +152,7 @@ export default function MyAlbums() {
   };
 
 
+
   if (loading && !albums.length) {
     return (
       <PageLayout>
@@ -151,6 +162,7 @@ export default function MyAlbums() {
       </PageLayout>
     );
   }
+
 
 
   return (
@@ -245,7 +257,13 @@ export default function MyAlbums() {
         isOpen={editModalOpen}
         onClose={() => { setEditModalOpen(false); setSelectedAlbum(null); }}
         onSuccess={handleEditAlbumSuccess}
-        album={selectedAlbum}
+        album={selectedAlbum ? {
+          AlbumID: selectedAlbum.AlbumID,
+          title: selectedAlbum.title,
+          description: selectedAlbum.description,
+          artist_id: selectedAlbum.artist_id,
+          cover_media_id: selectedAlbum.cover_media_id,
+        } : null}
       />
       <DeleteAlbumConfirmModal
         isOpen={deleteModalOpen}

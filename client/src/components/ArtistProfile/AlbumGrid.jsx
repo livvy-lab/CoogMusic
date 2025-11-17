@@ -122,7 +122,7 @@ export default function AlbumGrid({ artistId }) {
       ));
     }
     if (error) return <div className="alb__empty">⚠️ {error}</div>;
-    if (!albums.length) return <div className="alb__empty">💿 No albums yet 💿</div>;
+    if (!albums.length) return <div className="alb__empty">No albums yet</div>;
 
     return albums.map((a) => {
       const coverUrl =
@@ -136,6 +136,12 @@ export default function AlbumGrid({ artistId }) {
           className="alb__card"
           tabIndex={0}
           onClick={() => navigate(`/albums/${a.albumId}`)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate(`/albums/${a.albumId}`);
+            }
+          }}
         >
           <div className="alb__img">
             <img

@@ -1,0 +1,327 @@
+.albumPage {
+  width: 100%;
+  max-width: none !important;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 16px 0;
+}
+
+.albumCard {
+  width: 1250px;
+  margin: 0 auto;
+  border-radius: 20px;
+  border: 3px solid #895674;
+  box-shadow: 0 5px 0 #6e4760;
+  background: #fbeaf3;
+}
+
+/* Header box */
+.albumCard.headerCard {
+  padding: 30px 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffe6f5;
+  border: 5px solid #895674;
+  box-shadow: 0 5px 0 #6e4760;
+  position: relative;
+  min-height: 180px;
+}
+
+/* Header layout */
+.albumHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.albumCover {
+  width: 240px;
+  height: 240px;
+  border-radius: 16px;
+  border: 4px solid #895674;
+  overflow: hidden;
+  margin-left: 20px;
+}
+
+.albumCoverImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.albumHeaderText {
+  min-width: 0;
+  max-width: calc(100% - 300px);
+  overflow: visible;
+}
+
+.albumLabel {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #782355;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.albumTitle {
+  margin: 6px 0 8px;
+  font-size: clamp(32px, 4vw, 64px);
+  line-height: 1.08;
+  color: #782355;
+  font-weight: 900;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.albumInfo {
+  margin: 0;
+  color: #782355;
+  font-weight: 600;
+}
+
+/* Artist link */
+.artistLink {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  display: inline;
+}
+.artistLink:hover {
+  text-decoration: underline;
+}
+
+/* === Controls === */
+.albumControls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 175px;
+  margin-right: 15px;
+}
+
+/* NEW: Base class for all icon buttons */
+.controlButton {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 3px solid #6e4760;
+  box-shadow: 0 4px 0 #6e4760;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+/* Shared hover/active states */
+.controlButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 0 #6e4760;
+}
+
+.controlButton:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 0 #6e4760;
+}
+
+/* Specific button styles */
+.playButton {
+  background: #782355;
+  color: #fff;
+}
+.shuffleButton {
+  background: #f5d9e8;
+  color: #782355;
+}
+.editButton {
+  background: #782355;
+  color: #fff;
+}
+.editButton:hover {
+  background-color: #5a1a3d;
+}
+
+/* List card */
+.listCard {
+  background: #fbeaf3;
+  border: 5px solid #895674;
+  border-radius: 20px;
+  box-shadow: 0 5px 0 #6e4760;
+  width: min(96%, 1350px);
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* === Table header === */
+.albumTableHeader {
+  display: grid;
+  grid-template-columns: 60px 44px 1fr 100px;
+  align-items: center;
+  gap: 1rem;
+  padding: 12px 20px;
+  border-bottom: 2px solid #6e4760;
+  font-weight: 800;
+  color: #782355;
+}
+.albumTableHeader .th {
+  white-space: nowrap;
+}
+.albumTableHeader .th-num {
+  text-align: center;
+}
+.albumTableHeader .th-title {
+  text-align: left;
+}
+.albumTableHeader .th-dur {
+  text-align: right;
+  padding-right: 10px;
+}
+.albumTableHeader .th-dur svg {
+  vertical-align: middle;
+  margin-left: 2px;
+}
+
+/* Scrollable body */
+.tableBody {
+  max-height: 520px;
+  overflow-y: auto;
+  padding: 0 20px 16px 20px;
+  scrollbar-width: thin;
+}
+.tableBody::-webkit-scrollbar {
+  width: 8px;
+}
+.tableBody::-webkit-scrollbar-track {
+  background: #f3d6e6;
+  border-radius: 10px;
+}
+.tableBody::-webkit-scrollbar-thumb {
+  background: #a86793;
+  border-radius: 10px;
+}
+.tableBody::-webkit-scrollbar-thumb:hover {
+  background: #8a4f77;
+}
+
+/* === Album rows === */
+.albumRow {
+  display: grid;
+  grid-template-columns: 60px 44px 1fr 100px;
+  align-items: center;
+  gap: 1rem;
+  margin: 10px 0;
+  padding: 12px 20px;
+  border: 3px solid #6e4760;
+  border-radius: 28px;
+  box-shadow: 0 4px 0 #6e4760;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+  color: #782355;
+  cursor: pointer;
+}
+
+/* Alternating row colors */
+.tableBody > .albumRow:nth-child(odd) {
+  background: rgba(173, 125, 155, 0.35);
+}
+.tableBody > .albumRow:nth-child(even) {
+  background: rgba(173, 125, 155, 0.1);
+}
+
+/* Hover effect */
+.tableBody > .albumRow:hover {
+  background: rgba(173, 125, 155, 0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #6e4760;
+}
+
+/* Column styles */
+.col-num {
+  text-align: center;
+  font-weight: 600;
+}
+
+/* NEW: Column for cover art */
+.col-cover {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* UPDATED: Removed flex properties */
+.col-title {
+  min-width: 0;
+  text-align: left;
+}
+
+.trackCover {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 2px solid #895674;
+  flex-shrink: 0;
+}
+
+.songTitle {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #782355;
+  font-size: 16px;
+  flex: 1;
+  min-width: 0;
+}
+
+.col-duration {
+  text-align: right;
+  color: #782355;
+  font-weight: 600;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.noTracks {
+  text-align: center;
+  padding: 40px 20px;
+  color: #782355;
+  font-size: 16px;
+}
+
+/* === Responsive adjustments === */
+@media (max-width: 1200px) {
+  .albumTableHeader,
+  .albumRow {
+    grid-template-columns: 50px 44px 1fr 90px;
+    gap: 0.75rem;
+    padding: 10px 16px;
+  }
+}
+
+@media (max-width: 900px) {
+  .albumTableHeader,
+  .albumRow {
+    grid-template-columns: 45px 44px 1fr 80px;
+    gap: 0.6rem;
+    padding: 8px 14px;
+  }
+}
+
+/* Match both boxes visually */
+.albumCard.headerCard,
+.albumCard.listCard {
+  width: min(96%, 1250px) !important;
+  max-width: 1250px !important;
+  margin: 0 auto !important;
+}
