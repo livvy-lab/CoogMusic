@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { API_BASE_URL } from "../../config/api";
 import "./SongUploadModal.css";
 
+
+
 export default function SongUploadModal({ 
   onSuccess, 
   onClose, 
@@ -15,7 +17,11 @@ export default function SongUploadModal({
   const [availableGenres, setAvailableGenres] = useState([]);
   const [selectedGenres, setSelectedGenres] = useState([]);
 
+
+
   const SUPPORTED_FILES = ".mp3, .wav, .aac, .ogg, .flac";
+
+
 
   useEffect(() => {
     fetch(`${API_BASE_URL}/genres`)
@@ -23,12 +29,16 @@ export default function SongUploadModal({
       .then(data => setAvailableGenres(Array.isArray(data) ? data : []));
   }, []);
 
+
+
   const handleAudioChange = e => {
     const file = e.target.files[0];
     setAudioFile(file || null);
     setAudioName(file ? file.name : "");
     setError(""); // clear error on file change
   };
+
+
 
   const toggleGenre = (genreId) => {
     setSelectedGenres((prev) =>
@@ -38,6 +48,8 @@ export default function SongUploadModal({
     );
     setError(""); // clear error on genre select
   };
+
+
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -58,8 +70,12 @@ export default function SongUploadModal({
     
   };
 
+
+
   // Combine internal validation error with external network error
   const displayError = error || errorMsg;
+
+
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -102,7 +118,7 @@ export default function SongUploadModal({
                     id="audio-file"
                     style={{ display: "none" }}
                     onChange={handleAudioChange}
-                    accept={SUPPORTED_FILES.split(", ").map(f => `audio/${f.replace(".", "")}`).join(",")}
+                    accept="audio/*"
                     disabled={isSubmitting} // Use prop
                   />
                 </div>

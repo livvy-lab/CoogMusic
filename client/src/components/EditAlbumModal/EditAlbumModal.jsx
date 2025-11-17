@@ -3,7 +3,6 @@ import SongUploadModal from "../ArtistUpload/SongUploadModal";
 import { API_BASE_URL } from "../../config/api";
 import "./EditAlbumModal.css";
 
-
 export default function EditAlbumModal({
   isOpen,
   onClose,
@@ -22,7 +21,7 @@ export default function EditAlbumModal({
   const [showSongModal, setShowSongModal] = useState(false);
   const [songUploadError, setSongUploadError] = useState("");
   const [isUploadingSong, setIsUploadingSong] = useState(false);
-
+  const [albumCoverMediaId, setAlbumCoverMediaId] = useState(null);
 
   useEffect(() => {
     if (isOpen && album) {
@@ -31,6 +30,7 @@ export default function EditAlbumModal({
       setCoverFile(null);
       setError("");
       setToRemove([]);
+      setAlbumCoverMediaId(album.cover_media_id || null);
       if (album.cover_media_id) {
         loadCoverPreview(album.cover_media_id);
       } else {
@@ -40,7 +40,6 @@ export default function EditAlbumModal({
       fetchAllSongs();
     }
   }, [isOpen, album]);
-
 
   const fetchAlbumTracks = () => {
     fetch(`${API_BASE_URL}/albums/${album.AlbumID}/tracks`)
@@ -61,7 +60,6 @@ export default function EditAlbumModal({
       .catch(() => setAllSongs([]));
   };
 
-
   const loadCoverPreview = async (mediaId) => {
     try {
       const res = await fetch(`${API_BASE_URL}/media/${mediaId}`);
@@ -70,7 +68,6 @@ export default function EditAlbumModal({
       if (data.url) setCoverPreview(data.url);
     } catch { setCoverPreview(null); }
   };
-
 
   const handleCoverChange = (e) => {
     const file = e.target.files?.[0];
@@ -85,7 +82,6 @@ export default function EditAlbumModal({
     }
   };
 
-
   const toggleRemoveTrack = (songId) => {
     setToRemove(prev =>
       prev.includes(songId)
@@ -94,7 +90,6 @@ export default function EditAlbumModal({
     );
   };
 
-
   const addTrack = (songId, songObj = null) => {
     setTracks(prev => prev.includes(songId) ? prev : [...prev, songId]);
     setToRemove(prev => prev.filter(id => id !== songId));
@@ -102,10 +97,8 @@ export default function EditAlbumModal({
       prev.find(s => String(s.SongID) === String(songId)) ? prev : [...prev, songObj]);
   };
 
-
   const getFinalTracks = () =>
     tracks.filter(songId => !toRemove.includes(songId));
-
 
   const handleSongUpload = async ({ title, audioFile, genreIds }) => {
     setSongUploadError("");
@@ -115,7 +108,6 @@ export default function EditAlbumModal({
       if (!audioFile) throw new Error("Audio file required.");
       if (!genreIds || !genreIds.length) throw new Error("Choose a genre.");
 
-      // Upload audio
       const audioForm = new FormData();
       audioForm.append("audio", audioFile);
       audioForm.append("type", "song_audio");
@@ -123,7 +115,19 @@ export default function EditAlbumModal({
       if (!audioRes.ok) throw new Error("Audio upload failed");
       const audioData = await audioRes.json();
 
-      // Create the Song: Send GenreIDs as an array (matching backend expectations)
+      let newCoverMediaId = albumCoverMediaId;
+      if (coverFile) {
+        const form = new FormData();
+        form.append("image", coverFile);
+        form.append("type", "album_cover");
+        const coverRes = await fetch(`${API_BASE_URL}/media`, {
+          method: "POST", body: form,
+        });
+        if (!coverRes.ok) throw new Error("Failed to upload cover image");
+        const data = await coverRes.json();
+        newCoverMediaId = data.mediaId || null;
+      }
+
       const songRes = await fetch(`${API_BASE_URL}/songs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,13 +135,13 @@ export default function EditAlbumModal({
           Title: title.trim(),
           ArtistID: album.artist_id || album.ArtistID,
           GenreIDs: genreIds,
-          audio_media_id: audioData.mediaId
+          audio_media_id: audioData.mediaId,
+          cover_media_id: newCoverMediaId
         })
       });
       if (!songRes.ok) throw new Error("Failed to create song");
       const songData = await songRes.json();
 
-      // Add to album's tracks
       addTrack(songData.SongID, songData);
       setShowSongModal(false);
       setSongUploadError("");
@@ -148,12 +152,10 @@ export default function EditAlbumModal({
     }
   };
 
-
   const handleSongModalClose = () => {
     setShowSongModal(false);
     setSongUploadError("");
   };
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -164,7 +166,7 @@ export default function EditAlbumModal({
       const patchData = {
         Title: title.trim(),
         Description: description,
-        cover_media_id: album.cover_media_id || null
+        cover_media_id: albumCoverMediaId
       };
       if (coverFile) {
         const form = new FormData();
@@ -179,6 +181,7 @@ export default function EditAlbumModal({
         }
         const data = await coverRes.json();
         patchData.cover_media_id = data.mediaId || null;
+        setAlbumCoverMediaId(data.mediaId || null);
       }
       const patchRes = await fetch(`${API_BASE_URL}/albums/${album.AlbumID}`, {
         method: "PATCH",
@@ -189,12 +192,16 @@ export default function EditAlbumModal({
         const err = await patchRes.json();
         throw new Error(err.error || "Failed to update album");
       }
+      const finalTracks = getFinalTracks().filter(songId =>
+        allSongs.some(song => song.SongID === songId && !song.IsDeleted)
+      );
       await fetch(`${API_BASE_URL}/albums/${album.AlbumID}/tracks`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ trackSongIds: getFinalTracks() }),
+        body: JSON.stringify({ trackSongIds: finalTracks }),
       });
-      onSuccess(); onClose();
+      onSuccess();
+      onClose();
     } catch (e) {
       setError(e.message || "Failed to update album.");
     } finally {
@@ -202,9 +209,7 @@ export default function EditAlbumModal({
     }
   };
 
-
   if (!isOpen || !album) return null;
-
 
   return (
     <>

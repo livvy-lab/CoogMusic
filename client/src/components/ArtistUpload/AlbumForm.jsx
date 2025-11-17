@@ -4,6 +4,8 @@ import { API_BASE_URL } from "../../config/api";
 import "./AlbumForm.css";
 import SongUploadModal from "./SongUploadModal";
 
+
+
 export default function AlbumForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -19,6 +21,8 @@ export default function AlbumForm() {
   const [availableGenres, setAvailableGenres] = useState([]);
   const [notification, setNotification] = useState({ type: "", message: "" });
 
+
+
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem("user") || "null");
@@ -26,6 +30,8 @@ export default function AlbumForm() {
       if (id) setFormData(data => ({ ...data, artistId: String(id) }));
     } catch {}
   }, []);
+
+
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -41,17 +47,29 @@ export default function AlbumForm() {
     fetchGenres();
   }, []);
 
+
+
   const handleCoverChange = (e) => {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
-    if (!selectedFile.type.startsWith("image/")) {
-      setNotification({ type: "error", message: "Please select an image file." });
+    
+    // handle undefined MIME type by checking both type and extension
+    const mimeType = selectedFile.type || "";
+    const filename = selectedFile.name.toLowerCase();
+    const validImageExtensions = [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".svg"];
+    const hasValidExtension = validImageExtensions.some(ext => filename.endsWith(ext));
+    
+    if (!mimeType.startsWith("image/") && !hasValidExtension) {
+      setNotification({ type: "error", message: "Please select a valid image file." });
       return;
     }
+    
     const url = URL.createObjectURL(selectedFile);
     setPreviewUrl(url);
     setCover(selectedFile);
   };
+
+
 
   const handleAddSong = (track) => {
     setTracks(tracks => [
@@ -61,18 +79,26 @@ export default function AlbumForm() {
     setShowSongUploadModal(false);
   };
 
+
+
   const handleRemoveSong = (tempId) => {
     setTracks(tracks.filter((t) => t.tempId !== tempId));
   };
+
+
 
   // Compute unique album genres as the set of all song genreIds
   const allAlbumGenres = useMemo(() => Array.from(
     new Set([].concat(...tracks.map(t => t.genreIds || [])))
   ), [tracks]);
 
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setNotification({ type: "", message: "" });
+
+
 
     // Custom validation checks
     if (!formData.title.trim()) {
@@ -90,6 +116,8 @@ export default function AlbumForm() {
     // All checks passed, start loading
     setLoading(true);
 
+
+
     try {
       let coverMediaId = null;
       if (cover) {
@@ -102,7 +130,10 @@ export default function AlbumForm() {
         if (!res.ok) throw new Error("Failed to upload cover image");
         const { mediaId } = await res.json();
         coverMediaId = mediaId;
+        console.log("Cover uploaded with mediaId:", coverMediaId);
       }
+
+
 
       // Step 1: Upload all songs
       const uploadedTracks = [];
@@ -113,20 +144,41 @@ export default function AlbumForm() {
         songFormData.append("artistId", formData.artistId);
         songFormData.append("audio", audioFile);
         songFormData.append("genres", JSON.stringify(genreIds));
+        
+        // include coverMediaId with each song
+        if (coverMediaId) {
+          songFormData.append("coverMediaId", coverMediaId);
+        }
+        
+        console.log(`Uploading song ${idx + 1}/${tracks.length}:`, title);
+        console.log("   - artistId:", formData.artistId);
+        console.log("   - audioFile:", audioFile?.name, audioFile?.type, audioFile?.size);
+        console.log("   - genreIds:", genreIds);
+        console.log("   - coverMediaId:", coverMediaId);
+        
         const songRes = await fetch(`${API_BASE_URL}/upload/song`, {
           method: "POST",
           body: songFormData,
         });
+
+        console.log(`Response status for song ${idx + 1}:`, songRes.status);
+        
         if (!songRes.ok) {
-          throw new Error(`Failed to upload song #${idx + 1}: ${title}`);
+          const errData = await songRes.json();
+          console.error(`Song ${idx + 1} error response:`, errData);
+          throw new Error(`Failed to upload song #${idx + 1}: ${title} - ${errData.error || songRes.statusText}`);
         }
+        
         const song = await songRes.json();
+        console.log(`Song ${idx + 1} uploaded:`, song);
         uploadedTracks.push({
           songId: song.songId,
           title,
           genreIds,
         });
       }
+
+
 
       const albumData = {
         title: formData.title,
@@ -140,16 +192,22 @@ export default function AlbumForm() {
         })),
       };
 
+
+
       const uploadRes = await fetch(`${API_BASE_URL}/albums`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(albumData),
       });
 
+
+
       if (!uploadRes.ok) {
         const err = await uploadRes.json();
         throw new Error(err.error || "Failed to create album");
       }
+
+
 
       const { albumId } = await uploadRes.json();
       navigate(`/albums/${albumId}`);
@@ -160,6 +218,8 @@ export default function AlbumForm() {
       setLoading(false);
     }
   };
+
+
 
   return (
     <>

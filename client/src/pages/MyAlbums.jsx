@@ -7,6 +7,7 @@ import { getUser } from "../lib/userStorage";
 import EditAlbumModal from "../components/EditAlbumModal/EditAlbumModal";
 import DeleteAlbumConfirmModal from "../components/DeleteConfirmModal/DeleteAlbumModal";
 
+
 export default function MyAlbums() {
   const [albums, setAlbums] = useState([]);
   const [artistInfo, setArtistInfo] = useState({ id: null, name: "You" });
@@ -17,6 +18,7 @@ export default function MyAlbums() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [selectedAlbum, setSelectedAlbum] = useState(null);
+
 
   useEffect(() => {
     try {
@@ -34,32 +36,36 @@ export default function MyAlbums() {
     }
   }, []);
 
+
+  const fetchAlbums = async (artistId) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE_URL}/artists/${artistId}/albums`);
+      if (!res.ok) throw new Error("Failed to fetch albums");
+      const data = await res.json();
+      const formatted = data.map((row) => ({
+        AlbumID: row.AlbumID,
+        title: row.Title || "Untitled",
+        description: row.Description || "",
+        artist_id: artistId,
+        releaseDate: row.ReleaseDate ? new Date(row.ReleaseDate) : null,
+        trackCount: row.TrackCount || 0,
+        cover_media_id: row.cover_media_id || null,
+      }));
+      setAlbums(formatted);
+    } catch (err) {
+      console.error("Failed to fetch albums:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   useEffect(() => {
     if (!artistInfo.id) return;
-    async function fetchAlbums() {
-      try {
-        setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/artists/${artistInfo.id}/albums`);
-        if (!res.ok) throw new Error("Failed to fetch albums");
-        const data = await res.json();
-        const formatted = data.map((row) => ({
-          AlbumID: row.AlbumID,
-          title: row.Title || "Untitled",
-          description: row.Description || "",
-          artist_id: artistInfo.id,
-          releaseDate: row.ReleaseDate ? new Date(row.ReleaseDate) : null,
-          trackCount: row.TrackCount || 0,
-          cover_media_id: row.cover_media_id || null,
-        }));
-        setAlbums(formatted);
-      } catch (err) {
-        // silent/error display
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchAlbums();
+    fetchAlbums(artistInfo.id);
   }, [artistInfo.id]);
+
 
   useEffect(() => {
     let alive = true;
@@ -91,6 +97,7 @@ export default function MyAlbums() {
     return () => { alive = false; };
   }, [albums, covers]);
 
+
   const filteredAlbums = useMemo(() => {
     if (!search) return albums;
     return albums.filter((a) =>
@@ -98,9 +105,11 @@ export default function MyAlbums() {
     );
   }, [albums, search]);
 
+
   const handleAlbumClick = (albumId) => {
     navigate(`/albums/${albumId}`);
   };
+
 
   const openEditModal = (album) => {
     setSelectedAlbum(album);
@@ -111,14 +120,13 @@ export default function MyAlbums() {
     setDeleteModalOpen(true);
   };
 
-  const handleEditAlbumSuccess = () => {
+
+  const handleEditAlbumSuccess = async () => {
     setEditModalOpen(false);
     setSelectedAlbum(null);
-    // Refresh albums
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    await fetchAlbums(artistInfo.id);
   };
+
 
   const handleDeleteAlbumConfirmed = async () => {
     try {
@@ -133,6 +141,7 @@ export default function MyAlbums() {
     }
   };
 
+
   if (loading && !albums.length) {
     return (
       <PageLayout>
@@ -142,6 +151,7 @@ export default function MyAlbums() {
       </PageLayout>
     );
   }
+
 
   return (
     <PageLayout>
