@@ -3,9 +3,8 @@ import db from "../db.js";
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms) - industry standard
+const STREAM_MS_THRESHOLD = 30000; // 30 seconds (30,000 ms)
 
-// S3 client (env vars must be set)
 const s3 = new S3Client({
   region: process.env.AWS_REGION,
   credentials: {
@@ -20,20 +19,27 @@ function json(res, status, body) {
 }
 
 export async function handleArtistProfileRoutes(req, res) {
-  const { pathname, searchParams } = new URL(req.url, `http://${req.headers.host}`);
+  const { pathname, searchParams } = new URL(
+    req.url,
+    `http://${req.headers.host}`
+  );
   const method = req.method;
 
   // CORS
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (method === "OPTIONS") { res.writeHead(204); res.end(); return; }
+  if (method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
 
   // MATCHERS
   const mProfile = pathname.match(/^\/artists\/(\d+)\/profile$/);
-  const mAbout   = pathname.match(/^\/artists\/(\d+)\/about$/);
-  const mTop     = pathname.match(/^\/artists\/(\d+)\/top-tracks$/);
-  const mDiscog  = pathname.match(/^\/artists\/(\d+)\/discography$/);
+  const mAbout = pathname.match(/^\/artists\/(\d+)\/about$/);
+  const mTop = pathname.match(/^\/artists\/(\d+)\/top-tracks$/);
+  const mDiscog = pathname.match(/^\/artists\/(\d+)\/discography$/);
 
   try {
     // ------------------------------------------------------------
@@ -42,18 +48,18 @@ export async function handleArtistProfileRoutes(req, res) {
     if (method === "GET" && mProfile) {
       const artistId = mProfile[1];
 
-      // Pull artist + media join + counts
       const [[row]] = await db.query(
         `
         SELECT
           a.ArtistID,
           a.ArtistName,
           COALESCE(a.Bio,'') AS Bio,
-          a.PFP,                         -- legacy/fallback URL
+          a.PFP,
           a.image_media_id,
+          a.IsVerified,
           m.bucket AS mediaBucket,
           m.s3_key AS mediaKey,
-          COALESCE(m.url, a.PFP) AS pfpUrl, -- canonical public URL if stored
+          COALESCE(m.url, a.PFP) AS pfpUrl,
           COALESCE(songs.SongCount, 0)       AS SongCount,
           COALESCE(follows.FollowerCount, 0) AS FollowerCount
         FROM Artist a
@@ -79,28 +85,28 @@ export async function handleArtistProfileRoutes(req, res) {
 
       if (!row) return json(res, 404, { error: "Artist not found" });
 
-      // If we have a bucket/key, issue a short-lived signed URL (works with private buckets)
       let pfpSignedUrl = null;
       if (row.mediaBucket && row.mediaKey) {
         pfpSignedUrl = await getSignedUrl(
           s3,
           new GetObjectCommand({ Bucket: row.mediaBucket, Key: row.mediaKey }),
-          { expiresIn: 3600 } // 1 hour
+          { expiresIn: 3600 }
         );
       }
+
+      const isVerified = Number(row.IsVerified ?? 0);
 
       return json(res, 200, {
         ArtistID: row.ArtistID,
         ArtistName: row.ArtistName,
         Bio: row.Bio || "",
-        // keep all three for maximum front-end compatibility
-        PFP: row.PFP || null,               // legacy field
+        PFP: row.PFP || null,
         pfpUrl: row.pfpUrl || row.PFP || null,
-        pfpSignedUrl,                       // preferred when present
+        pfpSignedUrl,
         image_media_id: row.image_media_id,
         SongCount: Number(row.SongCount) || 0,
         FollowerCount: Number(row.FollowerCount) || 0,
-        // nested shape some components use
+        IsVerified: isVerified,
         artist: {
           artistId: row.ArtistID,
           artistName: row.ArtistName,
@@ -109,6 +115,7 @@ export async function handleArtistProfileRoutes(req, res) {
           imageMediaId: row.image_media_id,
           pfp: row.pfpUrl || row.PFP || null,
           pfpSignedUrl,
+          isVerified,
         },
       });
     }
@@ -125,7 +132,8 @@ export async function handleArtistProfileRoutes(req, res) {
           a.ArtistID,
           a.ArtistName,
           COALESCE(a.Bio,'') AS Bio,
-          COALESCE(m.url, a.PFP) AS pfpUrl
+          COALESCE(m.url, a.PFP) AS pfpUrl,
+          a.IsVerified
         FROM Artist a
         LEFT JOIN Media m ON m.MediaID = a.image_media_id
         WHERE COALESCE(a.IsDeleted,0)=0 AND a.ArtistID = ?
@@ -135,6 +143,8 @@ export async function handleArtistProfileRoutes(req, res) {
 
       if (!row) return json(res, 404, { error: "Artist not found" });
 
+      const isVerified = Number(row.IsVerified ?? 0);
+
       return json(res, 200, {
         ArtistID: row.ArtistID,
         ArtistName: row.ArtistName,
@@ -142,6 +152,7 @@ export async function handleArtistProfileRoutes(req, res) {
         HasBio: row.Bio.trim().length > 0,
         PFP: row.pfpUrl || null,
         pfpUrl: row.pfpUrl || null,
+        IsVerified: isVerified,
       });
     }
 
@@ -150,7 +161,10 @@ export async function handleArtistProfileRoutes(req, res) {
     // ------------------------------------------------------------
     if (method === "GET" && mTop) {
       const artistId = Number(mTop[1]);
-      const limit = Math.max(1, Math.min(50, Number(searchParams.get("limit")) || 10));
+      const limit = Math.max(
+        1,
+        Math.min(50, Number(searchParams.get("limit")) || 10)
+      );
 
       const [rows] = await db.query(
         `
@@ -181,7 +195,6 @@ export async function handleArtistProfileRoutes(req, res) {
         [STREAM_MS_THRESHOLD, artistId, limit]
       );
 
-      // Generate signed URLs for cover images
       const tracksWithCovers = await Promise.all(
         rows.map(async (r) => {
           let coverUrl = null;
@@ -189,7 +202,10 @@ export async function handleArtistProfileRoutes(req, res) {
             try {
               coverUrl = await getSignedUrl(
                 s3,
-                new GetObjectCommand({ Bucket: r.CoverBucket, Key: r.CoverS3Key }),
+                new GetObjectCommand({
+                  Bucket: r.CoverBucket,
+                  Key: r.CoverS3Key,
+                }),
                 { expiresIn: 3600 }
               );
             } catch (err) {
@@ -219,14 +235,11 @@ export async function handleArtistProfileRoutes(req, res) {
     }
 
     // ------------------------------------------------------------
-    // GET /artists/:id/discography   (NO aa.IsDeleted references)
+    // GET /artists/:id/discography
     // ------------------------------------------------------------
     if (method === "GET" && mDiscog) {
       const artistId = Number(mDiscog[1]);
 
-      // Albums the artist is on:
-      // - either explicitly via Album_Artist
-      // - or implicitly because a track on the album has Song_Artist mapping
       const [albums] = await db.query(
         `
         SELECT
@@ -256,12 +269,13 @@ export async function handleArtistProfileRoutes(req, res) {
             )
           )
         GROUP BY al.AlbumID, al.Title, al.ReleaseDate
-        ORDER BY (al.ReleaseDate IS NULL) ASC, al.ReleaseDate DESC, al.AlbumID DESC
+        ORDER BY (al.ReleaseDate IS NULL) ASC,
+                 al.ReleaseDate DESC,
+                 al.AlbumID DESC
         `,
         [artistId, artistId]
       );
 
-      // Singles = artist songs not on any album
       const [singles] = await db.query(
         `
         SELECT
@@ -279,20 +293,22 @@ export async function handleArtistProfileRoutes(req, res) {
         WHERE COALESCE(s.IsDeleted,0)=0
           AND atx.SongID IS NULL
         GROUP BY s.SongID, s.Title, s.ReleaseDate, s.DurationSeconds
-        ORDER BY (s.ReleaseDate IS NULL) ASC, s.ReleaseDate DESC, s.SongID DESC
+        ORDER BY (s.ReleaseDate IS NULL) ASC,
+                 s.ReleaseDate DESC,
+                 s.SongID DESC
         `,
         [artistId]
       );
 
       return json(res, 200, {
         ArtistID: artistId,
-        albums: albums.map(a => ({
+        albums: albums.map((a) => ({
           AlbumID: a.AlbumID,
           Title: a.Title,
           ReleaseDate: a.ReleaseDate,
           TrackCount: Number(a.TrackCount) || 0,
         })),
-        singles: singles.map(s => ({
+        singles: singles.map((s) => ({
           SongID: s.SongID,
           Title: s.Title,
           ReleaseDate: s.ReleaseDate,
@@ -301,7 +317,6 @@ export async function handleArtistProfileRoutes(req, res) {
       });
     }
 
-    // no match
     return json(res, 404, { error: "Route not found" });
   } catch (err) {
     console.error("artist_profile route error:", err);

@@ -53,6 +53,22 @@
   margin-bottom: 8px;
 }
 
+/* name + verified badge side-by-side */
+.artistCard__nameRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;              /* space between name and badge */
+}
+
+/* verified badge next to the name */
+.artistCard__verifiedBadge {
+  position: static;       /* override any old absolute positioning */
+  width: 70px;            /* tweak size to taste */
+  height: auto;
+  flex-shrink: 0;         /* don't let it squish on small screens */
+}
+
+
 .artistCard__name {
   margin: 0;
   font-size: clamp(50px, 5vw, 64px);

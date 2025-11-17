@@ -51,48 +51,83 @@ export default function JamCard({ listenerId }) {
     else playSong(song);
   }
 
-  const title = "Current Jam";
   const [coverUrl, setCoverUrl] = useState(FALLBACK_COVER);
 
   useEffect(() => {
     let cancelled = false;
+
     async function resolveCover() {
       if (!song) {
         setCoverUrl(FALLBACK_COVER);
         return;
       }
-      const explicit = song?.CoverURL || song?.CoverUrl || song?.coverUrl || song?.ArtworkURL || song?.ArtworkUrl || song?.ImageURL || song?.ImageUrl || song?.cover || null;
+
+      const explicit =
+        song?.CoverURL ||
+        song?.CoverUrl ||
+        song?.coverUrl ||
+        song?.ArtworkURL ||
+        song?.ArtworkUrl ||
+        song?.ImageURL ||
+        song?.ImageUrl ||
+        song?.cover ||
+        null;
+
       if (explicit) {
         setCoverUrl(explicit);
         return;
       }
-      const mediaId = song?.cover_media_id || song?.coverMediaId || song?.coverMediaID || song?.coverMedia || song?.coverMediaId || song?.coverId || song?.coverId;
+
+      const mediaId =
+        song?.cover_media_id ||
+        song?.coverMediaId ||
+        song?.coverMediaID ||
+        song?.coverMedia ||
+        song?.coverId ||
+        null;
+
       if (mediaId) {
         try {
-          const r = await fetch(`${API_BASE_URL}/media/${mediaId}`);
+          const r = await fetch(`${API_BASE}/media/${mediaId}`);
           if (r.ok) {
             const j = await r.json();
-            if (!cancelled && j?.url) { setCoverUrl(j.url); return; }
+            if (!cancelled && j?.url) {
+              setCoverUrl(j.url);
+              return;
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore
+        }
       }
+
       const sid = song?.SongID || song?.songId || song?.SongId;
       if (sid) {
         try {
-          const r = await fetch(`${API_BASE_URL}/songs/${sid}/stream`);
+          const r = await fetch(`${API_BASE}/songs/${sid}/stream`);
           if (r.ok) {
             const j = await r.json();
             const c = j?.coverUrl || j?.CoverURL || j?.Cover || null;
-            if (!cancelled && c) { setCoverUrl(c); return; }
+            if (!cancelled && c) {
+              setCoverUrl(c);
+              return;
+            }
           }
-        } catch (e) {}
+        } catch (e) {
+          // ignore
+        }
       }
+
       if (!cancelled) setCoverUrl(FALLBACK_COVER);
     }
 
     resolveCover();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [song]);
+
+  const title = "Current Jam";
 
   const track = loading
     ? "Loading…"
@@ -101,15 +136,21 @@ export default function JamCard({ listenerId }) {
     : song
     ? song.Title || "Untitled"
     : "None pinned yet";
-  const artist = loading
+
+  const artistLabel = loading
     ? ""
     : error
     ? error
     : song
-    ? song.Artists || "Unknown Artist"
+    ? song.Artists || song.ArtistName || "Unknown Artist"
     : "Pin a song to show it here!";
 
-
+  // derive artist id from the song (if available)
+  const artistIdFromSong =
+    song?.ArtistID ??
+    song?.artistId ??
+    song?.Artist?.ArtistID ??
+    null;
 
   return (
     <aside className="jam">
@@ -118,17 +159,17 @@ export default function JamCard({ listenerId }) {
       </div>
 
       <div className="jam__artWrap">
-          <img src={coverUrl} alt={`${track} cover`} className="jam__cover" />
+        <img src={coverUrl} alt={`${track} cover`} className="jam__cover" />
       </div>
 
       <div className="jam__meta">
         <div className="jam__song">{track}</div>
-        
+
         <div className="jam__artist">
-          {artistId != null && !loading && !error ? (
-            <Link to={`/artist/${artistId}`}>{artistName}</Link>
+          {artistIdFromSong != null && !loading && !error ? (
+            <Link to={`/artists/${artistIdFromSong}`}>{artistLabel}</Link>
           ) : (
-            <span>{artistName}</span>
+            <span>{artistLabel}</span>
           )}
         </div>
       </div>
@@ -141,12 +182,26 @@ export default function JamCard({ listenerId }) {
           disabled={!song || !!error || loading}
         >
           {isShowingPause ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <svg
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
               <rect x="5" y="4" width="4" height="16" fill="currentColor" />
               <rect x="15" y="4" width="4" height="16" fill="currentColor" />
             </svg>
           ) : (
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden
+            >
               <path d="M5 3v18l15-9L5 3z" fill="currentColor" />
             </svg>
           )}

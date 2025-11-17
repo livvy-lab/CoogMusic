@@ -67,6 +67,7 @@ export default function Discography({ artistId: artistIdProp }) {
             releaseDate: r.ReleaseDate,
             trackCount: r.TrackCount,
             coverMediaId: r.cover_media_id || r.CoverMediaID,
+            plays: r.Plays ?? r.plays ?? 0, // FIX: ensure plays always exists
           }))
           .sort((a, b) => {
             const da = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
@@ -121,9 +122,7 @@ export default function Discography({ artistId: artistIdProp }) {
       if (!alive) return;
       setCovers(prev => {
         const next = { ...prev };
-        for (const [id, url] of results) {
-          next[id] = url;
-        }
+        for (const [id, url] of results) next[id] = url;
         return next;
       });
     })();
@@ -134,7 +133,6 @@ export default function Discography({ artistId: artistIdProp }) {
     if (!release.songId) return;
     
     try {
-      // Fetch full song details to play
       const res = await fetch(`${API_BASE_URL}/songs/${release.songId}`);
       if (!res.ok) return;
       const song = await res.json();
@@ -156,23 +154,39 @@ export default function Discography({ artistId: artistIdProp }) {
     if (error) return <div className="nr__empty">⚠️ {error}</div>;
     if (!releases.length) return <div className="nr__empty">🎵 No releases yet 🎵</div>;
 
-    // Clicking discography cards should do nothing by design (no routing/play)
-    // This disables the previous behavior where clicking a card would play or navigate.
     return releases.map((r) => {
-      const coverUrl = r.coverMediaId && covers[r.coverMediaId] 
-        ? covers[r.coverMediaId] 
-        : "https://placehold.co/300x300/FFE8F5/895674?text=Album";
-      
+      const coverUrl =
+        r.coverMediaId && covers[r.coverMediaId]
+          ? covers[r.coverMediaId]
+          : "https://placehold.co/300x300/FFE8F5/895674?text=Album";
+
+      const trackLabel =
+        typeof r.trackCount === "number" && r.trackCount > 0
+          ? `${r.trackCount} ${r.trackCount === 1 ? "track" : "tracks"}`
+          : (() => {
+              const plays = typeof r.plays === "number" ? r.plays : 0;
+              return `${plays.toLocaleString()} ${plays === 1 ? "play" : "plays"}`;
+            })();
+
       return (
         <div 
           key={r.id} 
           className="nr__card"
-          // intentionally no onClick: card clicks are inert now
           style={{ cursor: 'default' }}
         >
           <div className="nr__img">
-            <img src={coverUrl} alt={r.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
+            <img 
+              src={coverUrl}
+              alt={r.title}
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: '12px'
+              }}
+            />
           </div>
+
           <p className="nr__caption">
             {r.title}
             <br />
@@ -180,11 +194,7 @@ export default function Discography({ artistId: artistIdProp }) {
               {r.releaseDate ? new Date(r.releaseDate).getFullYear() : "—"}
             </span>
             {" · "}
-            <span className="nr__tracks">
-              {r.trackCount
-                ? `${r.trackCount} ${r.trackCount === 1 ? "track" : "tracks"}`
-                : `${r.plays.toLocaleString()} ${r.plays === 1 ? "play" : "plays"}`}
-            </span>
+            <span className="nr__tracks">{trackLabel}</span>
           </p>
         </div>
       );

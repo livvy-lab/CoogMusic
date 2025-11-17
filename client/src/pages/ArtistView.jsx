@@ -23,8 +23,6 @@ export default function ArtistView() {
           <TopTracks artistId={isValid ? artistId : undefined} />
           <AboutBox  artistId={isValid ? artistId : undefined} />
         </div>
-
-        <Discography artistId={isValid ? artistId : undefined} />
         <AlbumGrid artistId={isValid ? artistId : undefined} />
       </div>
     </PageLayout>
