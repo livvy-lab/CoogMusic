@@ -22,6 +22,7 @@ import { handleSongArtistRoutes } from "./routes/song_artist.js";
 import { handleSongGenreRoutes } from "./routes/song_genre.js";
 import { handleSubscriptionRoutes } from "./routes/subscription.js";
 import { handlePremiumRoutes } from "./routes/premium.js";
+import { handleNotificationRoutes } from "./routes/notifications.js";
 import { handleUserReportsRoutes } from "./routes/user_reports.js";
 import { handleAlbumArtistRoutes } from "./routes/album_artist.js";
 import { handleAlbumGenreRoutes } from "./routes/album_genre.js";

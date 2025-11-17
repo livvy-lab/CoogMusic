@@ -1,6 +1,7 @@
 import NavigationBar from "../NavigationBar/NavigationBar";
 import recordImg from "../../assets/figmaRecord.svg";
 import SearchBar from "../SearchBar/SearchBar";
+import NotificationBell from "../NotificationBell/NotificationBell";
 import "./PageLayout.css";
 
 export default function PageLayout({ children }) {
@@ -20,6 +21,7 @@ export default function PageLayout({ children }) {
       <main className="pageMain">
         <div className="pageHeader">
           <SearchBar />
+          <NotificationBell />
         </div>
 
         <div className="pageContent">{children}</div>
