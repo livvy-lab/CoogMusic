@@ -159,6 +159,8 @@ export default function Discography({ artistId: artistIdProp }) {
     if (error) return <div className="nr__empty">⚠️ {error}</div>;
     if (!releases.length) return <div className="nr__empty">🎵 No releases yet 🎵</div>;
 
+    // Clicking discography cards should do nothing by design (no routing/play)
+    // This disables the previous behavior where clicking a card would play or navigate.
     return releases.map((r) => {
       const coverUrl = r.coverMediaId && covers[r.coverMediaId] 
         ? covers[r.coverMediaId] 
@@ -168,8 +170,8 @@ export default function Discography({ artistId: artistIdProp }) {
         <div 
           key={r.id} 
           className="nr__card"
-          onClick={() => handlePlaySong(r)}
-          style={{ cursor: r.songId ? 'pointer' : 'default' }}
+          // intentionally no onClick: card clicks are inert now
+          style={{ cursor: 'default' }}
         >
           <div className="nr__img">
             <img src={coverUrl} alt={r.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />

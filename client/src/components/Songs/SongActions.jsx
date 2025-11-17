@@ -51,11 +51,8 @@ export default function SongActions({ songId, songTitle, size = "sm" }) {
         onClick={(e) => {
           e.stopPropagation();
           if (hasValidId) {
-            const wasPinned = pin; // check the state *before* toggling
+            // togglePin will handle server update and dispatch a toast on success/failure
             togglePin(sid);
-            if (!wasPinned) {
-              alert("This song has been pinned to your profile");
-            }
           }
         }}
         title={hasValidId ? (pin ? "Unpin song" : "Pin song") : "Unavailable"}
