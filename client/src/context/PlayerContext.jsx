@@ -36,6 +36,10 @@ export function PlayerProvider({ children }) {
 
   // subscription + ad state
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [subscriptionError, setSubscriptionError] = useState(null);
+  const isSubscribedRef = useRef(false);
+  
   const [songsSinceAd, setSongsSinceAd] = useState(0);
   const [isPlayingAd, setIsPlayingAd] = useState(false);
   const [pendingSongAfterAd, setPendingSongAfterAd] = useState(null);
@@ -50,28 +54,58 @@ export function PlayerProvider({ children }) {
   const currentAdIndexRef = useRef(0);
   const adPoolFetchTimeRef = useRef(0);
 
-  // check subscription once
+// check subscription status
   useEffect(() => {
     const listenerId = getListenerId();
+    console.log("=== SUBSCRIPTION CHECK START ===");
+    
     if (!listenerId) {
+      console.log("No listener ID found");
       setIsSubscribed(false);
+      isSubscribedRef.current = false;
+      setSubscriptionLoading(false);
       return;
     }
 
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(
-          `${API_BASE_URL}/listeners/${listenerId}/subscription_status`
-        );
-        if (!res.ok) throw new Error("subscription-status-failed");
+        // CRITICAL CHANGE: Point to the subscriptions endpoint, not listeners
+        const url = `${API_BASE_URL}/subscriptions/status/${listenerId}`;
+        console.log("Fetching:", url);
+        
+        const res = await fetch(url);
+        
+        if (res.status === 404) {
+           console.log("Status 404: No active subscription.");
+           if (!cancelled) {
+             setIsSubscribed(false);
+             isSubscribedRef.current = false;
+             setSubscriptionLoading(false);
+           }
+           return;
+        }
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
         const data = await res.json();
+        console.log("Subscription Data:", data);
+        
         if (!cancelled) {
-          setIsSubscribed(!!data.isSubscribed);
+          const subscribed = !!data.isSubscribed;
+          setIsSubscribed(subscribed);
+          isSubscribedRef.current = subscribed;
+          setSubscriptionLoading(false);
+          console.log("✅ Final Status:", subscribed);
         }
       } catch (err) {
-        console.error("Error checking subscription status", err);
-        if (!cancelled) setIsSubscribed(false);
+        console.error("Error:", err);
+        if (!cancelled) {
+          setIsSubscribed(false);
+          isSubscribedRef.current = false;
+          setSubscriptionError(err.message);
+          setSubscriptionLoading(false);
+        }
       }
     })();
 
@@ -401,30 +435,38 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // main public playSong with ad logic
+  // main public playSong with ad logic - USE REF FOR IMMEDIATE ACCESS
   async function playSong(song) {
     if (!song) return;
 
-    console.log("playSong() called with:", song);
-    console.log("isSubscribed:", isSubscribed);
-    console.log("isPlayingAd:", isPlayingAd);
+    console.log("=== playSong() CALLED ===");
+    console.log("Song:", song);
+    console.log("isSubscribedRef.current (immediate):", isSubscribedRef.current);
+    console.log("isSubscribed (state):", isSubscribed);
+    console.log("subscriptionLoading:", subscriptionLoading);
     console.log("songsSinceAd:", songsSinceAd);
 
-    if (isSubscribed) {
-      console.log("User is subscribed, skipping ad logic");
+    // Use the ref for immediate, accurate subscription status
+    if (isSubscribedRef.current) {
+      console.log("✅ USER IS SUBSCRIBED (from ref) - SKIPPING ALL AD LOGIC");
       await playSongInternal(song);
       setSongsSinceAd((c) => c + 1);
+      console.log("Played song for subscriber, incremented songsSinceAd");
       return;
     }
 
+    console.log("User is NOT subscribed, proceeding with ad logic");
+
+    // if an ad is already playing, just queue this song to play afterwards
     if (isPlayingAd) {
       console.log("Ad is already playing, queuing song for after ad");
       setPendingSongAfterAd(song);
       return;
     }
 
+    // hit threshold: play ad first, then this song
     if (songsSinceAd >= 3) {
-      console.log("Hit ad threshold (3 songs), triggering ad");
+      console.log("🎯 HIT AD THRESHOLD (3 songs), TRIGGERING AD");
       setPendingSongAfterAd(song);
       
       if (adPoolRef.current.length > 0) {
@@ -439,6 +481,7 @@ export function PlayerProvider({ children }) {
       return;
     }
 
+    // otherwise play song and increment counter
     console.log("Playing song normally, incrementing counter");
     await playSongInternal(song);
     setSongsSinceAd((c) => c + 1);
@@ -764,6 +807,8 @@ export function PlayerProvider({ children }) {
     currentAdIndexRef.current = 0;
     setCurrentAdIndex(0);
     setAdPoolLoading(true);
+    setIsSubscribed(false);
+    isSubscribedRef.current = false;
   }
 
   const value = useMemo(
