@@ -43,6 +43,8 @@ import { AchievementProvider } from "./context/AchievementContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 import Toasts from "./components/Toasts/Toasts";
 import ToggleBarButton from "./components/ToggleBarButton/ToggleBarButton";
+import AdminSongPerformance from "./pages/AdminSongPerformance";
+
 
 function AppContent() {
   const location = useLocation();
@@ -66,7 +68,8 @@ function AppContent() {
           {/* Admin Routes */}
           <Route path="report-review" element={<RequireAdmin><AdminReportReview /></RequireAdmin>} />
           <Route path="admin-home" element={<RequireAdmin><AdminHome /></RequireAdmin>} />
-          
+          <Route path="/admin/reports/songs" element={<AdminSongPerformance />} />
+
           {/* Listener routes */}
           <Route path="/profile" element={<ListenerProfile />} />
           <Route path="/home" element={<ListenerHome />} />
