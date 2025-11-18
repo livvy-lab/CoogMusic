@@ -46,6 +46,8 @@ import { handleAdminAnalyticsRoutes } from "./routes/admin_analytics.js";
 import { handleAchievements } from "./routes/achievements.js";
 import { handleSoftDeleteRoutes } from "./routes/soft_delete.js";
 import { handleRecentUsersRoutes } from "./routes/users_recent.js";
+import { handleAdminSongReport } from "./routes/admin_song_report.js";
+
 
 const PORT = process.env.PORT || 3001;
 
@@ -194,6 +196,10 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/search")) { 
       await handleSearchRoutes(req, res); 
       return; 
+    }
+
+    if (pathname === "/admin/song-report") {
+      return handleAdminSongReport(req, res);
     }
 
     // ───────────────────────────────────────────────
