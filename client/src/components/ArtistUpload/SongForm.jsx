@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import "./SongForm.css";
 import { API_BASE_URL } from "../../config/api";
+import { showToast } from '../../lib/toast';
 
 export default function SongForm() {
   const [file, setFile] = useState(null);
@@ -55,7 +56,7 @@ export default function SongForm() {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
     if (!selectedFile.type.startsWith("audio/")) {
-      alert("Please select an audio file");
+      showToast("Please select an audio file", 'error');
       return;
     }
     setFile(selectedFile);
@@ -67,7 +68,7 @@ export default function SongForm() {
     const selectedFile = e.target.files[0];
     if (!selectedFile) return;
     if (!selectedFile.type.startsWith("image/")) {
-      alert("Please select an image file");
+      showToast("Please select an image file", 'error');
       return;
     }
     const url = URL.createObjectURL(selectedFile);
@@ -94,19 +95,19 @@ export default function SongForm() {
     e.preventDefault();
     setSuccessMessage("");
     if (!file) {
-      alert("Please select an audio file");
+      showToast("Please select an audio file", 'error');
       return;
     }
     if (!formData.artistId) {
-      alert("Missing artist account. Please log in as an artist and try again.");
+      showToast("Missing artist account. Please log in as an artist and try again.", 'error');
       return;
     }
     if (!formData.title) {
-      alert("Please enter a title for the song.");
+      showToast("Please enter a title for the song.", 'error');
       return;
     }
     if (formData.genres.length === 0) {
-      alert("Please select at least one genre for the song.");
+      showToast("Please select at least one genre for the song.", 'error');
       return;
     }
     setLoading(true);
@@ -157,7 +158,7 @@ export default function SongForm() {
       resetForm();
     } catch (err) {
       console.error("Upload failed:", err);
-      alert(`Upload failed: ${err.message}`);
+      showToast(`Upload failed: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }

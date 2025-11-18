@@ -28,6 +28,8 @@ export function PlayerProvider({ children }) {
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.8);
+  const [songHistory, setSongHistory] = useState([]); // track previous songs
+  const [historyIndex, setHistoryIndex] = useState(-1); // current position in history
 
   const postedRef = useRef(false);
   const playThresholdMs = 30000; // 30 seconds
@@ -219,7 +221,8 @@ export function PlayerProvider({ children }) {
       if (!r.ok) throw new Error("No real stream found");
       const data = await r.json();
       postedRef.current = false;
-      setCurrent({
+      
+      const newSong = {
         SongID: data.songId,
         Title: data.title,
         ArtistName: data.artistName,
@@ -227,7 +230,21 @@ export function PlayerProvider({ children }) {
         mime: data.mime,
         CoverURL: data.coverUrl || null,
         isAd: false,
+      };
+      
+      setCurrent(newSong);
+      
+      // Add to song history when playing a new song
+      setSongHistory((prev) => {
+        // If we're navigating history and not at the end, truncate future history
+        if (historyIndex >= 0 && historyIndex < prev.length - 1) {
+          return [...prev.slice(0, historyIndex + 1), newSong];
+        }
+        // Otherwise append to history
+        return [...prev, newSong];
       });
+      setHistoryIndex((prev) => prev + 1);
+      
       const a = audioRef.current;
       if (a) {
         a.src = data.url;
@@ -236,7 +253,7 @@ export function PlayerProvider({ children }) {
       setPlaying(true);
     } catch (err) {
       // fallback if stream data fails
-      setCurrent({
+      const fallbackSong = {
         SongID: id,
         Title: song?.Title || "Demo Track",
         ArtistName: song?.ArtistName || "Unknown Artist",
@@ -244,7 +261,19 @@ export function PlayerProvider({ children }) {
         mime: "audio/mpeg",
         CoverURL: song?.CoverURL || null,
         isAd: false,
+      };
+      
+      setCurrent(fallbackSong);
+      
+      // Add to song history
+      setSongHistory((prev) => {
+        if (historyIndex >= 0 && historyIndex < prev.length - 1) {
+          return [...prev.slice(0, historyIndex + 1), fallbackSong];
+        }
+        return [...prev, fallbackSong];
       });
+      setHistoryIndex((prev) => prev + 1);
+      
       try {
         const a = audioRef.current;
         const fallbackUrl = song?.url;
@@ -465,7 +494,11 @@ export function PlayerProvider({ children }) {
 
   // play next track in queue (ad logic will run inside playSong)
   function next() {
-    if (!queue || queue.length === 0) return;
+    if (!queue || queue.length === 0) {
+      // No queue - fetch random song
+      playNext();
+      return;
+    }
     if (repeatMode === "one") {
       // manual next should break out of repeat-one
       setRepeatMode("all");
@@ -479,6 +512,10 @@ export function PlayerProvider({ children }) {
     } else if (repeatMode === "all" && queue.length > 0) {
       target = queue[0];
       setCurrentIndex(0);
+    } else {
+      // Reached end of queue - fetch random song
+      playNext();
+      return;
     }
 
     if (target) {
@@ -486,13 +523,52 @@ export function PlayerProvider({ children }) {
     }
   }
 
+  // fetch and play a random song
+  async function playNext() {
+    try {
+      const res = await fetch(`${API_BASE_URL}/songs`);
+      if (!res.ok) throw new Error("Failed to fetch songs");
+      const songs = await res.json();
+      
+      if (songs && songs.length > 0) {
+        // Pick a random song
+        const randomIndex = Math.floor(Math.random() * songs.length);
+        const randomSong = songs[randomIndex];
+        await playSong(randomSong);
+      }
+    } catch (err) {
+      console.error("Error fetching random song:", err);
+    }
+  }
+
   // play previous track or restart current
   function prev() {
     const a = audioRef.current;
+    // If more than 3 seconds into current song, restart it
     if (a && a.currentTime > 3) {
       seek(0);
       return;
     }
+    
+    // Try to go back in song history
+    if (songHistory.length > 0 && historyIndex > 0) {
+      const prevHistoryIndex = historyIndex - 1;
+      const prevSong = songHistory[prevHistoryIndex];
+      
+      setHistoryIndex(prevHistoryIndex);
+      setCurrent(prevSong);
+      postedRef.current = false;
+      
+      const audio = audioRef.current;
+      if (audio && prevSong.url) {
+        audio.src = prevSong.url;
+        audio.play().catch(() => {});
+        setPlaying(true);
+      }
+      return;
+    }
+    
+    // Fallback: use queue-based navigation if no history available
     if (!queue || queue.length === 0) return;
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0 && prevIndex < queue.length) {
@@ -571,6 +647,8 @@ export function PlayerProvider({ children }) {
     setRepeatMode("none");
     setDuration(0);
     setCurrentTime(0);
+    setSongHistory([]);
+    setHistoryIndex(-1);
     postedRef.current = false;
     setSongsSinceAd(0);
     setIsPlayingAd(false);
@@ -598,9 +676,12 @@ export function PlayerProvider({ children }) {
       songsSinceAd,
       adPool,
       currentAdIndex,
+      songHistory,
+      historyIndex,
       playSong,
       playList,
       playShuffled,
+      playNext,
       next,
       prev,
       toggle,
@@ -626,6 +707,8 @@ export function PlayerProvider({ children }) {
       songsSinceAd,
       adPool,
       currentAdIndex,
+      songHistory,
+      historyIndex,
     ]
   );
 

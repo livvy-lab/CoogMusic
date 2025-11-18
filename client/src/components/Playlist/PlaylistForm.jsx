@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { API_BASE_URL } from "../../config/api";
+import { showToast } from '../../lib/toast';
 
 export default function PlaylistForm({ onCreated }) {
   const [name, setName] = useState("");
@@ -23,7 +24,7 @@ const res = await fetch(`${API_BASE_URL}/playlists`, {
       onCreated?.(data);
       setName("");
       setImage("");
-      alert("✅ Playlist created!");
+      showToast("✅ Playlist created!", 'success');
     }
   }
 

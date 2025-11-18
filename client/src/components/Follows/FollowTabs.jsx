@@ -4,6 +4,7 @@ import UserRow from "./UserRow";
 import "./Follows.css";
 import { getUser } from "../../lib/userStorage";
 import { API_BASE_URL } from "../../config/api";
+import { showToast } from '../../lib/toast';
 
 export default function FollowTabs() {
   const { id: viewedUserIdParam } = useParams();
@@ -85,14 +86,14 @@ export default function FollowTabs() {
       if (!response.ok) {
         const error = await response.json();
         console.error("Follow failed:", error);
-        alert(error.error || "Failed to follow user");
+        showToast(error.error || "Failed to follow user", 'error');
         return;
       }
 
       await refetchData();
     } catch (error) {
       console.error("Error following user:", error);
-      alert("Failed to follow user");
+      showToast("Failed to follow user", 'error');
     }
   };
 
@@ -113,14 +114,14 @@ export default function FollowTabs() {
       if (!response.ok) {
         const error = await response.json();
         console.error("Unfollow failed:", error);
-        alert(error.error || "Failed to unfollow user");
+        showToast(error.error || "Failed to unfollow user", 'error');
         return;
       }
 
       await refetchData();
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      alert("Failed to unfollow user");
+      showToast("Failed to unfollow user", 'error');
     }
   };
 

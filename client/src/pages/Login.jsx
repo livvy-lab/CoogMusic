@@ -7,6 +7,7 @@ import { API_BASE_URL } from "../config/api";
 import FloatingCats from "../components/CoogIcon/FloatingCats"; 
 import ShowPasswordIcon from "../assets/show-password.svg";
 import HidePasswordIcon from "../assets/hide-password.svg";
+import { showToast } from '../lib/toast';
 
 export default function Login() {
   const [username, setUsername] = useState("");
@@ -45,11 +46,11 @@ export default function Login() {
           navigate("/home");
         }
       } else {
-        alert(`Log in failed: ${data.message}`);
+        showToast(`Log in failed: ${data.message}`, 'error');
       }
     } catch (err) {
       console.error("Error occured while trying to log in: ", err);
-      alert("Log in failed. Please try again.");
+      showToast("Log in failed. Please try again.", 'error');
     }
   };
 

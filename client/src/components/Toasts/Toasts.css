@@ -1,7 +1,7 @@
 .toastsContainer {
   position: fixed;
   right: 20px;
-  bottom: 20px;
+  top: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -16,7 +16,7 @@
   color: #fff;
   font-weight: 700;
   box-shadow: 0 6px 18px rgba(0,0,0,0.18);
-  transform-origin: right bottom;
+  transform-origin: right top;
   animation: toastIn 220ms ease;
 }
 

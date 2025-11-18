@@ -4,6 +4,7 @@ import { API_BASE_URL } from "../../config/api";
 import EditPlaylistCoverModal from "./EditPlaylistCoverModal";
 import DeleteConfirmModal from "../DeleteConfirmModal/DeleteConfirmModal";
 import { Trash2, Image as ImageIcon, Save } from "lucide-react";
+import { showToast } from '../../lib/toast';
 
 export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUpdated }) {
   const [open, setOpen] = useState(true);
@@ -112,7 +113,7 @@ export default function EditPlaylistModal({ playlist, tracks = [], onClose, onUp
                   onUpdated?.({ ...playlist, cover_media_id: null }, localTracks);
                   try { window.dispatchEvent(new CustomEvent('playlistCoverUpdated', { detail: { PlaylistID: playlist.PlaylistID, cover_media_id: null } })); } catch(e){}
                 } catch (e) {
-                  alert(e.message || 'Failed to remove cover');
+                  showToast(e.message || 'Failed to remove cover', 'error');
                 }
               })();
             }}><Trash2 size={14} />&nbsp;Remove cover</button>

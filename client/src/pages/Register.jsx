@@ -5,6 +5,7 @@ import Loading from "../components/LoadingLayout/Loading";
 import { API_BASE_URL } from "../config/api";
 import ShowPasswordIcon from "../assets/show-password.svg";
 import HidePasswordIcon from "../assets/hide-password.svg";
+import { showToast } from '../lib/toast';
 
 export default function Register() {
   const navigate = useNavigate();
@@ -59,14 +60,12 @@ export default function Register() {
       let regData = {};
       try { regData = JSON.parse(raw); } catch {}
 
-      if (!regRes.ok || !regData?.success) {
-        const msg = regData?.message || regData?.error || `HTTP ${regRes.status}`;
-        alert(`Sign up failed: ${msg}`);
-        setSubmitting(false);
-        return;
-      }
-
-      const accountTypeLower = String(regData.accountType || selectedAccountType).toLowerCase();
+      if (!regRes.ok || !regData?.success) {
+        const msg = regData?.message || regData?.error || `HTTP ${regRes.status}`;
+        showToast(`Sign up failed: ${msg}`, 'error');
+        setSubmitting(false);
+        return;
+      }      const accountTypeLower = String(regData.accountType || selectedAccountType).toLowerCase();
       const artistId = regData.ArtistID ?? regData.artistId ?? regData.id ?? null;
       const listenerId = regData.ListenerID ?? regData.listenerId ?? regData.id ?? null;
 
@@ -92,22 +91,20 @@ export default function Register() {
           const url = upData.url || upData.signedUrl;
           const curr = JSON.parse(localStorage.getItem("user") || "{}");
           localStorage.setItem("user", JSON.stringify({ ...curr, pfpUrl: url }));
-        }
-      }
+        }
+      }
 
-      if (accountTypeLower === "artist") {
-        navigate("/upload", { replace: true });
-      } else {
-        navigate("/login", { replace: true });
-      }
-    } catch (err) {
-      alert("Sign up failed. Please ensure the API is running and try again.");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const onCancel = () => navigate("/login");
+      if (accountTypeLower === "artist") {
+        navigate("/upload", { replace: true });
+      } else {
+        navigate("/login", { replace: true });
+      }
+    } catch (err) {
+      showToast("Sign up failed. Please ensure the API is running and try again.", 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };  const onCancel = () => navigate("/login");
 
   return (
     <Loading>
