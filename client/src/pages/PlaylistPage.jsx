@@ -8,39 +8,73 @@ import { usePlayer } from "../context/PlayerContext.jsx";
 import { API_BASE_URL } from "../config/api";
 import EditPlaylistModal from "../components/Playlist/EditPlaylistModal";
 
-
-
-
-
 export default function PlaylistPage() {
   const { id } = useParams(); // read playlist ID from URL
   const [tracks, setTracks] = useState([]);
   const [playlistInfo, setPlaylistInfo] = useState(null);
+  const [playlistOwner, setPlaylistOwner] = useState(""); // New state for the owner name
   const [coverUrl, setCoverUrl] = useState(null);
   const navigate = useNavigate();
   const { playList, playSong, playShuffled } = usePlayer();
   const [editing, setEditing] = useState(false);
 
-  // fetch playlist metadata
+  // fetch playlist metadata AND owner name
   async function fetchPlaylistInfo() {
-    const res = await fetch(`${API_BASE_URL}/playlists/${id}`);
-    if (res.ok) {
-      const data = await res.json();
-      setPlaylistInfo(data);
-      // resolve cover media id to a usable URL if present
-      if (data?.cover_media_id) {
-        try {
-          const m = await fetch(`${API_BASE_URL}/media/${data.cover_media_id}`);
-          if (m.ok) {
-            const mj = await m.json();
-            setCoverUrl(mj?.url || null);
-          }
-        } catch (e) {
-          // ignore
+    try {
+      const res = await fetch(`${API_BASE_URL}/playlists/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPlaylistInfo(data);
+
+        let ownerName = "Unknown Owner";
+        
+        if (data.ArtistID) {
+          // It's an artist playlist
+          try {
+            const ar = await fetch(`${API_BASE_URL}/artists/${data.ArtistID}`);
+            const ad = await ar.json();
+            ownerName = ad.ArtistName || ad.artistName || "Unknown Artist";
+          } catch (e) { console.error(e); }
+        } 
+        else if (data.ListenerID) {
+          // It's a listener playlist
+          try {
+            const lr = await fetch(`${API_BASE_URL}/listeners/${data.ListenerID}`);
+            const ld = await lr.json();
+            // Prioritize Username, then First+Last
+            const uName = ld.Username || ld.username;
+            const fName = ld.FirstName || ld.firstName;
+            const lName = ld.LastName || ld.lastName;
+            
+            if (uName) {
+              ownerName = uName;
+            } else if (fName || lName) {
+              ownerName = `${fName || ""} ${lName || ""}`.trim();
+            } else {
+              ownerName = `User ${data.ListenerID}`;
+            }
+          } catch (e) { console.error(e); }
         }
-      } else {
-        setCoverUrl(null);
+        setPlaylistOwner(ownerName);
+        // --- FIX END ---
+
+        // resolve cover media id to a usable URL if present
+        if (data?.cover_media_id) {
+          try {
+            const m = await fetch(`${API_BASE_URL}/media/${data.cover_media_id}`);
+            if (m.ok) {
+              const mj = await m.json();
+              setCoverUrl(mj?.url || null);
+            }
+          } catch (e) {
+            // ignore
+          }
+        } else {
+          setCoverUrl(null);
+        }
       }
+    } catch (err) {
+      console.error("Error fetching playlist info:", err);
     }
   }
 
@@ -52,9 +86,9 @@ export default function PlaylistPage() {
       const formatted = data.map((row) => ({
         SongID: row.SongID,
         title: row.Title,
-          album: row.Album || "Unknown Album",
-          artist: row.ArtistName || row.Artist || "Unknown Artist",
-          artistId: row.ArtistID || row.ArtistId || null,
+        album: row.Album || "Unknown Album",
+        artist: row.ArtistName || row.Artist || "Unknown Artist",
+        artistId: row.ArtistID || row.ArtistId || null,
         duration: row.DurationSeconds
           ? `${Math.floor(row.DurationSeconds / 60)}:${String(
               row.DurationSeconds % 60
@@ -165,8 +199,9 @@ export default function PlaylistPage() {
                 {playlistInfo ? playlistInfo.Name : "Loading..."}
               </h1>
               <p className="likedUser">
+                {/* UPDATED: Display resolved name instead of ID */}
                 {playlistInfo
-                  ? `User ${playlistInfo.ListenerID} • ${tracks.length} songs`
+                  ? `${playlistOwner} • ${tracks.length} songs`
                   : ""}
               </p>
             </div>
