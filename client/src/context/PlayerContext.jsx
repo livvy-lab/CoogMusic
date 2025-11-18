@@ -2,15 +2,19 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { API_BASE_URL } from "../config/api";
 import { useAchievement } from "./AchievementContext";
 
-// player context
 const PlayerContext = createContext(null);
+
+// TODO: replace this with your real S3 ad object URL
+const AD_AUDIO_URL = "https://coog-music.s3.amazonaws.com/audio/ad1.mp3";
 
 // load listener id from localStorage
 function getListenerId() {
   try {
     const u = JSON.parse(localStorage.getItem("user") || "null");
     return u?.listenerId ?? u?.ListenerID ?? null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 export function PlayerProvider({ children }) {
@@ -22,7 +26,7 @@ export function PlayerProvider({ children }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [shuffleMode, setShuffleMode] = useState(false);
   const [originalQueue, setOriginalQueue] = useState(null);
-  const [repeatMode, setRepeatMode] = useState('none'); // 'none' | 'all' | 'one'
+  const [repeatMode, setRepeatMode] = useState("none"); // 'none' | 'all' | 'one'
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -31,16 +35,54 @@ export function PlayerProvider({ children }) {
   const postedRef = useRef(false);
   const playThresholdMs = 30000; // 30 seconds
 
-  // notify API of play when appropriate
+  // subscription + ad state
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [songsSinceAd, setSongsSinceAd] = useState(0);
+  const [isPlayingAd, setIsPlayingAd] = useState(false);
+  const [pendingSongAfterAd, setPendingSongAfterAd] = useState(null);
+
+  // check subscription once
+  useEffect(() => {
+    const listenerId = getListenerId();
+    if (!listenerId) {
+      setIsSubscribed(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        // adjust this endpoint to match your backend
+        const res = await fetch(
+          `${API_BASE_URL}/listeners/${listenerId}/subscription_status`
+        );
+        if (!res.ok) throw new Error("subscription-status-failed");
+        const data = await res.json();
+        if (!cancelled) {
+          setIsSubscribed(!!data.isSubscribed);
+        }
+      } catch (err) {
+        console.error("Error checking subscription status", err);
+        if (!cancelled) setIsSubscribed(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // notify API of play when appropriate (never fires for ads because SongID is null)
   async function postPlayIfPossible(msOverride) {
     try {
       const songId = current?.SongID;
       const listenerId = getListenerId();
       if (!songId || !listenerId) return;
       const a = audioRef.current;
-      const msPlayed = typeof msOverride === "number"
-        ? msOverride
-        : Math.round((a?.currentTime || 0) * 1000);
+      const msPlayed =
+        typeof msOverride === "number"
+          ? msOverride
+          : Math.round((a?.currentTime || 0) * 1000);
       if (msPlayed <= 0) return;
       if (postedRef.current) return;
       postedRef.current = true;
@@ -57,9 +99,8 @@ export function PlayerProvider({ children }) {
 
       console.log(`Successfully posted play for song ${songId}: ${msPlayed}ms`);
 
-      // Achievement POPUP integration
       if (data.newAchievement) {
-        console.log("API returned newAchievement:", data.newAchievement); // debugging
+        console.log("API returned newAchievement:", data.newAchievement);
         showAchievement(data.newAchievement);
       }
     } catch (err) {
@@ -74,51 +115,174 @@ export function PlayerProvider({ children }) {
     a.volume = volume;
   }, [volume]);
 
+  // helper: play an ad
+  async function playAd() {
+    const a = audioRef.current;
+    if (!a || !AD_AUDIO_URL) return;
+
+    const adTrack = {
+      SongID: null,
+      Title: "Advertisement",
+      ArtistName: "Sponsored",
+      url: AD_AUDIO_URL,
+      mime: "audio/mpeg",
+      CoverURL: null,
+      isAd: true,
+    };
+
+    setIsPlayingAd(true);
+    setCurrent(adTrack);
+    postedRef.current = false;
+
+    try {
+      a.src = AD_AUDIO_URL;
+      await a.play();
+      setPlaying(true);
+    } catch (err) {
+      console.error("Error playing ad audio:", err);
+      setPlaying(false);
+      setIsPlayingAd(false);
+    }
+  }
+
+  // helper: actually play a song track (no ad logic here)
+  async function playSongInternal(song) {
+    const id = song?.SongID || song?.songId;
+    if (!id) return;
+
+    try {
+      const r = await fetch(`${API_BASE_URL}/songs/${id}/stream`);
+      if (!r.ok) throw new Error("No real stream found");
+      const data = await r.json();
+      postedRef.current = false;
+      setCurrent({
+        SongID: data.songId,
+        Title: data.title,
+        ArtistName: data.artistName,
+        url: data.url,
+        mime: data.mime,
+        CoverURL: data.coverUrl || null,
+        isAd: false,
+      });
+      const a = audioRef.current;
+      if (a) {
+        a.src = data.url;
+        await a.play().catch(() => {});
+      }
+      setPlaying(true);
+    } catch (err) {
+      // fallback if stream data fails
+      setCurrent({
+        SongID: id,
+        Title: song?.Title || "Demo Track",
+        ArtistName: song?.ArtistName || "Unknown Artist",
+        url: song?.url || "",
+        mime: "audio/mpeg",
+        CoverURL: song?.CoverURL || null,
+        isAd: false,
+      });
+      try {
+        const a = audioRef.current;
+        const fallbackUrl = song?.url;
+        if (a && fallbackUrl) {
+          a.src = fallbackUrl;
+          await a.play().catch(() => {});
+          setPlaying(true);
+        } else {
+          setPlaying(false);
+        }
+      } catch (e) {
+        console.error("Error playing fallback URL:", e);
+        setPlaying(false);
+      }
+    }
+  }
+
+  // main public playSong with ad logic
+  async function playSong(song) {
+    if (!song) return;
+
+    // subscribers never get ads
+    if (isSubscribed) {
+      await playSongInternal(song);
+      setSongsSinceAd((c) => c + 1);
+      return;
+    }
+
+    // if an ad is already playing, just queue this song to play afterwards
+    if (isPlayingAd) {
+      setPendingSongAfterAd(song);
+      return;
+    }
+
+    // hit threshold: play ad first, then this song
+    if (songsSinceAd >= 3) {
+      setPendingSongAfterAd(song);
+      await playAd();
+      return;
+    }
+
+    // otherwise play song and increment counter
+    await playSongInternal(song);
+    setSongsSinceAd((c) => c + 1);
+  }
+
   // update listeners for audio events
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
 
-    function onLoaded() { 
+    function onLoaded() {
       setDuration(a.duration || 0);
-      // Reset play posted flag when new song loads
       postedRef.current = false;
     }
-    
-    function onTime() { 
+
+    function onTime() {
       setCurrentTime(a.currentTime || 0);
-      
-      // Auto-post play when reaching 30 seconds of playback
-      if (!postedRef.current && a.currentTime >= (playThresholdMs / 1000)) {
+
+      if (!postedRef.current && a.currentTime >= playThresholdMs / 1000) {
         console.log(`Reached ${playThresholdMs / 1000}s threshold, posting play...`);
         postPlayIfPossible();
       }
     }
-    
-    function onPlay() { setPlaying(true); }
-    
+
+    function onPlay() {
+      setPlaying(true);
+    }
+
     function onPause() {
       setPlaying(false);
-      // Only post if we've passed the threshold
-      if (a.currentTime >= (playThresholdMs / 1000)) {
+      if (a.currentTime >= playThresholdMs / 1000) {
         postPlayIfPossible();
       }
     }
-    
+
     function onEnd() {
-      // Post play on song end (will have passed threshold if song > 30s)
       postPlayIfPossible();
-      // handle repeat-one: restart same track
-      if (repeatMode === 'one') {
+
+      // if an ad finished, reset counters and play the pending song if any
+      if (current?.isAd) {
+        setIsPlayingAd(false);
+        setSongsSinceAd(0);
+        if (pendingSongAfterAd) {
+          const nextSong = pendingSongAfterAd;
+          setPendingSongAfterAd(null);
+          playSong(nextSong).catch(() => {});
+          return;
+        }
+        setPlaying(false);
+        return;
+      }
+
+      // don't repeat ads in repeat-one
+      if (repeatMode === "one") {
         seek(0);
-        // ensure we reload the same URL
-        if (current) {
+        if (current && !current.isAd) {
           playSong({ SongID: current.SongID }).catch(() => {});
         }
         return;
       }
 
-      // if there is a next track, play it
       if (queue && queue.length > 0) {
         const nextIndex = currentIndex + 1;
         if (nextIndex >= 0 && nextIndex < queue.length) {
@@ -127,9 +291,7 @@ export function PlayerProvider({ children }) {
           return;
         }
 
-        // reached end of queue
-        if (repeatMode === 'all' && queue.length > 0) {
-          // wrap to start
+        if (repeatMode === "all" && queue.length > 0) {
           setCurrentIndex(0);
           playSong(queue[0]).catch(() => {});
           return;
@@ -143,68 +305,16 @@ export function PlayerProvider({ children }) {
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("play", onPlay);
     a.addEventListener("pause", onPause);
-    a.addEventListener('ended', onEnd);
+    a.addEventListener("ended", onEnd);
 
     return () => {
       a.removeEventListener("loadedmetadata", onLoaded);
       a.removeEventListener("timeupdate", onTime);
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
-      a.removeEventListener('ended', onEnd);
+      a.removeEventListener("ended", onEnd);
     };
-  }, [current, queue, currentIndex]);
-
-  // play a song by id
-  async function playSong(song) {
-    const id = song?.SongID || song?.songId;
-    if (!id) return;
-    try {
-      const r = await fetch(`${API_BASE_URL}/songs/${id}/stream`);
-      if (!r.ok) throw new Error("No real stream found");
-      const data = await r.json();
-      postedRef.current = false;
-      setCurrent({
-        SongID: data.songId,
-        Title: data.title,
-        ArtistName: data.artistName,
-        url: data.url,
-        mime: data.mime,
-        CoverURL: data.coverUrl || null,
-      });
-      const a = audioRef.current;
-      if (a) {
-        a.src = data.url;
-        await a.play().catch(() => { });
-      }
-      setPlaying(true);
-    } catch (err) {
-      // fallback if stream data fails
-      setCurrent({
-        SongID: id,
-        Title: song?.Title || "Demo Track",
-        ArtistName: song?.ArtistName || "Unknown Artist",
-        url: song?.url || "",
-        mime: "audio/mpeg",
-        CoverURL: song?.CoverURL || null,
-      });
-      // If the caller provided a direct URL, attach it to the audio element and play.
-      try {
-        const a = audioRef.current;
-        const fallbackUrl = song?.url;
-        if (a && fallbackUrl) {
-          a.src = fallbackUrl;
-          await a.play().catch(() => { });
-          setPlaying(true);
-        } else {
-          // nothing to play, but mark playing state so UI updates. The UI will show current info.
-          setPlaying(false);
-        }
-      } catch (e) {
-        console.error('Error playing fallback URL:', e);
-        setPlaying(false);
-      }
-    }
-  }
+  }, [current, queue, currentIndex, pendingSongAfterAd, repeatMode, songsSinceAd, isPlayingAd]);
 
   // play a list from a given index
   function playList(list = [], startIndex = 0) {
@@ -214,7 +324,7 @@ export function PlayerProvider({ children }) {
     setQueue(list);
     const idx = Math.max(0, Math.min(startIndex, list.length - 1));
     setCurrentIndex(idx);
-    playSong(list[idx]).catch(() => { });
+    playSong(list[idx]).catch(() => {});
   }
 
   // play a shuffled copy of the list
@@ -229,15 +339,15 @@ export function PlayerProvider({ children }) {
     setShuffleMode(true);
     setQueue(cloned);
     setCurrentIndex(0);
-    playSong(cloned[0]).catch(() => { });
+    playSong(cloned[0]).catch(() => {});
   }
 
   // cycle repeat mode: none -> all -> one -> none
   function toggleRepeat() {
     setRepeatMode((prev) => {
-      if (prev === 'none') return 'all';
-      if (prev === 'all') return 'one';
-      return 'none';
+      if (prev === "none") return "all";
+      if (prev === "all") return "one";
+      return "none";
     });
   }
 
@@ -256,19 +366,21 @@ export function PlayerProvider({ children }) {
       }
       setQueue(cloned);
       setCurrentIndex(0);
-      playSong(cloned[0]).catch(() => { });
+      playSong(cloned[0]).catch(() => {});
       setShuffleMode(true);
     } else {
       if (originalQueue && Array.isArray(originalQueue) && originalQueue.length > 0) {
         const curId = current?.SongID;
         let idx = 0;
         if (curId != null) {
-          const found = originalQueue.findIndex((s) => (s?.SongID || s?.songId) === curId);
+          const found = originalQueue.findIndex(
+            (s) => (s?.SongID || s?.songId) === curId
+          );
           idx = found >= 0 ? found : 0;
         }
         setQueue(originalQueue.slice());
         setCurrentIndex(idx);
-        playSong(originalQueue[idx]).catch(() => { });
+        playSong(originalQueue[idx]).catch(() => {});
       }
       setShuffleMode(false);
       setOriginalQueue(null);
@@ -280,32 +392,33 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (!a) return;
     if (a.paused) {
-      a.play().catch(() => { });
+      a.play().catch(() => {});
       setPlaying(true);
     } else {
       a.pause();
     }
   }
 
-  // play next track in queue
+  // play next track in queue (ad logic will run inside playSong)
   function next() {
     if (!queue || queue.length === 0) return;
-    // If user manually presses Next while in repeat-one, switch back to playlist repeat
-    if (repeatMode === 'one') {
-      setRepeatMode('all');
+    if (repeatMode === "one") {
+      // manual next should break out of repeat-one
+      setRepeatMode("all");
     }
     const nextIndex = currentIndex + 1;
+    let target = null;
+
     if (nextIndex >= 0 && nextIndex < queue.length) {
+      target = queue[nextIndex];
       setCurrentIndex(nextIndex);
-      playSong(queue[nextIndex]).catch(() => { });
-      return;
+    } else if (repeatMode === "all" && queue.length > 0) {
+      target = queue[0];
+      setCurrentIndex(0);
     }
 
-    // If we've reached the end of the queue and repeat-all is enabled, wrap to the start
-    if (repeatMode === 'all' && queue.length > 0) {
-      setCurrentIndex(0);
-      playSong(queue[0]).catch(() => { });
-      return;
+    if (target) {
+      playSong(target).catch(() => {});
     }
   }
 
@@ -320,15 +433,14 @@ export function PlayerProvider({ children }) {
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0 && prevIndex < queue.length) {
       setCurrentIndex(prevIndex);
-      playSong(queue[prevIndex]).catch(() => { });
+      playSong(queue[prevIndex]).catch(() => {});
       return;
     }
 
-    // If at the start and repeat-all is enabled, wrap to the last track
-    if (repeatMode === 'all' && queue.length > 0) {
+    if (repeatMode === "all" && queue.length > 0) {
       const last = queue.length - 1;
       setCurrentIndex(last);
-      playSong(queue[last]).catch(() => { });
+      playSong(queue[last]).catch(() => {});
       return;
     }
   }
@@ -343,23 +455,30 @@ export function PlayerProvider({ children }) {
   // toggle like state for current song
   async function toggleLikeCurrent() {
     const sid = current?.SongID;
-    if (!sid) return { error: 'no-song' };
-    const stored = localStorage.getItem('listener');
+    if (!sid) return { error: "no-song" };
+    const stored = localStorage.getItem("listener");
     const listenerId = stored ? JSON.parse(stored).ListenerID : 6;
     try {
-      const res = await fetch(`${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ songId: sid }),
-      });
-      if (!res.ok) throw new Error('toggle-failed');
+      const res = await fetch(
+        `${API_BASE_URL}/listeners/${listenerId}/liked_songs/toggle`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ songId: sid }),
+        }
+      );
+      if (!res.ok) throw new Error("toggle-failed");
       const data = await res.json();
       try {
-        window.dispatchEvent(new CustomEvent('likedChanged', { detail: { songId: sid, liked: data.liked } }));
+        window.dispatchEvent(
+          new CustomEvent("likedChanged", {
+            detail: { songId: sid, liked: data.liked },
+          })
+        );
       } catch (e) {}
       return data;
     } catch (err) {
-      console.error('Error toggling like for current song', err);
+      console.error("Error toggling like for current song", err);
       return { error: err.message };
     }
   }
@@ -377,7 +496,7 @@ export function PlayerProvider({ children }) {
     const a = audioRef.current;
     if (a) {
       a.pause();
-      a.src = '';
+      a.src = "";
     }
     setCurrent(null);
     setQueue([]);
@@ -385,13 +504,15 @@ export function PlayerProvider({ children }) {
     setPlaying(false);
     setShuffleMode(false);
     setOriginalQueue(null);
-    setRepeatMode('none');
+    setRepeatMode("none");
     setDuration(0);
     setCurrentTime(0);
     postedRef.current = false;
+    setSongsSinceAd(0);
+    setIsPlayingAd(false);
+    setPendingSongAfterAd(null);
   }
 
-  // Memoized value, for stable context
   const value = useMemo(
     () => ({
       current,
@@ -405,6 +526,8 @@ export function PlayerProvider({ children }) {
       currentTime,
       volume,
       audioRef,
+      isSubscribed,
+      songsSinceAd,
       playSong,
       playList,
       playShuffled,
@@ -418,7 +541,20 @@ export function PlayerProvider({ children }) {
       toggleLikeCurrent,
       clearPlayer,
     }),
-    [current, queue, currentIndex, shuffleMode, originalQueue, playing, duration, currentTime, volume, repeatMode]
+    [
+      current,
+      queue,
+      currentIndex,
+      shuffleMode,
+      originalQueue,
+      playing,
+      duration,
+      currentTime,
+      volume,
+      repeatMode,
+      isSubscribed,
+      songsSinceAd,
+    ]
   );
 
   return (
@@ -429,7 +565,6 @@ export function PlayerProvider({ children }) {
   );
 }
 
-// hook to use player context
 export function usePlayer() {
   return useContext(PlayerContext);
 }
