@@ -7,14 +7,42 @@ import { getUser } from '../lib/userStorage';
 import { API_BASE_URL } from "../config/api";
 import { showToast } from '../lib/toast';
 
+// Helper function to get audio duration
+function getAudioDuration(file) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+    
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(audio.duration);
+    };
+    
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load audio file'));
+    };
+    
+    audio.src = url;
+  });
+}
+
 const BuyAds = () => {
-  const [activeTab, setActiveTab] = useState('banner'); // 'banner' or 'audio'
+  const [activeTab, setActiveTab] = useState('banner');
   const [formData, setFormData] = useState({
     adTitle: '',
-    adDescription: '',
     adFile: null
   });
   const [uploading, setUploading] = useState(false);
+
+  const user = useMemo(() => getUser(), []);
+  const isArtist = (user?.accountType || '').toLowerCase() === 'artist';
+
+  const AD_PRICES = {
+    'audio': 5.00,
+    'banner': 2.50
+  };
+  const adPrice = AD_PRICES[activeTab];
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -24,51 +52,62 @@ const BuyAds = () => {
     }));
   };
 
-  const handleFileUpload = (e) => {
+  const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    
     if (!file) return;
 
-    // Validate based on active tab
     if (activeTab === 'banner') {
-      // Validate image file
       if (!file.type.startsWith('image/')) {
         showToast('Please upload an image file (PNG, JPG, GIF, etc.)', 'error');
         e.target.value = '';
         return;
       }
-      // Max 5MB for images
       if (file.size > 5 * 1024 * 1024) {
         showToast('Image file size must be less than 5MB', 'error');
         e.target.value = '';
         return;
       }
     } else {
-      // Validate audio file
+      // Audio validation
       if (!file.type.startsWith('audio/')) {
         showToast('Please upload an audio file (MP3, WAV, etc.)', 'error');
         e.target.value = '';
         return;
       }
-      // Max 10MB for audio
       if (file.size > 10 * 1024 * 1024) {
         showToast('Audio file size must be less than 10MB', 'error');
         e.target.value = '';
         return;
       }
+
+      // Check duration (15-30 seconds)
+      try {
+        const duration = await getAudioDuration(file);
+        if (duration < 15) {
+          showToast(`Audio file is ${Math.round(duration)} seconds. Minimum is 15 seconds.`, 'error');
+          e.target.value = '';
+          return;
+        }
+        if (duration > 30) {
+          showToast(`Audio file is ${Math.round(duration)} seconds. Maximum is 30 seconds.`, 'error');
+          e.target.value = '';
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking audio duration:', err);
+        showToast('Could not verify audio duration. Please try again.', 'error');
+        e.target.value = '';
+        return;
+      }
     }
-    
+
     setFormData(prevState => ({
       ...prevState,
       adFile: file
     }));
   };
 
-  const user = useMemo(() => getUser(), []);
-  const isArtist = (user?.accountType || '').toLowerCase() === 'artist';
-
   const handleTabChange = (tab) => {
-    // Clear file when switching tabs
     setFormData(prev => ({ ...prev, adFile: null }));
     const fileInput = document.getElementById('adFile');
     if (fileInput) fileInput.value = '';
@@ -77,17 +116,15 @@ const BuyAds = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!isArtist) {
       showToast('Only artist accounts can upload ads.', 'error');
       return;
     }
-    
     if (!formData.adFile) {
       showToast(`Please select ${activeTab === 'banner' ? 'an image' : 'an audio'} file to upload.`, 'error');
       return;
     }
-    
     if (!formData.adTitle.trim()) {
       showToast('Please enter an ad title.', 'error');
       return;
@@ -99,19 +136,11 @@ const BuyAds = () => {
       const fd = new FormData();
       fd.append('adFile', formData.adFile);
       fd.append('adTitle', formData.adTitle.trim());
-      fd.append('adType', activeTab); // 'banner' or 'audio'
-      
-      if (formData.adDescription) {
-        fd.append('adDescription', formData.adDescription.trim());
-      }
-      
-      // Get artistId from user object
+      fd.append('adType', activeTab);
+
       const artistId = user?.artistId || user?.ArtistID;
-      if (artistId) {
-        fd.append('artistId', String(artistId));
-      } else {
-        throw new Error('Artist ID not found. Please log in again.');
-      }
+      if (!artistId) throw new Error('Artist ID not found. Please log in again.');
+      fd.append('artistId', String(artistId));
 
       const res = await fetch(`${API_BASE_URL}/upload/ad`, {
         method: 'POST',
@@ -125,20 +154,15 @@ const BuyAds = () => {
 
       const data = await res.json();
       console.log('Ad uploaded successfully:', data);
-      
+
       if (data?.error || data?.db?.error) {
         showToast('File uploaded but database record failed. Please contact support.', 'error');
       } else {
-        showToast(`${activeTab === 'banner' ? 'Banner' : 'Audio'} ad uploaded successfully!`, 'success');
-        
-        // Clear form
-        setFormData({ adTitle: '', adDescription: '', adFile: null });
-        
-        // Reset file input
+        showToast(`${activeTab === 'banner' ? 'Banner' : 'Audio'} ad uploaded successfully! $${adPrice.toFixed(2)} has been charged.`, 'success');
+        setFormData({ adTitle: '', adFile: null });
         const fileInput = document.getElementById('adFile');
         if (fileInput) fileInput.value = '';
         
-        // Redirect to My Ads page
         setTimeout(() => {
           window.location.href = '/my-ads';
         }, 1500);
@@ -161,13 +185,14 @@ const BuyAds = () => {
 
         <div className="buyads-form-container">
           {!isArtist && (
-            <div className="error-message" style={{ 
-              marginBottom: 16, 
-              padding: '12px', 
-              backgroundColor: '#ffe0e0', 
-              color: '#c00', 
+            <div className="error-message" style={{
+              marginBottom: 16,
+              padding: '12px',
+              backgroundColor: '#ffe0e0',
+              color: '#c00',
               borderRadius: '8px',
-              textAlign: 'center'
+              textAlign: 'center',
+              fontSize: '0.95rem'
             }}>
               This feature is available to artist accounts only. Please log in as an artist.
             </div>
@@ -181,7 +206,7 @@ const BuyAds = () => {
               onClick={() => handleTabChange('banner')}
               disabled={!isArtist || uploading}
             >
-              Ad Banner
+              Ad Banner $2.50
             </button>
             <button
               type="button"
@@ -189,7 +214,7 @@ const BuyAds = () => {
               onClick={() => handleTabChange('audio')}
               disabled={!isArtist || uploading}
             >
-              Audio Ad
+              Audio Ad $5.00
             </button>
           </div>
 
@@ -197,26 +222,23 @@ const BuyAds = () => {
           <div className="tab-description">
             {activeTab === 'banner' ? (
               <p>
-                <strong>Banner Ads</strong> appear on the home page and playlists. 
-                Upload a visually appealing image (PNG, JPG) up to 5MB. 
-                Recommended size: 1200x400px.
+                <strong>Banner Ads</strong> appear on the home page and playlists.
               </p>
             ) : (
               <p>
-                <strong>Audio Ads</strong> play between songs for non-subscribers. 
-                Upload an audio file (MP3, WAV) up to 10MB. 
-                Recommended length: 15-30 seconds.
+                <strong>Audio Ads</strong> play between songs for non-subscribers.
+                Upload an audio file that is between 15-30 seconds.
               </p>
             )}
           </div>
-          
+
           <form onSubmit={handleSubmit}>
             {/* Ad Title */}
             <div className="form-group artist-id-group">
               <input
                 type="text"
                 name="adTitle"
-                placeholder={`Ad Title (e.g., '${activeTab === 'banner' ? 'New Album Cover' : 'New Album Out Now!'}')`}
+                placeholder="Ad Title"
                 value={formData.adTitle}
                 onChange={handleInputChange}
                 className="artist-id-input"
@@ -230,9 +252,9 @@ const BuyAds = () => {
             <div className="form-group upload-group">
               <div className="upload-button">
                 <label htmlFor="adFile">
-                  {formData.adFile 
-                    ? `Change ${activeTab === 'banner' ? 'Image' : 'Audio'} File` 
-                    : `Upload ${activeTab === 'banner' ? 'Image (PNG, JPG)' : 'Audio (MP3, WAV)'}`
+                  {formData.adFile
+                    ? 'Change File'
+                    : 'Upload File'
                   }
                 </label>
                 <input
@@ -255,15 +277,15 @@ const BuyAds = () => {
                   </span>
                   {activeTab === 'banner' && formData.adFile.type.startsWith('image/') && (
                     <div style={{ marginTop: '12px' }}>
-                      <img 
-                        src={URL.createObjectURL(formData.adFile)} 
-                        alt="Preview" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: '200px', 
+                      <img
+                        src={URL.createObjectURL(formData.adFile)}
+                        alt="Preview"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '200px',
                           borderRadius: '8px',
                           border: '2px solid #a26aa1'
-                        }} 
+                        }}
                       />
                     </div>
                   )}
@@ -271,32 +293,25 @@ const BuyAds = () => {
               )}
             </div>
 
-            {/* Ad Description */}
-            <div className="form-group message-group">
-              <textarea
-                name="adDescription"
-                placeholder="Ad Description (optional - for internal use)"
-                value={formData.adDescription}
-                onChange={handleInputChange}
-                disabled={!isArtist || uploading}
-                maxLength="500"
-              />
-            </div>
-
             {/* Upload Progress */}
             {uploading && (
-              <div style={{ textAlign: 'center', marginTop: '1rem', color: '#6b3d6b' }}>
+              <div style={{
+                textAlign: 'center',
+                marginTop: '1rem',
+                color: '#6b3d6b',
+                fontWeight: '600'
+              }}>
                 Uploading... Please wait.
               </div>
             )}
 
             {/* Submit Button */}
-            <button 
-              type="submit" 
-              className="submit-button" 
+            <button
+              type="submit"
+              className="submit-button"
               disabled={!isArtist || uploading || !formData.adFile}
             >
-              {uploading ? 'Uploading...' : `Upload ${activeTab === 'banner' ? 'Banner' : 'Audio'} Ad`}
+              {uploading ? 'Uploading...' : 'Upload Ad'}
             </button>
           </form>
 

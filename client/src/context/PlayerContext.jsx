@@ -80,26 +80,44 @@ export function PlayerProvider({ children }) {
   useEffect(() => {
     async function fetchAdPool() {
       try {
+        console.log("Fetching ad pool from:", `${API_BASE_URL}/advertisements/active?type=audio`);
+        
         const res = await fetch(`${API_BASE_URL}/advertisements/active?type=audio`);
+        
+        console.log("Ad pool fetch response status:", res.status);
+        
         if (!res.ok) {
           console.warn("Failed to fetch ad pool:", res.status);
+          adPoolRef.current = [];
+          setAdPool([]);
           return;
         }
         
         const data = await res.json();
+        console.log("Ad pool fetch response data:", data);
+        
         const ads = data.advertisements || [];
         
-        if (ads.length > 0) {
-          adPoolRef.current = ads;
-          setAdPool(ads);
-          console.log(`Loaded ${ads.length} audio ads for rotation`);
-        } else {
-          console.warn("No audio ads available in ad pool");
+        console.log("Parsed ads array length:", ads.length);
+        
+        if (ads.length === 0) {
+          console.warn("No audio ads available in database");
           adPoolRef.current = [];
           setAdPool([]);
+        } else {
+          console.log("Ads in pool:", ads.map(ad => ({ 
+            id: ad.AdID, 
+            name: ad.AdName, 
+            url: ad.AdFile || ad.AdFileUrl 
+          })));
+          
+          adPoolRef.current = ads;
+          setAdPool(ads);
+          console.log(`Successfully loaded ${ads.length} audio ads for rotation`);
         }
       } catch (err) {
         console.error("Error fetching ad pool:", err);
+        console.error("Error message:", err.message);
         adPoolRef.current = [];
         setAdPool([]);
       }
@@ -155,59 +173,130 @@ export function PlayerProvider({ children }) {
     a.volume = volume;
   }, [volume]);
 
-  // helper: play an ad from the pool
+  // helper: play an ad
   async function playAd() {
     const a = audioRef.current;
-    if (!a) return;
+    if (!a) {
+      console.error("Audio element not available");
+      return;
+    }
 
-    // Determine which ad to play
+    console.log("playAd() called, adPoolRef.current.length:", adPoolRef.current.length);
+
+    // Use ads from pool if available
+    if (adPoolRef.current.length === 0) {
+      console.warn("No ads available in pool, skipping ad and playing next song");
+      setIsPlayingAd(false);
+      
+      // Play the pending song instead of getting stuck
+      if (pendingSongAfterAd) {
+        console.log("Playing pending song after failed ad");
+        const nextSong = pendingSongAfterAd;
+        setPendingSongAfterAd(null);
+        await playSong(nextSong);
+      } else {
+        console.log("No pending song, calling next()");
+        next();
+      }
+      return;
+    }
+
     let adUrl = null;
     let adTitle = "Advertisement";
     let adArtist = "Sponsored";
     let adId = null;
 
-    // Use ads from pool if available
-    if (adPoolRef.current.length > 0) {
+    try {
+      // Select ad from pool
       const selectedAd = adPoolRef.current[currentAdIndexRef.current % adPoolRef.current.length];
+      
+      console.log("Selected ad:", selectedAd);
+      
+      if (!selectedAd) {
+        console.error("Selected ad is undefined");
+        setIsPlayingAd(false);
+        if (pendingSongAfterAd) {
+          const nextSong = pendingSongAfterAd;
+          setPendingSongAfterAd(null);
+          await playSong(nextSong);
+        }
+        return;
+      }
+
       adUrl = selectedAd.AdFileUrl || selectedAd.AdFile;
       adTitle = selectedAd.AdName || "Advertisement";
-      adArtist = "Sponsored"; // Could fetch artist name if needed
       adId = selectedAd.AdID;
+
+      console.log("Ad URL:", adUrl);
+      console.log("Ad Title:", adTitle);
+      console.log("Ad ID:", adId);
+
+      if (!adUrl) {
+        console.error("Ad URL is missing");
+        setIsPlayingAd(false);
+        if (pendingSongAfterAd) {
+          const nextSong = pendingSongAfterAd;
+          setPendingSongAfterAd(null);
+          await playSong(nextSong);
+        }
+        return;
+      }
 
       // Rotate to next ad for variety
       currentAdIndexRef.current = (currentAdIndexRef.current + 1) % adPoolRef.current.length;
       setCurrentAdIndex(currentAdIndexRef.current);
 
       console.log(`Playing ad #${currentAdIndexRef.current}: ${adTitle} (${adId})`);
-    } else {
-      console.warn("No ads available in pool, skipping ad playback");
-      setIsPlayingAd(false);
-      return;
-    }
 
-    const adTrack = {
-      SongID: null,
-      AdID: adId,
-      Title: adTitle,
-      ArtistName: adArtist,
-      url: adUrl,
-      mime: "audio/mpeg",
-      CoverURL: null,
-      isAd: true,
-    };
+      const adTrack = {
+        SongID: null,
+        AdID: adId,
+        Title: adTitle,
+        ArtistName: adArtist,
+        url: adUrl,
+        mime: "audio/mpeg",
+        CoverURL: null,
+        isAd: true,
+      };
 
-    setIsPlayingAd(true);
-    setCurrent(adTrack);
-    postedRef.current = false;
+      setIsPlayingAd(true);
+      setCurrent(adTrack);
+      postedRef.current = false;
 
-    try {
       a.src = adUrl;
-      await a.play();
-      setPlaying(true);
+      
+      console.log("Audio element src set to:", a.src);
+      console.log("Attempting to play ad...");
+      
+      const playPromise = a.play();
+      
+      if (playPromise !== undefined) {
+        await playPromise;
+        console.log("Ad started playing successfully");
+        setPlaying(true);
+      } else {
+        console.log("Play promise is undefined, audio should be playing");
+        setPlaying(true);
+      }
+
     } catch (err) {
-      console.error("Error playing ad audio:", err);
+      console.error("Error in playAd():", err);
+      console.error("Error message:", err.message);
+      console.error("Error stack:", err.stack);
+      
       setPlaying(false);
       setIsPlayingAd(false);
+      
+      // If ad fails to play, play the pending song
+      if (pendingSongAfterAd) {
+        console.log("Ad failed, playing pending song");
+        const nextSong = pendingSongAfterAd;
+        setPendingSongAfterAd(null);
+        await playSong(nextSong);
+      } else {
+        console.log("Ad failed, calling next()");
+        next();
+      }
     }
   }
 
@@ -295,8 +384,14 @@ export function PlayerProvider({ children }) {
   async function playSong(song) {
     if (!song) return;
 
+    console.log("playSong() called with:", song);
+    console.log("isSubscribed:", isSubscribed);
+    console.log("isPlayingAd:", isPlayingAd);
+    console.log("songsSinceAd:", songsSinceAd);
+
     // subscribers never get ads
     if (isSubscribed) {
+      console.log("User is subscribed, skipping ad logic");
       await playSongInternal(song);
       setSongsSinceAd((c) => c + 1);
       return;
@@ -304,18 +399,32 @@ export function PlayerProvider({ children }) {
 
     // if an ad is already playing, just queue this song to play afterwards
     if (isPlayingAd) {
+      console.log("Ad is already playing, queuing song for after ad");
       setPendingSongAfterAd(song);
       return;
     }
 
     // hit threshold: play ad first, then this song
     if (songsSinceAd >= 3) {
+      console.log("Hit ad threshold (3 songs), triggering ad");
       setPendingSongAfterAd(song);
-      await playAd();
+      
+      // Only try to play ad if we have ads available
+      if (adPoolRef.current.length > 0) {
+        console.log("Ad pool available, playing ad");
+        await playAd();
+      } else {
+        console.warn("No ads in pool, playing song immediately without ad");
+        // Skip ad entirely and play song
+        setPendingSongAfterAd(null);
+        await playSongInternal(song);
+        setSongsSinceAd(0);
+      }
       return;
     }
 
     // otherwise play song and increment counter
+    console.log("Playing song normally, incrementing counter");
     await playSongInternal(song);
     setSongsSinceAd((c) => c + 1);
   }
@@ -351,13 +460,16 @@ export function PlayerProvider({ children }) {
     }
 
     function onEnd() {
+      console.log("Audio ended, isAd:", current?.isAd);
       postPlayIfPossible();
 
       // if an ad finished, reset counters and play the pending song if any
       if (current?.isAd) {
+        console.log("Ad finished, resetting counters");
         setIsPlayingAd(false);
         setSongsSinceAd(0);
         if (pendingSongAfterAd) {
+          console.log("Playing pending song after ad");
           const nextSong = pendingSongAfterAd;
           setPendingSongAfterAd(null);
           playSong(nextSong).catch(() => {});
