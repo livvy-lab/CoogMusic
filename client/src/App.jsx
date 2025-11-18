@@ -83,13 +83,17 @@ function AppContent() {
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
           <Route path="/subscription" element={<Subscription />} />
+          
+          {/* Connection Routes */}
           <Route path="/listeners/:id/follows" element={<FollowsPage />} />
+          <Route path="/artists/:id/follows" element={<FollowsPage />} /> {/* ADDED THIS ROUTE */}
+          <Route path="/follows" element={<FollowsPage />} />
+          
           <Route path="/buy-ads" element={<BuyAds />} />
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/my-ads" element={<MyAds />} />
           <Route path="/listener-analytics" element={<ListenerAnalytics />} />
-          <Route path="/follows" element={<FollowsPage />} />
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />

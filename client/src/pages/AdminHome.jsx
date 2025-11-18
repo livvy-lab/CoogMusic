@@ -135,10 +135,6 @@ export default function AdminHome() {
             <div className="card-title">Unverified Artists</div>
             <div className="card-number">{unverifiedArtists}</div>
           </div>
-          <div className="dashboard-card card-listeners">
-            <div className="card-title">Active Subscribers</div>
-            <div className="card-number">{subscribedListeners}</div>
-          </div>
         </div>
 
         <div className="dashboard-actions">

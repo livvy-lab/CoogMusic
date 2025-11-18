@@ -11,7 +11,6 @@ import chartIcon from '../assets/icons/chart-icon.svg';
 import uploadIcon from '../assets/icons/upload-icon.svg';
 import megaphoneIcon from '../assets/icons/megaphone-icon.svg';
 import albumIcon from '../assets/icons/album-icon.svg';
-import uploadSongIcon from '../assets/navigation_icons/uploadsong.svg';
 
 export default function ArtistsPerspective() {
   const navigate = useNavigate();
@@ -77,10 +76,22 @@ export default function ArtistsPerspective() {
 
     async function fetchTotalStreams(artistId, signal) {
       try {
-        // Use the same analytics endpoint as the analytics page
-        const res = await fetch(`${API_BASE_URL}/analytics/artist/${artistId}/summary`, { signal });
+        // FIX: Define a date range covering "All Time"
+        // If we don't pass dates, the backend likely defaults to "Last 7 Days" or similar
+        const endDate = new Date().toISOString().slice(0, 10); // Today
+        const startDate = '2000-01-01'; // Arbitrary past date to ensure we catch all history
+        
+        const params = new URLSearchParams({
+          startDate,
+          endDate
+        });
+
+        // Use the same analytics endpoint but with explicit "All Time" params
+        const res = await fetch(`${API_BASE_URL}/analytics/artist/${artistId}/summary?${params}`, { signal });
+        
         if (!res.ok) return;
         const data = await res.json();
+        
         // Extract total streams from the totals array
         const streamsData = data.totals?.find(t => t.label === "Total Streams");
         setTotalStreams(streamsData?.value || 0);
@@ -216,13 +227,18 @@ export default function ArtistsPerspective() {
                   onClick={() => playSong({ songId: song.SongID })}
                 >
                   <div className="song-left">
-                    {/* Removed Heart Icon Here */}
+                    {/* Artwork with Error Handling */}
                     <div className="song-artwork">
                       {song.CoverURL ? (
-                        <img src={song.CoverURL} alt={song.Title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      ) : (
-                        <div className="artwork-placeholder">🎵</div>
-                      )}
+                        <img 
+                          src={song.CoverURL} 
+                          alt={song.Title} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                          onError={(e) => { e.currentTarget.style.display = "none"; }}
+                        />
+                      ) : null}
+                      {/* Placeholder shows if image is missing or errors out */}
+                      <div className="artwork-placeholder" style={{ display: song.CoverURL ? 'none' : 'flex' }}>🎵</div>
                     </div>
                     <div className="song-info">
                       <div className="song-title">{song.Title}</div>
@@ -234,7 +250,7 @@ export default function ArtistsPerspective() {
                       {song.ReleaseDate ? new Date(song.ReleaseDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Unknown'}
                     </div>
                     <div className="song-plays">
-                      {(song.StreamCount || 0).toLocaleString()}
+                      {(Number(song.Streams) || 0).toLocaleString()}
                     </div>
                   </div>
                 </div>

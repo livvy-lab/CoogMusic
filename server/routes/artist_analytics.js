@@ -56,24 +56,20 @@ export async function handleArtistAnalyticsRoutes(req, res) {
     const orderSQL = order === "asc" ? "ASC" : "DESC";
 
     try {
-      // --- FIX A: STRICTER TOTALS QUERIES ---
-      
-      // 1. Total Streams (Respects Date Range + IsDeleted Checks)
+      // A. TOTALS
       const [[{ totalStreams = 0 }]] = await db.query(`
         SELECT COUNT(*) AS totalStreams 
         FROM Play P
-        JOIN Song S ON P.SongID = S.SongID       -- Join Song to check IsDeleted
+        JOIN Song S ON P.SongID = S.SongID
         JOIN Song_Artist SA ON S.SongID = SA.SongID
         WHERE SA.ArtistID = ?
-          AND P.MsPlayed >= ?                    -- 30s Threshold
-          AND P.IsDeleted = 0                    -- Exclude deleted plays
-          AND S.IsDeleted = 0                    -- Exclude deleted songs
+          AND P.MsPlayed >= ?
+          AND P.IsDeleted = 0
+          AND S.IsDeleted = 0
           AND (? IS NULL OR P.PlayedAt >= ?) 
           AND (? IS NULL OR P.PlayedAt <= ?)
       `, [artistId, STREAM_MS_THRESHOLD, startDate, startDate, endDateTime, endDateTime]);
       
-      // 2. Total Likes (Lifetime, excludes deleted songs)
-      // Note: Removed Date Range here to show TRUE total profile likes
       const [[{ totalLikes = 0 }]] = await db.query(`
         SELECT COUNT(*) AS totalLikes 
         FROM Liked_Song LS
@@ -83,7 +79,6 @@ export async function handleArtistAnalyticsRoutes(req, res) {
           AND S.IsDeleted = 0
       `, [artistId]);
       
-      // 3. Total Releases (Lifetime, excludes deleted songs)
       const [[{ totalReleases = 0 }]] = await db.query(`
         SELECT COUNT(DISTINCT S.SongID) AS totalReleases 
         FROM Song S
@@ -91,12 +86,13 @@ export async function handleArtistAnalyticsRoutes(req, res) {
         WHERE SA.ArtistID = ? AND S.IsDeleted = 0
       `, [artistId]);
 
-      // B. ALBUM LIST
+      // B. ALBUM LIST (For Dropdown) -- FIXED HERE
       const [albums] = await db.query(`
         SELECT DISTINCT Alb.AlbumID, Alb.Title 
         FROM Album Alb
         JOIN Album_Artist AA ON Alb.AlbumID = AA.AlbumID
         WHERE AA.ArtistID = ? 
+          AND Alb.IsDeleted = 0 -- Added this check
         ORDER BY Alb.Title
       `, [artistId]);
 
@@ -107,7 +103,6 @@ export async function handleArtistAnalyticsRoutes(req, res) {
           S.Title AS songTitle,
           COALESCE(Alb.Title, 'Single') AS album,
           S.ReleaseDate AS releaseDate,
-          -- Streams (Period & Validated)
           COUNT(CASE 
             WHEN P.PlayID IS NOT NULL 
              AND P.MsPlayed >= ?
@@ -117,9 +112,7 @@ export async function handleArtistAnalyticsRoutes(req, res) {
             THEN 1 
             ELSE NULL 
           END) AS totalStreams,
-          -- Lifetime Likes
           (SELECT COUNT(*) FROM Liked_Song LS WHERE LS.SongID = S.SongID) AS totalLikes,
-          -- Lifetime Playlist Adds
           (SELECT COUNT(*) FROM Playlist_Track PT WHERE PT.SongID = S.SongID) AS playlistAdds
         FROM Song S
         JOIN Song_Artist SA ON S.SongID = SA.SongID
@@ -140,9 +133,9 @@ export async function handleArtistAnalyticsRoutes(req, res) {
 
       res.end(JSON.stringify({
         totals: [
-          { label: "Total Streams", value: totalStreams }, // Affected by Date Picker
-          { label: "Total Likes", value: totalLikes },     // Lifetime
-          { label: "Total Releases", value: totalReleases }, // Lifetime
+          { label: "Total Streams", value: totalStreams },
+          { label: "Total Likes", value: totalLikes },
+          { label: "Total Releases", value: totalReleases },
         ],
         albums,
         songs

@@ -1,11 +1,12 @@
 import "./DiscographyGrid.css";
 import { useRef, useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // Added useNavigate
 import { API_BASE_URL } from "../../config/api";
 import { usePlayer } from "../../context/PlayerContext";
 
 export default function Discography({ artistId: artistIdProp }) {
   const params = useParams();
+  const navigate = useNavigate(); // Hook for navigation
   const artistId = artistIdProp ?? params.id ?? params.artistId;
 
   const scrollRef = useRef(null);
@@ -21,7 +22,6 @@ export default function Discography({ artistId: artistIdProp }) {
     scrollRef.current.scrollBy({ left: amt, behavior: "smooth" });
   };
 
-  // helper: detect any abort flavor (AbortError, Safari code 20, custom reason)
   const isAbort = (err) =>
     err?.name === "AbortError" ||
     err?.code === 20 ||
@@ -80,7 +80,7 @@ export default function Discography({ artistId: artistIdProp }) {
         setReleases(merged);
       } catch (err) {
         if (isAbort(err) || !alive) {
-          // ignore silent aborts
+          // ignore
         } else {
           console.error("Discography fetch error:", err);
           if (alive) setError("Could not load discography.");
@@ -133,17 +133,21 @@ export default function Discography({ artistId: artistIdProp }) {
     return () => { alive = false; };
   }, [releases]);
 
-  async function handlePlaySong(release) {
-    if (!release.songId) return;
-    
-    try {
-      // Fetch full song details to play
-      const res = await fetch(`${API_BASE_URL}/songs/${release.songId}`);
-      if (!res.ok) return;
-      const song = await res.json();
-      playSong(song);
-    } catch (err) {
-      console.error("Failed to play song:", err);
+  // Handle Click: Play if Song, Navigate if Album
+  async function handleReleaseClick(release) {
+    if (release.songId) {
+      // It's a Single -> Play the song directly
+      try {
+        const res = await fetch(`${API_BASE_URL}/songs/${release.songId}`);
+        if (!res.ok) return;
+        const song = await res.json();
+        playSong(song);
+      } catch (err) {
+        console.error("Failed to play song:", err);
+      }
+    } else if (release.albumId) {
+      // It's an Album -> Navigate to Album View
+      navigate(`/albums/${release.albumId}`);
     }
   }
 
@@ -160,22 +164,33 @@ export default function Discography({ artistId: artistIdProp }) {
     if (!releases.length) return <div className="nr__empty">🎵 No releases yet 🎵</div>;
 
     return releases.map((r) => {
-      // Determine placeholder text: Album if albumId exists, otherwise Single
       const placeholderText = r.albumId ? "Album" : "Single";
       
+      // Use resolved cover URL or fallback
       const coverUrl = r.coverMediaId && covers[r.coverMediaId] 
         ? covers[r.coverMediaId] 
-        : `https://placehold.co/300x300/FFE8F5/895674?text=${placeholderText}`;
-      
+        : null; // Null allows fallback logic inside the image tag or container
+
+      // Fallback URL only if no media ID exists at all
+      const finalSrc = coverUrl || `https://placehold.co/300x300/FFE8F5/895674?text=${placeholderText}`;
+
       return (
         <div 
           key={r.id} 
           className="nr__card"
-          // intentionally no onClick: card clicks are inert now
-          style={{ cursor: 'default' }}
+          onClick={() => handleReleaseClick(r)} // Click handler restored
+          style={{ cursor: 'pointer' }} // Pointer cursor restored
         >
           <div className="nr__img">
-            <img src={coverUrl} alt={r.title} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} />
+            <img 
+              src={finalSrc} 
+              alt={r.title} 
+              style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }} 
+              onError={(e) => {
+                 // If image breaks, hide it to show the nice background color
+                 e.currentTarget.style.display = "none";
+              }}
+            />
           </div>
           <p className="nr__caption">
             {r.title}
