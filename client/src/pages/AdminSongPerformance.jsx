@@ -1,239 +1,229 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { API_BASE_URL } from "../config/api";
 import "./AdminSongPerformance.css";
 
+// Helper to format large numbers
+const formatNumber = (num) => {
+  return Number(num).toLocaleString();
+};
+
+function todayOffset(days = 0) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function AdminSongPerformance() {
-  const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState("total_plays");
-  const [minPlays, setMinPlays] = useState("");
-  const [minLikes, setMinLikes] = useState("");
-  const [minListeners, setMinListeners] = useState("");
-  const [activeSinceDays, setActiveSinceDays] = useState("");
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  
+  // Filters
+  const [minPlays, setMinPlays] = useState("");
+  const [minLikes, setMinLikes] = useState("");
+  const [minListeners, setMinListeners] = useState("");
+  
+  // Date Filters
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() - 6);
+    return d.toISOString().slice(0, 10);
+  });
+  const [endDate, setEndDate] = useState(todayOffset(0));
+  
+  const [sortBy, setSortBy] = useState("total_plays");
+  
+  const fetchReportData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-  useEffect(() => {
-    let cancelled = false;
+      const params = new URLSearchParams();
+      if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate);
+      
+      if (minPlays) params.append("minPlays", minPlays);
+      if (minLikes) params.append("minLikes", minLikes);
+      if (minListeners) params.append("minListeners", minListeners);
+      
+      const url = `${API_BASE_URL}/admin/song-report?${params.toString()}`;
 
-    async function load() {
-      try {
-        setLoading(true);
-        setError("");
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`Network error (${res.status})`);
 
-        const params = new URLSearchParams();
-        if (minPlays) params.append("minPlays", minPlays);
-        if (minLikes) params.append("minLikes", minLikes);
-        if (minListeners) params.append("minListeners", minListeners);
-        if (activeSinceDays) params.append("activeSinceDays", activeSinceDays);
+      const data = await res.json();
+      setRows(Array.isArray(data) ? data : []);
+      
+    } catch (err) {
+      console.error("Error loading song report:", err);
+      setError(`Could not load song performance report: ${err.message}.`);
+      setRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [minPlays, minLikes, minListeners, startDate, endDate]);
 
-        const url =
-          params.toString().length > 0
-            ? `${API_BASE_URL}/admin/song-report?${params.toString()}`
-            : `${API_BASE_URL}/admin/song-report`;
+  useEffect(() => {
+    fetchReportData();
+  }, [fetchReportData]);
 
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Network error (${res.status})`);
+  // Calculate summary: Total Plays is for the period, Total Likes is sum of lifetime likes for filtered songs.
+  const summary = rows.reduce((acc, row) => {
+    acc.totalPlays += Number(row.total_plays) || 0;
+    acc.totalLikes += Number(row.likes) || 0; // 'likes' is the lifetime count from the backend
+    return acc;
+  }, { totalPlays: 0, totalLikes: 0 });
+  
+  const filtered = rows.filter((row) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const title = (row.Title || "").toLowerCase();
+    const artist = (row.ArtistName || "").toLowerCase();
+    return title.includes(q) || artist.includes(q);
+  });
 
-        const data = await res.json();
-        if (!cancelled) {
-          setRows(Array.isArray(data) ? data : []);
-        }
-      } catch (err) {
-        console.error("Error loading song report:", err);
-        if (!cancelled) {
-          setError(
-            `Could not load song performance report: ${err.message}. Please try again later.`
-          );
-          setRows([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
+  const sorted = [...filtered].sort((a, b) => {
+    if (sortBy === "Title") return (a.Title || "").localeCompare(b.Title || "");
+    if (sortBy === "ArtistName") return (a.ArtistName || "").localeCompare(b.ArtistName || "");
+    return Number(b[sortBy] || 0) - Number(a[sortBy] || 0);
+  });
 
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [minPlays, minLikes, minListeners, activeSinceDays]);
+  return (
+    <PageLayout>
+      <div className="admin-report-container">
+        <h2>Song Performance Report</h2>
 
-  const filtered = rows.filter((row) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    const title = (row.Title || "").toLowerCase();
-    const artist = (row.ArtistName || "").toLowerCase();
-    return title.includes(q) || artist.includes(q);
-  });
+        {/* Summary Cards */}
+        <div className="rev-summary-grid two-column">
+          <div className="rev-card total">
+            <div className="rev-label">Total Plays (Period)</div>
+            <div className="rev-amount">{formatNumber(summary.totalPlays)}</div>
+          </div>
+          <div className="rev-card sub">
+            <div className="rev-label">Total Likes (Lifetime)</div>
+            <div className="rev-amount">{formatNumber(summary.totalLikes)}</div>
+          </div>
+        </div>
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === "Title") {
-      return (a.Title || "").localeCompare(b.Title || "");
-    }
-    if (sortBy === "ArtistName") {
-      return (a.ArtistName || "").localeCompare(b.ArtistName || "");
-    }
-    const av = Number(a[sortBy] || 0);
-    const bv = Number(b[sortBy] || 0);
-    return bv - av;
-  });
+        {/* Filter Bar */}
+        <div className="arr-filter-bar">
+          <div>
+            <label className="arr-filter-label">From:</label>
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={(e) => setStartDate(e.target.value)} 
+            />
+          </div>
+          <div>
+            <label className="arr-filter-label">To:</label>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={(e) => setEndDate(e.target.value)} 
+            />
+          </div>
+          <div>
+            <label className="arr-filter-label">Search:</label>
+            <input 
+              type="text" 
+              placeholder="Song or Artist..." 
+              value={search} 
+              onChange={(e) => setSearch(e.target.value)} 
+            />
+          </div>
+          <div>
+            <label className="arr-filter-label">Min Plays:</label>
+            <input 
+              type="number" 
+              placeholder="0" 
+              value={minPlays} 
+              onChange={(e) => setMinPlays(e.target.value)} 
+            />
+          </div>
+          <div>
+            <label className="arr-filter-label">Min Likes:</label>
+            <input 
+              type="number" 
+              placeholder="0" 
+              value={minLikes} 
+              onChange={(e) => setMinLikes(e.target.value)} 
+            />
+          </div>
+          <div>
+            <label className="arr-filter-label">Min Listeners:</label>
+            <input 
+              type="number" 
+              placeholder="0" 
+              value={minListeners} 
+              onChange={(e) => setMinListeners(e.target.value)} 
+            />
+          </div>
+          <div>
+            <button className="arr-filter-apply-btn" onClick={fetchReportData}>
+              Refresh
+            </button>
+          </div>
+        </div>
 
-  return (
-    <PageLayout>
-      <div className="admin-report-container">
-        <h2>Song Performance Report</h2>
-
-        <div className="arr-filter-bar">
-          <div>
-            <label className="arr-filter-label" htmlFor="songSearch">
-              Search Song / Artist
-            </label>
-            <input
-              id="songSearch"
-              type="text"
-              className="arr-date-input"
-              placeholder="Start typing a song or artist..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="arr-filter-label" htmlFor="sortBy">
-              Sort By
-            </label>
-            <select
-              id="sortBy"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="total_plays">Total Plays</option>
-              <option value="unique_listeners">Unique Listeners</option>
-              <option value="likes">Likes</option>
-              <option value="Title">Song Title (A–Z)</option>
-              <option value="ArtistName">Artist Name (A–Z)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="arr-filter-label" htmlFor="minPlays">
-              Min Plays
-            </label>
-            <input
-              id="minPlays"
-              type="number"
-              className="arr-date-input"
-              min="0"
-              placeholder="e.g. 100"
-              value={minPlays}
-              onChange={(e) => setMinPlays(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="arr-filter-label" htmlFor="minLikes">
-              Min Likes
-            </label>
-            <input
-              id="minLikes"
-              type="number"
-              className="arr-date-input"
-              min="0"
-              placeholder="e.g. 10"
-              value={minLikes}
-              onChange={(e) => setMinLikes(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="arr-filter-label" htmlFor="minListeners">
-              Min Unique Listeners
-            </label>
-            <input
-              id="minListeners"
-              type="number"
-              className="arr-date-input"
-              min="0"
-              placeholder="e.g. 5"
-              value={minListeners}
-              onChange={(e) => setMinListeners(e.target.value)}
-            />
-          </div>
-
-          <div>
-            <label className="arr-filter-label" htmlFor="activeSinceDays">
-              Active in last (days)
-            </label>
-            <input
-              id="activeSinceDays"
-              type="number"
-              className="arr-date-input"
-              min="0"
-              placeholder="e.g. 30"
-              value={activeSinceDays}
-              onChange={(e) => setActiveSinceDays(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <section className="arr-section table-container">
-          <div className="table-scroll">
-            {loading ? (
-              <div className="arr-loading">Loading Song Report...</div>
-            ) : error ? (
-              <div className="arr-error">{error}</div>
-            ) : sorted.length === 0 ? (
-              <table className="arr-table">
-                <tbody>
-                  <tr>
-                    <td className="arr-no-reports" colSpan={8}>
-                      No data available.
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            ) : (
-              <table className="arr-table">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Song</th>
-                    <th>Artist</th>
-                    <th>Total Plays</th>
-                    <th>Unique Listeners</th>
-                    <th>Likes</th>
-                    <th>First Played</th>
-                    <th>Last Played</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sorted.map((row, index) => (
-                    <tr key={row.SongID}>
-                      <td>{index + 1}</td>
-                      <td>{row.Title || "Untitled"}</td>
-                      <td>{row.ArtistName || "Unknown"}</td>
-                      <td>{row.total_plays}</td>
-                      <td>{row.unique_listeners}</td>
-                      <td>{row.likes}</td>
-                      <td>
-                        {row.first_played_at
-                          ? new Date(row.first_played_at).toLocaleDateString()
-                          : "-"}
-                      </td>
-                      <td>
-                        {row.last_played_at
-                          ? new Date(row.last_played_at).toLocaleDateString()
-                          : "-"}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
-      </div>
-    </PageLayout>
-  );
+        {/* Table */}
+        <section className="arr-section table-container">
+          <div className="table-scroll">
+            {loading ? (
+              <div className="arr-loading">Loading...</div>
+            ) : error ? (
+              <div className="arr-error">{error}</div>
+            ) : (
+              <table className="arr-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Song</th>
+                    <th>Artist</th>
+                    <th>Plays</th>
+                    <th>Listeners</th>
+                    <th>Likes</th>
+                    <th>First Played</th>
+                    <th>Last Played</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.length > 0 ? (
+                    sorted.map((row, index) => (
+                      <tr key={row.SongID}>
+                        <td>{index + 1}</td>
+                        <td className="col-title">{row.Title}</td>
+                        <td>{row.ArtistName}</td>
+                        <td className="col-highlight">{formatNumber(row.total_plays)}</td>
+                        <td>{formatNumber(row.unique_listeners)}</td>
+                        <td>{formatNumber(row.likes)}</td>
+                        <td>
+                          {row.first_played_at 
+                            ? new Date(row.first_played_at).toLocaleDateString() 
+                            : "-"}
+                        </td>
+                        <td>
+                          {row.last_played_at 
+                            ? new Date(row.last_played_at).toLocaleDateString() 
+                            : "-"}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="arr-no-reports">
+                        No songs match your filters.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </div>
+    </PageLayout>
+  );
 }

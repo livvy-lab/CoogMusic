@@ -2,10 +2,19 @@ import React, { useState, useEffect } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { API_BASE_URL } from '../config/api';
 import { getUser } from '../lib/userStorage';
-import { Link } from "react-router-dom";
+import { showToast } from "../lib/toast";
 import "./AdminReportReview.css";
 
-// helper to format today's date offset by days
+// Helper to format dates
+function formatDate(dateString) {
+  if (!dateString) return "N/A";
+  try {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: 'numeric', month: 'short', day: 'numeric'
+    });
+  } catch (e) { return "Invalid Date"; }
+}
+
 function todayOffset(days = 0) {
   const d = new Date();
   d.setDate(d.getDate() + days);
@@ -15,85 +24,37 @@ function todayOffset(days = 0) {
 function formatAdminAction(action) {
   if (action === 'NoAction') return 'No Action';
   if (action === 'Removed') return 'Removed';
-  return action || "N/A";
+  return action || "-";
 }
 
-const statusOptions = [
-  { label: "Pending", value: "false" },
-  { label: "Resolved", value: "true" },
-  { label: "All", value: "" },
-];
-
-const reportTypeOptions = [
-  { label: "All", value: "" },
-  { label: "Copyright Infringement", value: "Copyright Infringement" },
-  { label: "Inappropriate Content", value: "Inappropriate Content" },
-  { label: "Impersonation", value: "Impersonation" },
-  { label: "Other", value: "Other" }
-];
-
-const entityTypeOptions = [
-  { label: "All", value: "" },
-  { label: "Song", value: "Song" },
-  { label: "Artist", value: "Artist" },
-  { label: "Playlist", value: "Playlist" },
-  { label: "User", value: "Listener" }
-];
-
-const actionOptions = [
-  { label: "All", value: "" },
-  { label: "Removed", value: "Removed" },
-  { label: "No Action", value: "NoAction" },
-];
-
+// === MAIN PAGE COMPONENT ===
 export default function AdminReportReview() {
   const [loading, setLoading] = useState(true);
   const [reports, setReports] = useState([]);
-  const [error, setError] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
 
-  const [pendingStartDate, setPendingStartDate] = useState(todayOffset(-30));
-  const [pendingEndDate, setPendingEndDate] = useState(todayOffset(0));
-  const [pendingStatus, setPendingStatus] = useState("");
-  const [pendingReportType, setPendingReportType] = useState("");
-  const [pendingEntityType, setPendingEntityType] = useState("");
-  const [pendingActionType, setPendingActionType] = useState("");
-
-  const [appliedStartDate, setAppliedStartDate] = useState(todayOffset(-30));
-  const [appliedEndDate, setAppliedEndDate] = useState(todayOffset(0));
-  const [appliedStatus, setAppliedStatus] = useState("");
-  const [appliedReportType, setAppliedReportType] = useState("");
-  const [appliedEntityType, setAppliedEntityType] = useState("");
-  const [appliedActionType, setAppliedActionType] = useState("");
-
-  const applyFilters = () => {
-    setAppliedStartDate(pendingStartDate);
-    setAppliedEndDate(pendingEndDate);
-    setAppliedStatus(pendingStatus);
-    setAppliedReportType(pendingReportType);
-    setAppliedEntityType(pendingEntityType);
-    setAppliedActionType(pendingActionType);
-    setError("");
-  };
+  // Filters
+  const [startDate, setStartDate] = useState(todayOffset(-30));
+  const [endDate, setEndDate] = useState(todayOffset(0));
+  const [statusFilter, setStatusFilter] = useState("false"); 
+  const [typeFilter, setTypeFilter] = useState(""); 
 
   const fetchReports = () => {
     setLoading(true);
     const params = new URLSearchParams();
-    params.append('startDate', appliedStartDate);
-    params.append('endDate', appliedEndDate);
-    if (appliedStatus) params.append('resolved', appliedStatus);
-    if (appliedReportType) params.append('reportType', appliedReportType);
-    if (appliedEntityType) params.append('type', appliedEntityType);
-    if (appliedActionType) params.append('adminAction', appliedActionType);
+    params.append('startDate', startDate);
+    params.append('endDate', endDate);
+    if (statusFilter) params.append('resolved', statusFilter);
+    if (typeFilter) params.append('type', typeFilter);
 
     fetch(`${API_BASE_URL}/user_reports?${params.toString()}`)
       .then((res) => {
-        if (!res.ok) throw new Error(`Network response was not ok (${res.status})`);
+        if (!res.ok) throw new Error(`Error: ${res.status}`);
         return res.json();
       })
       .then((data) => setReports(data || []))
       .catch((err) => {
-        setError(`Could not load reports: ${err.message}. Please try again later.`);
+        showToast("Failed to load reports", "error");
         setReports([]);
       })
       .finally(() => setLoading(false));
@@ -101,100 +62,87 @@ export default function AdminReportReview() {
 
   useEffect(() => {
     fetchReports();
-  }, [appliedStartDate, appliedEndDate, appliedStatus, appliedReportType, appliedEntityType, appliedActionType]);
+  }, [startDate, endDate, statusFilter, typeFilter]);
 
   return (
     <PageLayout>
-      <div className="admin-report-container">
-        <h2>User Report Management</h2>
-        <div className="arr-filter-bar">
-          <div>
-            <label className="arr-filter-label" htmlFor="startDate">Start Date:</label>
-            <input id="startDate" className="arr-date-input" type="date" value={pendingStartDate} onChange={e => setPendingStartDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="arr-filter-label" htmlFor="endDate">End Date:</label>
-            <input id="endDate" className="arr-date-input" type="date" value={pendingEndDate} onChange={e => setPendingEndDate(e.target.value)} />
-          </div>
-          <div>
-            <label className="arr-filter-label" htmlFor="status">Status:</label>
-            <select id="status" value={pendingStatus} onChange={e => setPendingStatus(e.target.value)}>
-              {statusOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+      <div className="admin-reports-container">
+        <div className="header-row">
+          <h1>Report Review</h1>
+          <div className="controls">
+            <div className="date-group">
+              <input type="date" className="filter-input" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              <span className="date-sep">to</span>
+              <input type="date" className="filter-input" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </div>
+            <select className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+              <option value="false">Pending</option>
+              <option value="true">Resolved</option>
+              <option value="">All Status</option>
             </select>
-          </div>
-          <div>
-            <label className="arr-filter-label" htmlFor="entityType">Entity Type:</label>
-            <select id="entityType" value={pendingEntityType} onChange={e => setPendingEntityType(e.target.value)}>
-              {entityTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            <select className="filter-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+              <option value="">All Content</option>
+              <option value="Song">Songs</option>
+              <option value="Artist">Artists</option>
+              <option value="Playlist">Playlists</option>
+              <option value="Listener">Users</option>
             </select>
-          </div>
-          <div>
-            <label className="arr-filter-label" htmlFor="reportReason">Report Reason:</label>
-            <select id="reportReason" value={pendingReportType} onChange={e => setPendingReportType(e.target.value)}>
-              {reportTypeOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="arr-filter-label" htmlFor="actionType">Action Type:</label>
-            <select id="actionType" value={pendingActionType} onChange={e => setPendingActionType(e.target.value)}>
-              {actionOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-          </div>
-          <div>
-            <button type="button" className="arr-filter-apply-btn" onClick={applyFilters}>Apply Filters</button>
           </div>
         </div>
-        <section className="arr-section table-container">
-          <div className="table-scroll">
-            {loading ? (
-              <div className="arr-loading">Loading Reports...</div>
-            ) : error ? (
-              <div className="arr-error">{error}</div>
-            ) : (
-              <table className="arr-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Reported By</th>
-                    <th>Reported Item</th>
-                    <th>Reason</th>
-                    <th>Status</th>
-                    <th>Action Taken</th>
-                    <th>Resolved By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.length > 0 ? (
-                    reports.map((row) => (
-                      <tr key={row.ReportID} onClick={() => setSelectedReport(row)} title="Click to view details">
-                        <td>{String(row.DateCreated).slice(0, 10)}</td>
-                        <td>{row.ReporterUsername || `Listener ID: ${row.ListenerID}`}</td>
-                        <td>{`${row.EntityType}: ${row.EntityName || `ID: ${row.EntityID}`}`}</td>
-                        <td>{row.ReportType}</td>
-                        <td>
-                          <span className={row.Resolved ? 'status-resolved' : 'status-pending'}>
-                            {row.Resolved ? "Resolved" : "Pending"}
-                          </span>
-                        </td>
-                        <td>{formatAdminAction(row.AdminActionTaken)}</td>
-                        <td>{row.ResolverName || "N/A"}</td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="7" className="arr-no-reports">
-                        No reports found for the selected filters.
+
+        <div className="table-card">
+          {loading ? (
+            <div className="loading-state">Loading reports...</div>
+          ) : (
+            <table className="reports-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Reporter</th>
+                  <th>Content</th>
+                  <th>Reason</th>
+                  <th>Status</th>
+                  <th>Resolution</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {reports.length > 0 ? (
+                  reports.map((row) => (
+                    <tr key={row.ReportID} onClick={() => setSelectedReport(row)}>
+                      <td>{formatDate(row.DateCreated)}</td>
+                      <td className="reporter-cell">{row.ReporterUsername || `ID: ${row.ListenerID}`}</td>
+                      <td>
+                        <strong>{row.EntityType}</strong>
+                        <br/>
+                        <span className="sub-text">{row.EntityName || `#${row.EntityID}`}</span>
+                      </td>
+                      <td><span className="reason-badge">{row.ReportType}</span></td>
+                      <td>
+                        {row.Resolved ? (
+                          <span className="status-badge resolved">Resolved</span>
+                        ) : (
+                          <span className="status-badge pending">Pending</span>
+                        )}
+                      </td>
+                      <td>{formatAdminAction(row.AdminActionTaken)}</td>
+                      <td>
+                        <button className="review-btn">{row.Resolved ? "View" : "Review"}</button>
                       </td>
                     </tr>
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
+                  ))
+                ) : (
+                  <tr><td colSpan="7" className="no-results">No reports found.</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
+
+      {/* Modal for Reviewing Report */}
       {selectedReport && (
-        <ReportDetailView
+        <ReportDetailModal
           report={selectedReport}
           onClose={() => setSelectedReport(null)}
           onActionSuccess={() => {
@@ -207,179 +155,266 @@ export default function AdminReportReview() {
   );
 }
 
-// modal detail view remains the same
-function ReportDetailView({ report, onClose, onActionSuccess }) {
-  const [adminJustification, setAdminJustification] = useState("");
-  const [selectedAction, setSelectedAction] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+// === REPORT DETAIL MODAL ===
+function ReportDetailModal({ report, onClose, onActionSuccess }) {
+  const [justification, setJustification] = useState("");
+  const [action, setAction] = useState("");
+  const [processing, setProcessing] = useState(false);
+  
+  // State for the Nested Profile Modal
+  const [previewUser, setPreviewUser] = useState(null);
 
-  const handleResolveSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedAction || !adminJustification) {
-      setErrorMessage("Please select an action and provide a justification.");
-      return;
-    }
-    setIsProcessing(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    if (!action || !justification) return;
+    setProcessing(true);
     const user = getUser();
-    const token = user ? user.adminId : null;
-    if (!token) {
-      setErrorMessage("Authentication error. Please log out and log back in.");
-      setIsProcessing(false);
-      return;
-    }
-    const authHeader = { "Authorization": `Bearer ${token}` };
+    
     try {
-      if (selectedAction === "Removed") {
-        const deleteRes = await fetch(`${API_BASE_URL}/api/soft_delete/${report.EntityType}/${report.EntityID}`, {
+      if (action === "Removed") {
+        const delRes = await fetch(`${API_BASE_URL}/api/soft_delete/${report.EntityType}/${report.EntityID}`, {
           method: "DELETE",
-          headers: { ...authHeader }
+          headers: { "Authorization": `Bearer ${user?.adminId}` }
         });
-        if (!deleteRes.ok) {
-          const errData = await deleteRes.json();
-          throw new Error(`Failed to remove content: ${errData.message || 'Unknown error'}`);
-        }
+        if (!delRes.ok) throw new Error("Failed to remove content");
       }
-      const resolveRes = await fetch(`${API_BASE_URL}/user_reports/${report.ReportID}`, {
+
+      const res = await fetch(`${API_BASE_URL}/user_reports/${report.ReportID}`, {
         method: "PUT",
-        headers: {
+        headers: { 
           "Content-Type": "application/json",
-          ...authHeader
+          "Authorization": `Bearer ${user?.adminId}` 
         },
         body: JSON.stringify({
-          AdminActionTaken: selectedAction,
-          AdminJustification: adminJustification,
+          AdminActionTaken: action,
+          AdminJustification: justification,
         }),
       });
-      if (!resolveRes.ok) {
-        const errData = await resolveRes.json();
-        throw new Error(`Failed to resolve report: ${errData.error || 'Unknown error'}`);
-      }
-      setSuccessMessage("Report resolved successfully!");
-      setTimeout(() => {
-        onActionSuccess();
-      }, 1500);
+
+      if (!res.ok) throw new Error("Failed to update report");
+
+      showToast("Report resolved successfully", "success");
+      setTimeout(onActionSuccess, 500);
     } catch (err) {
-      setErrorMessage(err.message);
-      setIsProcessing(false);
+      showToast(err.message, "error");
+      setProcessing(false);
     }
   };
 
-  const getActionBtnClass = (action) => {
-    let base = "action-button";
-    if (action === 'Removed') base += ' remove';
-    if (action === 'NoAction') base += ' no-action';
-    if (selectedAction === action) base += ' active';
-    return base;
+  // Helper to open the profile modal
+  const handleViewProfile = () => {
+    if (report.EntityType === 'Artist' || report.EntityType === 'Listener' || report.EntityType === 'User') {
+      setPreviewUser({
+        SpecificID: report.EntityID,
+        AccountType: report.EntityType === 'User' ? 'Listener' : report.EntityType,
+        DisplayName: report.EntityName, // Fallback name
+        Username: "User", // Fallback
+        DateCreated: null // Fallback
+      });
+    }
   };
 
-  const getProfileLink = () => {
-    if (report.EntityType === 'Artist') return `/artist/${report.EntityID}`;
-    if (report.EntityType === 'Listener' || report.EntityType === 'User') return `/listener/${report.EntityID}`;
-    return null;
-  };
-
-  const profileLink = getProfileLink();
+  const canViewProfile = ['Artist', 'Listener', 'User'].includes(report.EntityType);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close-button" onClick={onClose}>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
-          </svg>
-        </button>
-        <div className="detail-view-container">
-          <div className="detail-view-left">
-            <h2>Report Details</h2>
-            <div className="info-items">
-              <div className="info-item">
-                <label className="info-item-label">Reported By:</label>
-                <p>{report.ReporterUsername || `Listener ID: ${report.ListenerID}`}</p>
-              </div>
-              <div className="info-item">
-                <label className="info-item-label">Reported Item:</label>
-                <p>{`${report.EntityType}: ${report.EntityName || `ID: ${report.EntityID}`}`}</p>
-                {profileLink && (
-                  <Link to={profileLink} className="arr-profile-link" target="_blank" rel="noopener noreferrer">
-                    View Profile
-                  </Link>
+      <div className="modal-box" onClick={e => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Review Complaint #{report.ReportID}</h2>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        
+        <div className="modal-body">
+          <div className="report-info">
+            <div className="info-row">
+              <label>Reported Item:</label>
+              <div>
+                <strong>{report.EntityType}: {report.EntityName || report.EntityID}</strong>
+                
+                {/* BUTTON TO OPEN PROFILE MODAL */}
+                {canViewProfile && (
+                  <button 
+                    type="button" 
+                    className="view-link-btn" 
+                    onClick={handleViewProfile}
+                  >
+                    View Profile Details
+                  </button>
                 )}
               </div>
-              <div className="info-item listener-reason">
-                <label className="info-item-label">Listener's Reason:</label>
-                <p>{report.Reason || "No reason provided."}</p>
-              </div>
+            </div>
+            <div className="info-row">
+              <label>Reason:</label>
+              <span>{report.ReportType}</span>
+            </div>
+            <div className="info-row">
+              <label>Details:</label>
+              <p className="reason-text">{report.Reason || "No details provided."}</p>
             </div>
           </div>
-          <div className="detail-view-right">
-            {report.Resolved ? (
-              <ResolvedView report={report} />
-            ) : (
-              <form className="admin-form" onSubmit={handleResolveSubmit}>
-                <h2>Take Action</h2>
-                <div className="form-group">
-                  <label>Action Taken *</label>
-                  <div className="action-button-group">
-                    <button
-                      type="button"
-                      className={getActionBtnClass('Removed')}
-                      onClick={() => setSelectedAction('Removed')}>
-                      Remove Content
-                    </button>
-                    <button
-                      type="button"
-                      className={getActionBtnClass('NoAction')}
-                      onClick={() => setSelectedAction('NoAction')}>
-                      No Action
-                    </button>
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="justification">Admin Justification *</label>
-                  <textarea
-                    id="justification"
-                    value={adminJustification}
-                    onChange={(e) => setAdminJustification(e.target.value)}
-                    placeholder="Explain the reason for your action. This will be visible to the artist/user."
-                  />
-                </div>
-                {errorMessage && <p className="form-message error">{errorMessage}</p>}
-                {successMessage && <p className="form-message success">{successMessage}</p>}
-                <button
-                  type="submit"
-                  className="form-button submit"
-                  disabled={isProcessing || !adminJustification || !selectedAction}
+
+          <hr className="divider" />
+
+          {report.Resolved ? (
+            <div className="resolved-info">
+              <h3>Resolution Details</h3>
+              <p><strong>Action:</strong> {formatAdminAction(report.AdminActionTaken)}</p>
+              <p><strong>By:</strong> {report.ResolverName || "Admin"}</p>
+              <p><strong>Notes:</strong> {report.AdminJustification}</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <h3>Take Action</h3>
+              <div className="action-buttons">
+                <button 
+                  type="button" 
+                  className={`act-btn remove ${action === 'Removed' ? 'active' : ''}`}
+                  onClick={() => setAction('Removed')}
                 >
-                  {isProcessing ? "Processing..." : "Resolve Report"}
+                  Remove Content
                 </button>
-              </form>
-            )}
-          </div>
+                <button 
+                  type="button" 
+                  className={`act-btn ignore ${action === 'NoAction' ? 'active' : ''}`}
+                  onClick={() => setAction('NoAction')}
+                >
+                  Dismiss / No Action
+                </button>
+              </div>
+              <textarea 
+                className="admin-notes" 
+                placeholder="Justification (Required to resolve)..."
+                value={justification}
+                onChange={e => setJustification(e.target.value)}
+              />
+              <button 
+                type="submit" 
+                className="submit-resolve" 
+                disabled={!action || !justification || processing}
+              >
+                {processing ? "Processing..." : "Resolve Report"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
+
+      {/* NESTED MODAL FOR VIEWING PROFILE */}
+      {previewUser && (
+        <UserProfileModal 
+          user={previewUser} 
+          onClose={() => setPreviewUser(null)} 
+        />
+      )}
     </div>
   );
 }
 
-function ResolvedView({ report }) {
+// === USER PROFILE MODAL (Embedded here for simplicity) ===
+function UserProfileModal({ user, onClose }) {
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [resolvedPfp, setResolvedPfp] = useState(null);
+  
+  const isArtist = user.AccountType === "Artist";
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchDetails = async () => {
+      try {
+        let url = isArtist
+          ? `${API_BASE_URL}/artists/${user.SpecificID}`
+          : `${API_BASE_URL}/listeners/${user.SpecificID}/profile`;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isMounted) return;
+
+          // Normalize Data Structure
+          let profileData = isArtist ? data : data.listener;
+          setDetails(profileData);
+
+          // --- MEDIA RESOLUTION LOGIC ---
+          // Check for Media ID (Artists use 'image_media_id', Listeners use 'image_media_id')
+          const mediaId = profileData.image_media_id;
+          
+          if (mediaId) {
+            // Fetch signed URL
+            const mediaRes = await fetch(`${API_BASE_URL}/media/${mediaId}`);
+            if (mediaRes.ok) {
+              const mediaData = await mediaRes.json();
+              setResolvedPfp(mediaData.url);
+            }
+          } else {
+            // Fallback to direct PFP url or PFP string if valid
+            setResolvedPfp(profileData.pfpUrl || profileData.PFP || null);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load user details", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchDetails();
+    return () => { isMounted = false; };
+  }, [user, isArtist]);
+
+  // Use fetched details if available, else fallback to passed user prop
+  const displayName = details?.ArtistName || details?.FirstName ? (isArtist ? details.ArtistName : `${details.FirstName} ${details.LastName}`) : user.DisplayName;
+  const displayUsername = details?.Username || user.Username;
+  const bio = details?.Bio || "No bio provided.";
+
   return (
-    <div className="resolved-view">
-      <h2>Report Resolved</h2>
-      <div className="info-item">
-        <label className="info-item-label">Resolved By:</label>
-        <p>{report.ResolverName || `Admin ID: ${report.AdminID}`}</p>
-      </div>
-      <div className="info-item">
-        <label className="info-item-label">Action Taken:</label>
-        <p>{formatAdminAction(report.AdminActionTaken)}</p>
-      </div>
-      <div className="info-item">
-        <label className="info-item-label">Admin's Justification:</label>
-        <p>{report.AdminJustification}</p>
+    <div className="modal-overlay profile-z-index" onClick={onClose}>
+      <div className="modal-box profile-modal-box" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Profile Preview</h2>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        <div className="modal-body">
+          {loading ? (
+            <div className="modal-loading">Loading profile...</div>
+          ) : (
+            <>
+              <div className="profile-preview-header">
+                {resolvedPfp ? (
+                  <img 
+                    src={resolvedPfp} 
+                    alt={displayName} 
+                    className="profile-preview-avatar"
+                    onError={(e) => {
+                      // If resolved URL fails, hide image and show fallback
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                
+                {/* Fallback Circle (shown if no PFP or if PFP errors out) */}
+                <div className="profile-preview-fallback" style={{ display: resolvedPfp ? 'none' : 'flex' }}>
+                  {displayName ? displayName.charAt(0).toUpperCase() : "?"}
+                </div>
+
+                <div className="profile-preview-text">
+                  <h3>{displayName}</h3>
+                  <span className="profile-preview-tag">@{displayUsername}</span>
+                  <span className={`type-badge ${isArtist ? 'artist' : 'listener'}`}>{user.AccountType}</span>
+                </div>
+              </div>
+              <div className="profile-preview-bio">
+                <label>Bio:</label>
+                <p>{bio}</p>
+              </div>
+              <div className="profile-preview-stats">
+                <div className="stat-chip">ID: {user.SpecificID}</div>
+                {isArtist && <div className="stat-chip">{details?.IsVerified ? "Verified ✓" : "Standard Artist"}</div>}
+                {!isArtist && <div className="stat-chip">{details?.Major ? `Major: ${details.Major}` : "Major: N/A"}</div>}
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

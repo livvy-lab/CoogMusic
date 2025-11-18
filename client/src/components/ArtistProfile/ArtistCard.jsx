@@ -25,7 +25,6 @@ function PlaceholderCard() {
         </div>
         <div className="artistCard__stats">
           <button disabled>0 followers</button>
-          <button disabled>0 albums</button>
         </div>
       </div>
       <div className="artistCard__songs">♪ 0 songs</div>
@@ -35,9 +34,9 @@ function PlaceholderCard() {
 
 export default function ArtistCard({ artistId }) {
   const [artist, setArtist] = useState(null);
-  const [favorited, setFavorited] = useState(false); // state for the favorite button
+  const [favorited, setFavorited] = useState(false); 
   const [state, setState] = useState({ loading: false, notFound: false });
-  const [pending, setPending] = useState(false); // pending state for favorite button
+  const [pending, setPending] = useState(false); 
 
   // follow/report logic
   const [isFollowing, setIsFollowing] = useState(false);
@@ -147,7 +146,6 @@ export default function ArtistCard({ artistId }) {
       setPending(false);
     }
   }
-
 
   // check follow status (only for listeners)
   useEffect(() => {
@@ -288,24 +286,20 @@ export default function ArtistCard({ artistId }) {
         {/* stats section */}
         <div className="artistCard__stats">
           <button
-            onClick={() => navigate(`/artists/${artistId}/follows?tab=followers`)}
+            onClick={() => navigate(`/artists/${artistId}/follows`)}
             aria-label="View followers"
             title="View followers"
+            style={{ cursor: 'pointer' }}
           >
             {Number(artist?.FollowerCount || 0).toLocaleString()} followers
-          </button>
-          <button
-            onClick={() => navigate(`/artists/${artistId}/albums`)}
-            aria-label="View albums"
-            title="View albums"
-          >
-            {Number(artist?.AlbumCount || 0).toLocaleString()} albums
           </button>
         </div>
       </div>
 
-      {/* song count badge (top right) */}
-      <div className="artistCard__songs">♪ {artist?.SongCount || 0} songs</div>
+      {/* song & album count badge (top right) */}
+      <div className="artistCard__songs">
+        ♪ {artist?.SongCount || 0} songs
+      </div>
 
       {/* favorite/pin button (listeners only) */}
       {currentUserType === "Listener" && (

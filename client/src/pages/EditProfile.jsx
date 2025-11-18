@@ -153,7 +153,20 @@ function EditListenerProfile({ user }) {
         <form className="edit-profile-form" onSubmit={handleSubmit}>
           <div className="profile-pic-section">
             {pfpUrl && (
-              <img src={pfpUrl} alt="Profile" className="profile-pic-preview" />
+              <img 
+                src={pfpUrl} 
+                alt="Profile" 
+                className="profile-pic-preview" 
+                // Added circular styling for Listener as well
+                style={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #895674',
+                  marginBottom: '1rem'
+                }}
+              />
             )}
             <input
               type="file"
@@ -274,7 +287,9 @@ function EditArtistProfile({ user }) {
           artistName: data.ArtistName || "",
           bio: data.Bio || "",
         });
-        setPfpUrl(data.pfpUrl || "");
+        
+        // setPfpUrl(data.pfpUrl || ""); // Commented out to remove initial preview for Artists
+        
         setOriginalData(data);
       } catch (err) {
         console.error("Error fetching profile:", err);
@@ -369,7 +384,19 @@ function EditArtistProfile({ user }) {
         <form className="edit-profile-form" onSubmit={handleSubmit}>
           <div className="profile-pic-section">
             {pfpUrl && (
-              <img src={pfpUrl} alt="Profile" className="profile-pic-preview" />
+              <img 
+                src={pfpUrl} 
+                alt="Profile" 
+                className="profile-pic-preview" 
+                style={{
+                  width: '150px',
+                  height: '150px',
+                  borderRadius: '50%',
+                  objectFit: 'cover',
+                  border: '2px solid #895674',
+                  marginBottom: '1rem'
+                }}
+              />
             )}
             <input
               type="file"

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import PageLayout from "../components/PageLayout/PageLayout";
 import { getUser } from "../lib/userStorage";
-import "./ArtistAnalytics.css";
 import { API_BASE_URL } from "../config/api";
+import "./ArtistAnalytics.css";
 
 function todayOffset(days = 0) {
   const d = new Date();
@@ -11,10 +11,9 @@ function todayOffset(days = 0) {
 }
 
 const sortOptions = [
-  { label: "Song Title", value: "songTitle" },
-  { label: "Album", value: "album" },
-  { label: "Release Date", value: "releaseDate" },
   { label: "Total Streams", value: "totalStreams" },
+  { label: "Song Title", value: "songTitle" },
+  { label: "Release Date", value: "releaseDate" },
   { label: "Total Likes", value: "totalLikes" },
   { label: "Playlist Adds", value: "playlistAdds" },
 ];
@@ -25,86 +24,63 @@ export default function ArtistAnalytics() {
   const [stats, setStats] = useState({ totals: [], albums: [], songs: [] });
   const [isInitLoading, setIsInitLoading] = useState(true);
 
-  const [pendingStartDate, setPendingStartDate] = useState(todayOffset(-6));
-  const [pendingEndDate, setPendingEndDate] = useState(todayOffset(0));
-  const [pendingSortBy, setPendingSortBy] = useState("totalStreams");
-  const [pendingSortOrder, setPendingSortOrder] = useState("desc");
-  const [pendingFilterAlbum, setPendingFilterAlbum] = useState("");
-  const [pendingSearchTitle, setPendingSearchTitle] = useState("");
+  // Filters
+  const [startDate, setStartDate] = useState(todayOffset(-6));
+  const [endDate, setEndDate] = useState(todayOffset(0));
+  const [filterAlbum, setFilterAlbum] = useState("");
+  const [searchTitle, setSearchTitle] = useState("");
+  
+  // Sort State
+  const [sortBy, setSortBy] = useState("totalStreams");
+  const [sortOrder, setSortOrder] = useState("desc");
 
-  const [appliedStartDate, setAppliedStartDate] = useState(todayOffset(-6));
-  const [appliedEndDate, setAppliedEndDate] = useState(todayOffset(0));
-  const [appliedSortBy, setAppliedSortBy] = useState("totalStreams");
-  const [appliedSortOrder, setAppliedSortOrder] = useState("desc");
-  const [appliedFilterAlbum, setAppliedFilterAlbum] = useState("");
-  const [appliedSearchTitle, setAppliedSearchTitle] = useState("");
-
-  const applyFilters = () => {
-    setAppliedStartDate(pendingStartDate);
-    setAppliedEndDate(pendingEndDate);
-    setAppliedSortBy(pendingSortBy);
-    setAppliedSortOrder(pendingSortOrder);
-    setAppliedFilterAlbum(pendingFilterAlbum);
-    setAppliedSearchTitle(pendingSearchTitle);
-  };
-
-  // runs once to get the default start date
+  // Initial Setup
   useEffect(() => {
     if (!artistId) return;
-    
-    setIsInitLoading(true); // start loading
+    setIsInitLoading(true);
     fetch(`${API_BASE_URL}/analytics/artist/${artistId}/init`)
       .then(r => r.json())
       .then(data => {
         if (data.firstReleaseDate) {
           const firstDate = data.firstReleaseDate.slice(0, 10);
-          setPendingStartDate(firstDate);
-          setAppliedStartDate(firstDate);
+          setStartDate(firstDate);
         }
       })
-      .catch(err => {
-        console.error("Failed to fetch first release date, using default.", err);
-      })
-      .finally(() => {
-        setIsInitLoading(false);
-      });
+      .catch(console.error)
+      .finally(() => setIsInitLoading(false));
   }, [artistId]);
 
-  useEffect(() => {
-    if (!artistId || isInitLoading) return;
-
+  // Main Fetch
+  const fetchStats = () => {
+    if (!artistId) return;
     setLoading(true);
+    
     const params = new URLSearchParams({
-      startDate: appliedStartDate,
-      endDate: appliedEndDate,
-      sort: appliedSortBy,
-      order: appliedSortOrder,
-      ...(appliedFilterAlbum ? { album: appliedFilterAlbum } : {}),
-      ...(appliedSearchTitle ? { song: appliedSearchTitle } : {}),
+      startDate,
+      endDate,
+      sort: sortBy,
+      order: sortOrder,
+      ...(filterAlbum ? { album: filterAlbum } : {}),
+      ...(searchTitle ? { song: searchTitle } : {}),
     }).toString();
+
     fetch(`${API_BASE_URL}/analytics/artist/${artistId}/summary?${params}`)
       .then(r => r.json())
-      .then(summary => {
-        setStats(summary);
+      .then(data => {
+        setStats(data);
         setLoading(false);
       });
-  }, [
-    artistId,
-    isInitLoading,
-    appliedStartDate,
-    appliedEndDate,
-    appliedSortBy,
-    appliedSortOrder,
-    appliedFilterAlbum,
-    appliedSearchTitle,
-  ]);
+  };
 
-  const filteredSongs = stats.songs ?? [];
+  // Fetch when filters/sort change
+  useEffect(() => {
+    if (!isInitLoading) fetchStats();
+  }, [artistId, isInitLoading, startDate, endDate, sortBy, sortOrder, filterAlbum]);
 
-  if (loading || isInitLoading) return (
+  if (loading && isInitLoading) return (
     <PageLayout>
       <div className="artist-analytics-container">
-        <div className="aa-loading">Loading...</div>
+        <div className="aa-loading">Loading Report...</div>
       </div>
     </PageLayout>
   );
@@ -113,108 +89,109 @@ export default function ArtistAnalytics() {
     <PageLayout>
       <div className="artist-analytics-container">
         <h2>Artist Performance Report</h2>
-        <div className="aa-filter-bar">
-          <div>
-            <label className="aa-filter-label">Start Date:</label>
-            <input
-              className="aa-date-input"
-              type="date"
-              value={pendingStartDate}
-              onChange={e => setPendingStartDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="aa-filter-label">End Date:</label>
-            <input
-              className="aa-date-input"
-              type="date"
-              value={pendingEndDate}
-              onChange={e => setPendingEndDate(e.target.value)}
-            />
-          </div>
-          <div>
-            <label className="aa-filter-label">Album:</label>
-            <select value={pendingFilterAlbum} onChange={e => setPendingFilterAlbum(e.target.value)}>
-              <option value="">All</option>
-              {stats.albums?.map(alb =>
-                <option key={alb.AlbumID} value={alb.AlbumID}>{alb.Title}</option>
-              )}
-            </select>
-          </div>
-          <div>
-            <label className="aa-filter-label">Song Title:</label>
-            <input
-              type="text"
-              className="aa-date-input"
-              placeholder="Search title..."
-              value={pendingSearchTitle}
-              onChange={e => setPendingSearchTitle(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') applyFilters(); }}
-            />
-          </div>
-          <div>
-            <label className="aa-filter-label">Sort By:</label>
-            <select value={pendingSortBy} onChange={e => setPendingSortBy(e.target.value)}>
-              {sortOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-            </select>
-            <select value={pendingSortOrder} onChange={e => setPendingSortOrder(e.target.value)}>
-              <option value="desc">↓</option>
-              <option value="asc">↑</option>
-            </select>
-          </div>
-          <div>
-            <button
-              type="button"
-              className="aa-filter-apply-btn"
-              onClick={applyFilters}
-            >
-            Apply Filters
-            </button>
-          </div>
-        </div>
-        <div className="aa-stats-row">
-          {stats?.totals?.map(item =>
+
+        {/* 1. Summary Cards */}
+        <div className="aa-summary-grid">
+          {stats?.totals?.map(item => (
             <div className="aa-stat-card" key={item.label}>
               <div className="aa-stat-label">{item.label}</div>
-              <div className="aa-stat-value">{item.value}</div>
+              <div className="aa-stat-value">{item.value.toLocaleString()}</div>
             </div>
-          )}
+          ))}
         </div>
-        <section className="aa-section">
-          <table className="aa-table">
-            <thead>
-              <tr>
-                <th>Song Title</th>
-                <th>Album</th>
-                <th>Release Date</th>
-                <th>Total Streams</th>
-                <th>Total Likes</th>
-                <th>Playlist Adds</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSongs.map((row, i) =>
-                <tr key={i}>
-                  <td>{row.songTitle}</td>
-                  <td>{row.album}</td>
-                  <td>
-                    {new Date(
-                      row.releaseDate 
-                        ? `${String(row.releaseDate).slice(0, 10)}T00:00:00Z` 
-                        : Date.now()
-                    ).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
-                </td>
-                  <td>{row.totalStreams}</td>
-                  <td>{row.totalLikes}</td>
-                  <td>{row.playlistAdds}</td>
+
+        {/* 2. Filter Bar */}
+        <div className="aa-filter-bar">
+          <div className="date-group">
+            <label className="aa-filter-label">From:</label>
+            <input 
+              type="date" 
+              value={startDate} 
+              onChange={e => setStartDate(e.target.value)} 
+            />
+          </div>
+          <div className="date-group">
+            <label className="aa-filter-label">To:</label>
+            <input 
+              type="date" 
+              value={endDate} 
+              onChange={e => setEndDate(e.target.value)} 
+            />
+          </div>
+          
+          <div className="search-group">
+            <label className="aa-filter-label">Search Song:</label>
+            <input 
+              type="text" 
+              placeholder="Title..." 
+              value={searchTitle} 
+              onChange={e => setSearchTitle(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') fetchStats(); }}
+            />
+          </div>
+
+          <div>
+            <label className="aa-filter-label">Album:</label>
+            <select value={filterAlbum} onChange={e => setFilterAlbum(e.target.value)}>
+              <option value="">All Albums</option>
+              {stats.albums?.map(alb => (
+                <option key={alb.AlbumID} value={alb.AlbumID}>{alb.Title}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="aa-filter-label">Sort By:</label>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)}>
+              {sortOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+          </div>
+
+          <div className="btn-container">
+            <button className="aa-apply-btn" onClick={fetchStats}>Refresh</button>
+          </div>
+        </div>
+
+        {/* 3. Detailed Data Table */}
+        <section className="aa-table-card">
+          <div className="table-scroll">
+            <table className="aa-table">
+              <thead>
+                <tr>
+                  <th>Song Title</th>
+                  <th>Album</th>
+                  <th>Release Date</th>
+                  <th>Streams (Period)</th>
+                  <th>Total Likes</th>
+                  <th>Added to Playlists</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.songs?.length > 0 ? (
+                  stats.songs.map((row, i) => (
+                    <tr key={i}>
+                      <td className="col-title">{row.songTitle}</td>
+                      <td className="col-album">{row.album}</td>
+                      <td>
+                        {new Date(row.releaseDate).toLocaleDateString("en-US", {
+                          year: "numeric", month: "short", day: "numeric"
+                        })}
+                      </td>
+                      <td className="col-highlight">{row.totalStreams.toLocaleString()}</td>
+                      <td>{row.totalLikes.toLocaleString()}</td>
+                      <td>{row.playlistAdds.toLocaleString()}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="aa-no-results">
+                      No performance data found for this period.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </section>
       </div>
     </PageLayout>

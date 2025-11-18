@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useParams } from "react-router-dom";
+import { useSearchParams, useParams, useLocation } from "react-router-dom";
 import UserRow from "./UserRow";
 import "./Follows.css";
 import { getUser } from "../../lib/userStorage";
@@ -9,15 +9,23 @@ import { showToast } from '../../lib/toast';
 export default function FollowTabs() {
   const { id: viewedUserIdParam } = useParams();
   const [searchParams] = useSearchParams();
+  const location = useLocation(); // Added to check URL path
+  
   const initialTab = searchParams.get("tab") || "followers";
-
   const loggedInUser = getUser();
+  
   const isViewingOtherListener = Boolean(viewedUserIdParam);
+  
+  // Determine if we are on an Artist route (e.g. /artists/1/follows)
+  const isArtistRoute = location.pathname.includes("/artists/");
+
   const viewedUserId = isViewingOtherListener
     ? viewedUserIdParam
     : loggedInUser.listenerId || loggedInUser.artistId || loggedInUser.accountId;
+
+  // FIX: Dynamically determine type based on URL route
   const viewedUserType = isViewingOtherListener
-    ? "Listener"
+    ? (isArtistRoute ? "Artist" : "Listener")
     : loggedInUser.accountType === "listener"
     ? "Listener"
     : "Artist";
@@ -28,9 +36,11 @@ export default function FollowTabs() {
   const currentUserType =
     loggedInUser.accountType === "listener" ? "Listener" : "Artist";
 
-
   const isArtist = currentUserType === "Artist";
-  const isViewingOwnProfile = !isViewingOtherListener;
+  // Check if viewing own profile (IDs match AND types match)
+  const isViewingOwnProfile = 
+    Number(viewedUserId) === Number(currentUserId) && viewedUserType === currentUserType;
+
   const [activeTab, setActiveTab] = useState(
     isArtist && isViewingOwnProfile ? "followers" : initialTab,
   );
@@ -42,22 +52,33 @@ export default function FollowTabs() {
 
   // Refetch lists for profile being viewed
   const refetchData = async () => {
-    const followersRes = await fetch(
-      `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`,
-    );
-    setFollowers(await followersRes.json());
-    if (!isArtist || !isViewingOwnProfile) {
-      const followingRes = await fetch(
-        `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`,
-      );
-      setFollowing(await followingRes.json());
-    }
+    if (!viewedUserId) return;
 
-    if (!isArtist) {
-      const myFollowingRes = await fetch(
-        `${API_BASE_URL}/follows?userId=${currentUserId}&userType=${currentUserType}&tab=following`,
+    try {
+      const followersRes = await fetch(
+        `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=followers`,
       );
-      setMyFollowing(await myFollowingRes.json());
+      if (followersRes.ok) setFollowers(await followersRes.json());
+
+      // Only fetch 'following' if it's a Listener (Artists usually don't have a 'following' list in this context)
+      // OR if we just want to be safe, we can try fetching it anyway, but the button is hidden below.
+      if (viewedUserType === "Listener") {
+        const followingRes = await fetch(
+          `${API_BASE_URL}/follows?userId=${viewedUserId}&userType=${viewedUserType}&tab=following`,
+        );
+        if (followingRes.ok) setFollowing(await followingRes.json());
+      } else {
+        setFollowing([]); // Artists don't show following
+      }
+
+      if (!isArtist) {
+        const myFollowingRes = await fetch(
+          `${API_BASE_URL}/follows?userId=${currentUserId}&userType=${currentUserType}&tab=following`,
+        );
+        if (myFollowingRes.ok) setMyFollowing(await myFollowingRes.json());
+      }
+    } catch (e) {
+      console.error("Failed to fetch follow data", e);
     }
   };
 
@@ -66,8 +87,13 @@ export default function FollowTabs() {
   }, [viewedUserId, viewedUserType, isArtist, isViewingOwnProfile]);
 
   useEffect(() => {
-    setActiveTab(isArtist && isViewingOwnProfile ? "followers" : initialTab);
-  }, [initialTab, isArtist, isViewingOwnProfile]);
+    // If viewing an Artist (own or other), default to followers tab as they might not have 'following'
+    if (viewedUserType === "Artist") {
+      setActiveTab("followers");
+    } else {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab, viewedUserType]);
 
   const handleFollow = async (targetUser) => {
     if (isArtist) return;
@@ -138,7 +164,8 @@ export default function FollowTabs() {
           Followers
         </button>
         
-        {(!isArtist || !isViewingOwnProfile) && (
+        {/* Only show Following tab if the VIEWED user is a Listener */}
+        {viewedUserType === "Listener" && (
           <button
             className={activeTab === "following" ? "active" : ""}
             onClick={() => setActiveTab("following")}

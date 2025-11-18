@@ -187,7 +187,10 @@ export default function NewReleases({ title = "New releases" }) {
                 className="newRel__img"
                 src={c.img}
                 alt={c.alt}
-                onClick={() => c.song && handlePlay(c.song)}
+                onClick={(e) => {
+                  if (e.target.closest(".songActions") || e.target.closest(".addToPlaylistMenu-root") || e.target.closest(".addToPlaylistPopup-menu")) return;
+                  if (c.song) handlePlay(c.song);
+                }}
                 onKeyDown={(e) => {
                   if (!c.song) return;
                   if (e.key === "Enter" || e.key === " ") handlePlay(c.song);
@@ -200,7 +203,10 @@ export default function NewReleases({ title = "New releases" }) {
               <div className="newRel__meta">
                 <div
                   className="newRel__song"
-                  onClick={() => c.song && handlePlay(c.song)}
+                  onClick={(e) => {
+                    if (e.target.closest(".songActions") || e.target.closest(".addToPlaylistMenu-root") || e.target.closest(".addToPlaylistPopup-menu")) return;
+                    if (c.song) handlePlay(c.song);
+                  }}
                   onKeyDown={(e) => {
                     if (!c.song) return;
                     if (e.key === "Enter" || e.key === " ") handlePlay(c.song);

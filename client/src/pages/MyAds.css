@@ -10,12 +10,12 @@
 
 .myads-header h1 {
   font-size: 2.5rem;
-  color: #1a1a1a;
+  color: #6f233f;
   margin-bottom: 0.5rem;
 }
 
 .myads-header p {
-  color: #666;
+  color: #6f233f;
   font-size: 1.1rem;
 }
 
@@ -70,8 +70,9 @@
 }
 
 .ad-card {
-  background: white;
+  background: rgb(255, 255, 255);
   border-radius: 12px;
+  border: 5px solid #895674;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
@@ -119,8 +120,17 @@
 }
 
 .file-icon {
-  font-size: 4rem;
-  opacity: 0.3;
+  font-size: 1.2rem;
+  opacity: 0.5;
+  color: #999;
+}
+
+.img-fallback {
+  color: #bbb;
+  text-align: center;
+  width: 100%;
+  padding: 2em 0;
+  font-size: 1.05rem;
 }
 
 .ad-info {
@@ -208,12 +218,12 @@
 .sub-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: transparent; /* keep screen brightness unchanged */
+  background: transparent;
   border: none;
   padding: 0;
   margin: 0;
   cursor: default;
-  z-index: 1000; /* ensure backdrop stays below modal panel */
+  z-index: 1000;
 }
 
 .sub-modal {
@@ -222,10 +232,10 @@
   background: #ffe8f5;
   border: 5px solid #895674;
   border-radius: 18px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
   padding: 24px 28px;
   color: #782355;
-  z-index: 1001; /* place modal above backdrop */
+  z-index: 1001;
 }
 
 .sub-modal h3 {
@@ -252,17 +262,34 @@
   border-radius: 10px;
   padding: 10px 14px;
   font-weight: 800;
-  cursor: pointer; /* show hand cursor on both modal buttons */
+  cursor: pointer;
 }
 
 .btn-secondary {
   background: #f7ddec;
   color: #782355;
 }
-.btn-secondary:hover { background: #f1cfe3; }
+
+.btn-secondary:hover {
+  background: #f1cfe3;
+}
 
 .btn-danger {
   background: #8b1858;
   color: #fff;
 }
-.btn-danger:hover { background: #6d1245; }
+
+.btn-danger:hover {
+  background: #6d1245;
+}
+
+/* Success alert (if needed for future use) */
+.success-alert {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #e0ffe0;
+  color: #157d1c;
+  border-radius: 8px;
+  border-left: 4px solid #3eb86c;
+  font-size: 1rem;
+}

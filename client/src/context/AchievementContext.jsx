@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import AchievementPopup from "../components/Achievement/AchievementPopUp";
+import AchievementPopup from "../components/Achievement/AchievementPopup";
 import { getUser } from "../lib/userStorage";
 import { API_BASE_URL } from "../config/api";
 

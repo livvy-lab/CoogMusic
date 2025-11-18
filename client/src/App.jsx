@@ -36,6 +36,9 @@ import AdminReportReview from "./pages/AdminReportReview";
 import AdminHome from "./pages/AdminHome";
 import RequireAdmin from "./components/Auth/RequireAdmin";
 import AlbumView from "./pages/AlbumView";
+import AdminRevenueReport from "./pages/AdminRevenueReport"; 
+import AdminSongPerformance from "./pages/AdminSongPerformance";
+import AdminUserManagement from "./pages/AdminUserManagement";
 
 import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
@@ -43,7 +46,6 @@ import { AchievementProvider } from "./context/AchievementContext";
 import MusicPlayBar from "./components/MusicPlayBar/MusicPlayBar";
 import Toasts from "./components/Toasts/Toasts";
 import ToggleBarButton from "./components/ToggleBarButton/ToggleBarButton";
-import AdminSongPerformance from "./pages/AdminSongPerformance";
 
 
 function AppContent() {
@@ -68,7 +70,9 @@ function AppContent() {
           {/* Admin Routes */}
           <Route path="report-review" element={<RequireAdmin><AdminReportReview /></RequireAdmin>} />
           <Route path="admin-home" element={<RequireAdmin><AdminHome /></RequireAdmin>} />
-          <Route path="/admin/reports/songs" element={<AdminSongPerformance />} />
+          <Route path="/admin/reports/songs" element={<RequireAdmin><AdminSongPerformance /></RequireAdmin>} />
+          <Route path="/admin/reports/revenue" element={<RequireAdmin><AdminRevenueReport /></RequireAdmin>} />
+          <Route path="/admin/listeners" element={<RequireAdmin><AdminUserManagement /></RequireAdmin>} />
 
           {/* Listener routes */}
           <Route path="/profile" element={<ListenerProfile />} />
@@ -79,13 +83,17 @@ function AppContent() {
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
           <Route path="/subscription" element={<Subscription />} />
+          
+          {/* Connection Routes */}
           <Route path="/listeners/:id/follows" element={<FollowsPage />} />
+          <Route path="/artists/:id/follows" element={<FollowsPage />} /> {/* ADDED THIS ROUTE */}
+          <Route path="/follows" element={<FollowsPage />} />
+          
           <Route path="/buy-ads" element={<BuyAds />} />
           <Route path="/edit-profile" element={<EditProfile />} />
           <Route path="/playlists" element={<Playlists />} />
           <Route path="/my-ads" element={<MyAds />} />
           <Route path="/listener-analytics" element={<ListenerAnalytics />} />
-          <Route path="/follows" element={<FollowsPage />} />
 
           {/* Artist routes */}
           <Route path="/artist/:artistId" element={<ArtistView />} />

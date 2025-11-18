@@ -85,13 +85,15 @@
 .dashboard-actions {
   width: 100%;
   max-width: 1080px;
-  height: 250px;
   margin-top: 48px;
   padding: 32px;
   background: #FFF0FD;
   border: 4px solid #895674;
   border-radius: 20px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .section-title {
