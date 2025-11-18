@@ -159,12 +159,13 @@ export default function Discography({ artistId: artistIdProp }) {
     if (error) return <div className="nr__empty">⚠️ {error}</div>;
     if (!releases.length) return <div className="nr__empty">🎵 No releases yet 🎵</div>;
 
-    // Clicking discography cards should do nothing by design (no routing/play)
-    // This disables the previous behavior where clicking a card would play or navigate.
     return releases.map((r) => {
+      // Determine placeholder text: Album if albumId exists, otherwise Single
+      const placeholderText = r.albumId ? "Album" : "Single";
+      
       const coverUrl = r.coverMediaId && covers[r.coverMediaId] 
         ? covers[r.coverMediaId] 
-        : "https://placehold.co/300x300/FFE8F5/895674?text=Album";
+        : `https://placehold.co/300x300/FFE8F5/895674?text=${placeholderText}`;
       
       return (
         <div 

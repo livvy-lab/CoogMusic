@@ -11,7 +11,6 @@ import chartIcon from '../assets/icons/chart-icon.svg';
 import uploadIcon from '../assets/icons/upload-icon.svg';
 import megaphoneIcon from '../assets/icons/megaphone-icon.svg';
 import albumIcon from '../assets/icons/album-icon.svg';
-import heartIcon from '../assets/icons/heart-icon.svg';
 import uploadSongIcon from '../assets/navigation_icons/uploadsong.svg';
 
 export default function ArtistsPerspective() {
@@ -92,7 +91,7 @@ export default function ArtistsPerspective() {
 
     async function fetchFollowerCount(artistId, signal) {
       try {
-  const res = await fetch(`${API_BASE_URL}/follows/artist-followers?artistId=${artistId}`, { signal });
+        const res = await fetch(`${API_BASE_URL}/follows/artist-followers?artistId=${artistId}`, { signal });
         if (!res.ok) return;
         const data = await res.json();
         setFollowerCount(data.followerCount || 0);
@@ -217,7 +216,7 @@ export default function ArtistsPerspective() {
                   onClick={() => playSong({ songId: song.SongID })}
                 >
                   <div className="song-left">
-                    <img src={heartIcon} alt="" className="song-heart" />
+                    {/* Removed Heart Icon Here */}
                     <div className="song-artwork">
                       {song.CoverURL ? (
                         <img src={song.CoverURL} alt={song.Title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -249,6 +248,3 @@ export default function ArtistsPerspective() {
     </PageLayout>
   );
 }
-
-
-
