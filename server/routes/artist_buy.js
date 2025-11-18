@@ -5,12 +5,10 @@ export async function handleArtistBuyRoutes(req, res) {
   const { pathname } = parse(req.url, true);
   const method = req.method;
 
-  // Allow CORS (important for frontend calls)
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
-  // Preflight check (browser sends this before actual request)
   if (method === "OPTIONS") {
     res.writeHead(204);
     res.end();
@@ -18,131 +16,54 @@ export async function handleArtistBuyRoutes(req, res) {
   }
 
   try {
-    // GET all artists that are not deleted
+    // GET all ad purchases (Admin view)
     if (pathname === "/artist_buys" && method === "GET") {
-      const [rows] = await db.query("SELECT * FROM Artist WHERE IsDeleted = 0");
+      const [rows] = await db.query("SELECT * FROM Artist_Buy WHERE IsDeleted = 0");
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(rows));
       return;
     }
 
-    // GET one artist by their ArtistID
-    if (pathname.startsWith("/artist_buys/") && method === "GET") {
-      const artistId = pathname.split("/")[2];
-      const [rows] = await db.query(
-        "SELECT * FROM Artist WHERE ArtistID = ? AND IsDeleted = 0",
-        [artistId]
-      );
-
-      if (rows.length === 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Artist not found" }));
-        return;
-      }
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(rows[0]));
-      return;
-    }
-
-    // POST create a new artist
+    // POST: Manually record a transaction (if needed separate from upload)
     if (pathname === "/artist_buys" && method === "POST") {
       let body = "";
       req.on("data", chunk => (body += chunk));
       req.on("end", async () => {
-        const { Username, ArtistName, DateCreated, PFP, Banner, Bio } = JSON.parse(body);
+        try {
+          const { AdID, ArtistID } = JSON.parse(body);
 
-        // Required fields check
-        if (!Username || !ArtistName || !DateCreated) {
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(
-            JSON.stringify({ error: "Missing required fields: Username, ArtistName, DateCreated" })
+          if (!AdID || !ArtistID) {
+            res.writeHead(400, { "Content-Type": "application/json" });
+            res.end(JSON.stringify({ error: "AdID and ArtistID are required" }));
+            return;
+          }
+
+          const [result] = await db.query(
+            "INSERT INTO Artist_Buy (AdID, ArtistID, PurchaseDate, IsDeleted) VALUES (?, ?, NOW(), 0)",
+            [AdID, ArtistID]
           );
-          return;
+
+          res.writeHead(201, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({
+            BuyID: result.insertId,
+            AdID,
+            ArtistID,
+            message: "Ad purchase recorded successfully"
+          }));
+        } catch (err) {
+          console.error("Error recording ad buy:", err);
+          res.writeHead(500, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Database error" }));
         }
-
-        const [result] = await db.query(
-          "INSERT INTO Artist (Username, ArtistName, DateCreated, PFP, Banner, Bio) VALUES (?, ?, ?, ?, ?, ?)",
-          [Username, ArtistName, DateCreated, PFP || null, Banner || null, Bio || null]
-        );
-
-        res.writeHead(201, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            ArtistID: result.insertId,
-            Username,
-            ArtistName,
-            DateCreated,
-            PFP,
-            Banner,
-            Bio,
-            IsDeleted: 0,
-          })
-        );
       });
       return;
     }
 
-    // PUT update artist profile info
-    if (pathname.startsWith("/artist_buys/") && method === "PUT") {
-      const artistId = pathname.split("/")[2];
-      let body = "";
-      req.on("data", chunk => (body += chunk));
-      req.on("end", async () => {
-        const { Username, ArtistName, DateCreated, PFP, Banner, Bio } = JSON.parse(body);
-
-        const [result] = await db.query(
-          "UPDATE Artist SET Username = ?, ArtistName = ?, DateCreated = ?, PFP = ?, Banner = ?, Bio = ? WHERE ArtistID = ? AND IsDeleted = 0",
-          [Username, ArtistName, DateCreated, PFP, Banner, Bio, artistId]
-        );
-
-        if (result.affectedRows === 0) {
-          res.writeHead(404, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Artist not found" }));
-          return;
-        }
-
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({
-            ArtistID: artistId,
-            Username,
-            ArtistName,
-            DateCreated,
-            PFP,
-            Banner,
-            Bio,
-            message: "Artist updated successfully",
-          })
-        );
-      });
-      return;
-    }
-
-    // DELETE (soft delete) artist record
-    if (pathname.startsWith("/artist_buys/") && method === "DELETE") {
-      const artistId = pathname.split("/")[2];
-      const [result] = await db.query(
-        "UPDATE Artist SET IsDeleted = 1 WHERE ArtistID = ?",
-        [artistId]
-      );
-
-      if (result.affectedRows === 0) {
-        res.writeHead(404, { "Content-Type": "application/json" });
-        res.end(JSON.stringify({ error: "Artist not found or already deleted" }));
-        return;
-      }
-
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ message: "Artist soft deleted successfully" }));
-      return;
-    }
-
-    // Fallback 404 
     res.writeHead(404, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Route not found" }));
+
   } catch (err) {
-    console.error("Error handling artist route:", err);
+    console.error("Error in artist_buy routes:", err);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: "Server error" }));
   }

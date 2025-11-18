@@ -214,21 +214,27 @@ export async function handleUploadRoutes(req, res) {
       try {
         const adName = title;
 
-        // Insert ad with price
+        // 1. Insert Advertisement
         const [ins] = await db.query(
           "INSERT INTO Advertisement (AdName, AdFile, AdType, AdPrice, ArtistID, IsDeleted, CreatedAt) VALUES (?, ?, ?, ?, ?, 0, NOW())",
           [adName, put.canonical, adType, adPrice, artistId]
         );
         adId = ins.insertId ?? null;
 
-        // Log transaction (optional)
-        try {
-          await db.query(
-            "INSERT INTO Transaction (ArtistID, Type, Amount, Description, RelatedAdID, CreatedAt, Status) VALUES (?, 'AD_PURCHASE', ?, ?, ?, NOW(), 'completed')",
-            [artistId, -adPrice, `Ad upload: ${adType} - ${adName}`, adId]
-          );
-        } catch (txErr) {
-          console.warn("Failed to log transaction:", txErr);
+        console.log(`Advertisement created with ID: ${adId}`);
+
+        // 2. Insert Artist_Buy record (Track the purchase)
+        if (adId) {
+          try {
+            await db.query(
+              "INSERT INTO Artist_Buy (AdID, ArtistID, PurchaseDate, IsDeleted) VALUES (?, ?, NOW(), 0)",
+              [adId, artistId]
+            );
+            console.log(`✅ Artist_Buy record created for AdID ${adId}`);
+          } catch (buyErr) {
+            console.error(" Failed to insert Artist_Buy record:", buyErr?.message || buyErr);
+            // Don't fail the entire request - the ad was created successfully
+          }
         }
 
       } catch (dbErr) {
@@ -558,8 +564,13 @@ export async function handleUploadRoutes(req, res) {
       });
     }
 
+    // ============================================================
+    // 404 - Unknown route
+    // ============================================================
     return bad(res, 404, "not_found");
+
   } catch (e) {
+    console.error("Upload handler error:", e);
     return ok(res, 500, {
       error: e.message || "server_error",
       code: e.code || null,
@@ -645,6 +656,7 @@ export async function handleLocalUpload(req, res) {
       return;
     }
   } catch (e) {
+    console.error("Local upload error:", e);
     res.writeHead(500, { "Content-Type": "application/json" });
     res.end(JSON.stringify({ error: e.message }));
   }

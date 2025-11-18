@@ -20,9 +20,6 @@ function formatDate(dateString) {
 
 function RecentUserCard({ user }) {
   const isArtist = user.AccountType === "Artist";
-  const profileUrl = isArtist
-    ? `/artist/${user.SpecificID}`
-    : `/listener/${user.SpecificID}`;
 
   const idLabel = isArtist ? "Artist ID:" : "Listener ID:";
   const name = user.DisplayName || "N/A";
@@ -52,9 +49,7 @@ function RecentUserCard({ user }) {
           <span className="user-card-username">@{username}</span>
         </div>
       </div>
-      <Link to={profileUrl} className="user-card-button">
-        View Profile
-      </Link>
+      {/* View Profile Button Removed */}
     </div>
   );
 }
@@ -149,14 +144,14 @@ export default function AdminHome() {
         <div className="dashboard-actions">
           <h2 className="section-title">Management</h2>
           <div className="action-buttons-container">
-            <Link className="action-btn" to="/admin/reports">
-              Manage Reports
+            <Link className="action-btn" to="/report-review">
+            See User Complaints
             </Link>
             <Link className="action-btn" to="/admin/listeners">
               Manage Users
             </Link>
-            <Link className="action-btn" to="/admin/artists">
-              Manage Subscriptions
+            <Link className="action-btn" to="/admin/reports/revenue">
+              Monthly Revenue Report
             </Link>
             <Link className="action-btn" to="/admin/reports/songs">
               Song Performance Report
