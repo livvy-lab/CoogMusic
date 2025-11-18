@@ -39,7 +39,7 @@ export default function DeleteAlbumModal({
           <p>Are you sure you want to take down this album?</p>
           <p className="item-title-highlight">"{albumTitle}"</p>
           <p className_ ="warning-text">
-            This will also take down all associated songs. This action cannot be undone.
+          This action cannot be undone.
           </p>
         </div>
         

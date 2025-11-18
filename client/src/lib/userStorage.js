@@ -6,12 +6,21 @@ export function setUser(user) {
 
 export function getUser() {
   try {
-    // Some parts of the app store the user under 'user' and others under 'listener'.
     const raw = localStorage.getItem(KEY) || localStorage.getItem('listener') || null;
-    return JSON.parse(raw || "null");
-  } catch { return null; }
+    const parsed = JSON.parse(raw || "null");
+    
+    if (parsed && !parsed.artistId && parsed.ArtistID) {
+      parsed.artistId = parsed.ArtistID;
+    }
+    
+    return parsed;
+  } catch (err) {
+    console.error("Error parsing user from storage:", err);
+    return null;
+  }
 }
 
 export function clearUser() {
   localStorage.removeItem(KEY);
+  localStorage.removeItem('listener'); // Also clear fallback key
 }

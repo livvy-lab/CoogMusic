@@ -4,9 +4,6 @@ import { useAchievement } from "./AchievementContext";
 
 const PlayerContext = createContext(null);
 
-// TODO: replace this with your real S3 ad object URL
-const AD_AUDIO_URL = "https://coog-music.s3.amazonaws.com/audio/ad1.mp3";
-
 // load listener id from localStorage
 function getListenerId() {
   try {
@@ -40,6 +37,12 @@ export function PlayerProvider({ children }) {
   const [songsSinceAd, setSongsSinceAd] = useState(0);
   const [isPlayingAd, setIsPlayingAd] = useState(false);
   const [pendingSongAfterAd, setPendingSongAfterAd] = useState(null);
+  
+  // Ad pool management
+  const [adPool, setAdPool] = useState([]);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const adPoolRef = useRef([]);
+  const currentAdIndexRef = useRef(0);
 
   // check subscription once
   useEffect(() => {
@@ -52,7 +55,6 @@ export function PlayerProvider({ children }) {
     let cancelled = false;
     (async () => {
       try {
-        // adjust this endpoint to match your backend
         const res = await fetch(
           `${API_BASE_URL}/listeners/${listenerId}/subscription_status`
         );
@@ -70,6 +72,42 @@ export function PlayerProvider({ children }) {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  // Fetch active audio ads for the ad pool
+  useEffect(() => {
+    async function fetchAdPool() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/advertisements/active?type=audio`);
+        if (!res.ok) {
+          console.warn("Failed to fetch ad pool:", res.status);
+          return;
+        }
+        
+        const data = await res.json();
+        const ads = data.advertisements || [];
+        
+        if (ads.length > 0) {
+          adPoolRef.current = ads;
+          setAdPool(ads);
+          console.log(`Loaded ${ads.length} audio ads for rotation`);
+        } else {
+          console.warn("No audio ads available in ad pool");
+          adPoolRef.current = [];
+          setAdPool([]);
+        }
+      } catch (err) {
+        console.error("Error fetching ad pool:", err);
+        adPoolRef.current = [];
+        setAdPool([]);
+      }
+    }
+
+    fetchAdPool();
+    
+    // Refresh ad pool every 5 minutes
+    const interval = setInterval(fetchAdPool, 5 * 60 * 1000);
+    return () => clearInterval(interval);
   }, []);
 
   // notify API of play when appropriate (never fires for ads because SongID is null)
@@ -115,16 +153,42 @@ export function PlayerProvider({ children }) {
     a.volume = volume;
   }, [volume]);
 
-  // helper: play an ad
+  // helper: play an ad from the pool
   async function playAd() {
     const a = audioRef.current;
-    if (!a || !AD_AUDIO_URL) return;
+    if (!a) return;
+
+    // Determine which ad to play
+    let adUrl = null;
+    let adTitle = "Advertisement";
+    let adArtist = "Sponsored";
+    let adId = null;
+
+    // Use ads from pool if available
+    if (adPoolRef.current.length > 0) {
+      const selectedAd = adPoolRef.current[currentAdIndexRef.current % adPoolRef.current.length];
+      adUrl = selectedAd.AdFileUrl || selectedAd.AdFile;
+      adTitle = selectedAd.AdName || "Advertisement";
+      adArtist = "Sponsored"; // Could fetch artist name if needed
+      adId = selectedAd.AdID;
+
+      // Rotate to next ad for variety
+      currentAdIndexRef.current = (currentAdIndexRef.current + 1) % adPoolRef.current.length;
+      setCurrentAdIndex(currentAdIndexRef.current);
+
+      console.log(`Playing ad #${currentAdIndexRef.current}: ${adTitle} (${adId})`);
+    } else {
+      console.warn("No ads available in pool, skipping ad playback");
+      setIsPlayingAd(false);
+      return;
+    }
 
     const adTrack = {
       SongID: null,
-      Title: "Advertisement",
-      ArtistName: "Sponsored",
-      url: AD_AUDIO_URL,
+      AdID: adId,
+      Title: adTitle,
+      ArtistName: adArtist,
+      url: adUrl,
       mime: "audio/mpeg",
       CoverURL: null,
       isAd: true,
@@ -135,7 +199,7 @@ export function PlayerProvider({ children }) {
     postedRef.current = false;
 
     try {
-      a.src = AD_AUDIO_URL;
+      a.src = adUrl;
       await a.play();
       setPlaying(true);
     } catch (err) {
@@ -511,6 +575,10 @@ export function PlayerProvider({ children }) {
     setSongsSinceAd(0);
     setIsPlayingAd(false);
     setPendingSongAfterAd(null);
+    adPoolRef.current = [];
+    setAdPool([]);
+    currentAdIndexRef.current = 0;
+    setCurrentAdIndex(0);
   }
 
   const value = useMemo(
@@ -528,6 +596,8 @@ export function PlayerProvider({ children }) {
       audioRef,
       isSubscribed,
       songsSinceAd,
+      adPool,
+      currentAdIndex,
       playSong,
       playList,
       playShuffled,
@@ -554,6 +624,8 @@ export function PlayerProvider({ children }) {
       repeatMode,
       isSubscribed,
       songsSinceAd,
+      adPool,
+      currentAdIndex,
     ]
   );
 
