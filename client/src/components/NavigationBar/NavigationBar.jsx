@@ -60,7 +60,6 @@ export default function NavigationBar() {
               <span>Home</span>
             </Link>
 
-            {/* Listeners Only: Subscription */}
             {!isArtist && !isAdmin && (
               <Link className="navLink" to="/subscription">
                 <img src={subscriptionIcon} alt="" className="navIcon" />
@@ -68,7 +67,6 @@ export default function NavigationBar() {
               </Link>
             )}
 
-            {/* Analytics: Artists & Listeners Only */}
             {isArtist && (
                <Link className="navLink" to="/artist-analytics">
                  <img src={analyticsIcon} alt="" className="navIcon" />
@@ -87,14 +85,22 @@ export default function NavigationBar() {
           {isAdmin && (
             <nav className="navSection">
               <div className="navTitle">Admin Tools</div>
+              
               <Link className="navLink" to="/report-review">
-                <img src={analyticsIcon} alt="" className="navIcon" />
-                <span>User Complaints</span>
+                <span style={{ fontSize: '1.2em', marginRight: '8px' }}>🛠️</span>
+                <span>Report Review</span>
               </Link>
+              
+              <Link className="navLink" to="/admin/listeners">
+                <img src={profileIcon} alt="" className="navIcon" />
+                <span>Manage Users</span>
+              </Link>
+              
               <Link className="navLink" to="/admin/reports/revenue">
                 <img src={analyticsIcon} alt="" className="navIcon" />
                 <span>Revenue Report</span>
               </Link>
+              
               <Link className="navLink" to="/admin/reports/songs">
                 <img src={analyticsIcon} alt="" className="navIcon" />
                 <span>Song Performance</span>
@@ -138,7 +144,6 @@ export default function NavigationBar() {
                 <span>Library</span>
               </div>
               {!isArtist ? (
-                /* Listener View */
                 <>
                   <Link className="navLink" to="/likedsongs">
                     <img src={favoritesIcon} alt="" className="navIcon" />
@@ -150,7 +155,6 @@ export default function NavigationBar() {
                   </Link>
                 </>
               ) : (
-                /* Artist Library View */
                 <>
                   <Link className="navLink" to="/my-songs"> 
                     <img src={uploadSongIcon} alt="" className="navIcon" />

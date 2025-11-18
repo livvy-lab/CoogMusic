@@ -136,7 +136,7 @@ export default function AdminHome() {
             <div className="card-number">{unverifiedArtists}</div>
           </div>
           <div className="dashboard-card card-listeners">
-            <div className="card-title">Subscribed Listeners</div>
+            <div className="card-title">Active Subscribers</div>
             <div className="card-number">{subscribedListeners}</div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export default function AdminHome() {
           <h2 className="section-title">Management</h2>
           <div className="action-buttons-container">
             <Link className="action-btn" to="/report-review">
-            See User Complaints
+            See User Reports
             </Link>
             <Link className="action-btn" to="/admin/listeners">
               Manage Users

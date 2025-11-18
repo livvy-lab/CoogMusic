@@ -287,3 +287,159 @@
   font-size: 12px;
   font-style: italic;
 }
+
+.view-btn {
+  background-color: #fff;
+  border: 1px solid #895674;
+  color: #895674;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-btn:hover {
+  background-color: #fff5fb;
+}
+
+/* === MODAL STYLES (Copied from Report Review for consistency) === */
+.modal-overlay.profile-z-index {
+  z-index: 2000; 
+  position: fixed;
+  inset: 0;
+  background-color: rgba(80, 26, 51, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-modal-box {
+  background: white;
+  width: 90%;
+  max-width: 450px;
+  border-radius: 16px;
+  border: 2px solid #895674;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  overflow: hidden;
+  animation: popIn 0.2s;
+}
+
+.modal-header {
+  padding: 20px 24px;
+  background: #ffe6f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f2c3d8;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #895674;
+  font-size: 20px;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: #895674;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 24px;
+}
+
+.profile-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-preview-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #895674;
+}
+
+.profile-preview-fallback {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #895674;
+  color: white;
+  font-size: 32px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #895674;
+}
+
+.profile-preview-text h3 {
+  margin: 0 0 4px 0;
+  color: #501a33;
+  font-size: 20px;
+}
+
+.profile-preview-tag {
+  display: block;
+  color: #895674;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+.profile-preview-bio {
+  background: #fff5fb;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f2c3d8;
+}
+
+.profile-preview-bio label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #a11362;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.profile-preview-bio p {
+  margin: 0;
+  font-size: 14px;
+  color: #501a33;
+  line-height: 1.4;
+}
+
+.profile-preview-stats {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  font-size: 12px;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 12px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.modal-loading {
+  text-align: center;
+  padding: 20px;
+  color: #895674;
+}
+
+@keyframes popIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }

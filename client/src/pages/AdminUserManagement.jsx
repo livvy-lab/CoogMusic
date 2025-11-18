@@ -10,15 +10,17 @@ export default function AdminUserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   
   // Filters
-  const [filterType, setFilterType] = useState("All"); // All, Listener, Artist
-  const [filterStatus, setFilterStatus] = useState("Active"); // Active, Inactive, All
+  const [filterType, setFilterType] = useState("All");
+  const [filterStatus, setFilterStatus] = useState("Active");
 
-  // Confirmation Modal State
+  // Modals
   const [confirmModal, setConfirmModal] = useState({
     isOpen: false,
     accountId: null,
     username: "",
   });
+  
+  const [viewingUser, setViewingUser] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -54,7 +56,6 @@ export default function AdminUserManagement() {
       
       showToast(`User @${username} is now inactive.`, "success");
       
-      // Update local state: Set IsDeleted to 1 instead of removing the row
       setUsers(prev => prev.map(u => 
         u.AccountID === accountId ? { ...u, IsDeleted: 1 } : u
       ));
@@ -81,24 +82,25 @@ export default function AdminUserManagement() {
     }
   };
 
-  // === Filtering Logic ===
+  const handleViewProfile = (user) => {
+    setViewingUser({
+      ...user,
+      SpecificID: user.AccountType === 'Artist' ? user.ArtistID : user.ListenerID,
+      DisplayName: user.AccountType === 'Artist' ? user.ArtistName : user.ListenerName
+    });
+  };
+
   const filteredUsers = users.filter(user => {
-    // 1. Type Filter
     const matchesType = filterType === "All" || user.AccountType === filterType;
-    
-    // 2. Status Filter (Active vs Inactive)
     let matchesStatus = true;
     if (filterStatus === "Active") matchesStatus = user.IsDeleted === 0;
     if (filterStatus === "Inactive") matchesStatus = user.IsDeleted === 1;
-    
-    // 3. Search Filter
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       (user.Username || "").toLowerCase().includes(searchLower) ||
       (user.ListenerName || "").toLowerCase().includes(searchLower) ||
       (user.ArtistName || "").toLowerCase().includes(searchLower) ||
       String(user.AccountID).includes(searchLower);
-
     return matchesType && matchesStatus && matchesSearch;
   });
 
@@ -115,8 +117,6 @@ export default function AdminUserManagement() {
               onChange={e => setSearchTerm(e.target.value)}
               className="search-input"
             />
-            
-            {/* Role Filter */}
             <select 
               value={filterType} 
               onChange={e => setFilterType(e.target.value)}
@@ -126,8 +126,6 @@ export default function AdminUserManagement() {
               <option value="Listener">Listeners</option>
               <option value="Artist">Artists</option>
             </select>
-
-            {/* Status Filter */}
             <select 
               value={filterStatus} 
               onChange={e => setFilterStatus(e.target.value)}
@@ -151,8 +149,8 @@ export default function AdminUserManagement() {
                   <th>Account</th>
                   <th>Name</th>
                   <th>Type</th>
-                  <th>Sub/Verify</th> {/* Updated Header */}
-                  <th>Account Status</th> {/* New Header */}
+                  <th>Sub/Verify</th>
+                  <th>Account Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -173,36 +171,24 @@ export default function AdminUserManagement() {
                           {user.AccountType}
                         </span>
                       </td>
-                      
-                      {/* Subscription / Verification Status */}
                       <td>
                         {user.AccountType === 'Artist' ? (
-                          user.IsVerified ? (
-                            <span className="status-verified">Verified ✓</span>
-                          ) : (
-                            <span className="status-standard">Standard</span>
-                          )
+                          user.IsVerified ? <span className="status-verified">Verified ✓</span> : <span className="status-standard">Standard</span>
                         ) : (
-                          // Listener Logic: Check HasActiveSub
-                          user.HasActiveSub ? (
-                            <span className="status-premium">Premium</span>
-                          ) : (
-                            <span className="status-standard">Standard</span>
-                          )
+                          user.HasActiveSub ? <span className="status-premium">Premium</span> : <span className="status-standard">Standard</span>
                         )}
                       </td>
-
-                      {/* Account Status (Active/Inactive) */}
                       <td>
-                        {isInactive ? (
-                          <span className="acct-status inactive">Inactive</span>
-                        ) : (
-                          <span className="acct-status active">Active</span>
-                        )}
+                        {isInactive ? <span className="acct-status inactive">Inactive</span> : <span className="acct-status active">Active</span>}
                       </td>
-
                       <td className="actions-cell">
-                        {/* Only show actions if user is Active */}
+                        <button 
+                          className="view-btn"
+                          onClick={() => handleViewProfile(user)}
+                          title="View Profile Details"
+                        >
+                          View
+                        </button>
                         {!isInactive && (
                           <>
                             {user.AccountType === 'Artist' && !user.IsVerified && (
@@ -223,49 +209,160 @@ export default function AdminUserManagement() {
                             </button>
                           </>
                         )}
-                        {isInactive && <span className="text-muted">Archived</span>}
                       </td>
                     </tr>
                   );
                 }) : (
-                  <tr>
-                    <td colSpan="7" className="no-results">No users found matching your criteria.</td>
-                  </tr>
+                  <tr><td colSpan="7" className="no-results">No users found matching your criteria.</td></tr>
                 )}
               </tbody>
             </table>
           )}
         </div>
 
-        {/* Confirmation Popup */}
         {confirmModal.isOpen && (
           <div className="custom-confirm-overlay" onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}>
             <div className="custom-confirm-box" onClick={e => e.stopPropagation()}>
               <h3 className="confirm-title">Deactivate User?</h3>
-              <p className="confirm-text">
-                Are you sure you want to remove <strong>@{confirmModal.username}</strong>?
-              </p>
-              <p className="confirm-subtext">
-                This will mark the account as <strong>Inactive</strong>. They will no longer be able to log in.
-              </p>
+              <p className="confirm-text">Are you sure you want to remove <strong>@{confirmModal.username}</strong>?</p>
+              <p className="confirm-subtext">This will mark the account as <strong>Inactive</strong>.</p>
               <div className="confirm-actions">
-                <button 
-                  className="confirm-btn cancel" 
-                  onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="confirm-btn delete" 
-                  onClick={executeRemoveUser}
-                >
-                  Yes, Deactivate
-                </button>
+                <button className="confirm-btn cancel" onClick={() => setConfirmModal({ ...confirmModal, isOpen: false })}>Cancel</button>
+                <button className="confirm-btn delete" onClick={executeRemoveUser}>Yes, Deactivate</button>
               </div>
             </div>
           </div>
         )}
+
+        {viewingUser && (
+          <UserProfileModal 
+            user={viewingUser} 
+            onClose={() => setViewingUser(null)} 
+          />
+        )}
       </div>
     </PageLayout>
+  );
+}
+
+// === UPDATED USER PROFILE MODAL ===
+function UserProfileModal({ user, onClose }) {
+  const [details, setDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [resolvedPfp, setResolvedPfp] = useState(null);
+  const [imgError, setImgError] = useState(false);
+
+  const isArtist = user.AccountType === "Artist";
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    setResolvedPfp(null);
+    setImgError(false);
+    setLoading(true);
+    setDetails(null);
+
+    const fetchDetails = async () => {
+      try {
+        let url = isArtist
+          ? `${API_BASE_URL}/artists/${user.SpecificID}`
+          : `${API_BASE_URL}/listeners/${user.SpecificID}/profile`;
+
+        const res = await fetch(url);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isMounted) return;
+
+          // Handle data structure difference
+          let profileData = isArtist ? data : data.listener;
+          if (!profileData) return;
+
+          setDetails(profileData);
+
+          // --- FIX START: Robust Image Resolution ---
+          // 1. Check for Media ID (using snake_case from DB schema)
+          const mediaId = profileData.image_media_id || profileData.ImageMediaID; 
+          
+          if (mediaId) {
+            // Fetch fresh signed URL from Media API
+            const mediaRes = await fetch(`${API_BASE_URL}/media/${mediaId}`);
+            if (mediaRes.ok) {
+              const mediaData = await mediaRes.json();
+              setResolvedPfp(mediaData.url);
+            }
+          } else {
+            // 2. Fallback to PFP string
+            let rawPfp = profileData.pfpUrl || profileData.PFP || null;
+            
+            // If it's a relative path (legacy upload), prepend API URL
+            if (rawPfp && typeof rawPfp === 'string' && rawPfp.startsWith('/')) {
+                rawPfp = `${API_BASE_URL}${rawPfp}`;
+            }
+            setResolvedPfp(rawPfp);
+          }
+          // --- FIX END ---
+        }
+      } catch (err) {
+        console.error("Failed to load user details", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchDetails();
+    return () => { isMounted = false; };
+  }, [user, isArtist]);
+
+  const displayName = details?.ArtistName || details?.FirstName ? (isArtist ? details.ArtistName : `${details.FirstName} ${details.LastName}`) : user.DisplayName;
+  const displayUsername = details?.Username || user.Username;
+  const bio = details?.Bio || "No bio provided.";
+
+  return (
+    <div className="modal-overlay profile-z-index" onClick={onClose}>
+      <div className="modal-box profile-modal-box" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header">
+          <h2>Profile Preview</h2>
+          <button className="close-btn" onClick={onClose}>&times;</button>
+        </div>
+        <div className="modal-body">
+          {loading ? (
+            <div className="modal-loading">Loading profile...</div>
+          ) : (
+            <>
+              <div className="profile-preview-header">
+                {/* Image Rendering Logic */}
+                {resolvedPfp && !imgError ? (
+                  <img 
+                    src={resolvedPfp} 
+                    alt={displayName} 
+                    className="profile-preview-avatar"
+                    onError={() => setImgError(true)} 
+                  />
+                ) : (
+                  // Fallback Circle
+                  <div className="profile-preview-fallback">
+                    {displayName ? displayName.charAt(0).toUpperCase() : "?"}
+                  </div>
+                )}
+
+                <div className="profile-preview-text">
+                  <h3>{displayName}</h3>
+                  <span className="profile-preview-tag">@{displayUsername}</span>
+                  <span className={`type-badge ${isArtist ? 'artist' : 'listener'}`}>{user.AccountType}</span>
+                </div>
+              </div>
+              <div className="profile-preview-bio">
+                <label>Bio:</label>
+                <p>{bio}</p>
+              </div>
+              <div className="profile-preview-stats">
+                <div className="stat-chip">ID: {user.SpecificID}</div>
+                {isArtist && <div className="stat-chip">{details?.IsVerified ? "Verified ✓" : "Standard Artist"}</div>}
+                {!isArtist && <div className="stat-chip">{details?.Major ? `Major: ${details.Major}` : "Major: N/A"}</div>}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
