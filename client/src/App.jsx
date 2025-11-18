@@ -38,6 +38,7 @@ import RequireAdmin from "./components/Auth/RequireAdmin";
 import AlbumView from "./pages/AlbumView";
 import AdminRevenueReport from "./pages/AdminRevenueReport"; 
 import AdminSongPerformance from "./pages/AdminSongPerformance";
+import AdminUserManagement from "./pages/AdminUserManagement";
 
 import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
@@ -71,6 +72,7 @@ function AppContent() {
           <Route path="admin-home" element={<RequireAdmin><AdminHome /></RequireAdmin>} />
           <Route path="/admin/reports/songs" element={<RequireAdmin><AdminSongPerformance /></RequireAdmin>} />
           <Route path="/admin/reports/revenue" element={<RequireAdmin><AdminRevenueReport /></RequireAdmin>} />
+          <Route path="/admin/listeners" element={<RequireAdmin><AdminUserManagement /></RequireAdmin>} />
 
           {/* Listener routes */}
           <Route path="/profile" element={<ListenerProfile />} />
