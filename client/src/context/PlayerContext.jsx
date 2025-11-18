@@ -23,16 +23,16 @@ export function PlayerProvider({ children }) {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [shuffleMode, setShuffleMode] = useState(false);
   const [originalQueue, setOriginalQueue] = useState(null);
-  const [repeatMode, setRepeatMode] = useState("none"); // 'none' | 'all' | 'one'
+  const [repeatMode, setRepeatMode] = useState("none");
   const [playing, setPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [volume, setVolume] = useState(0.8);
-  const [songHistory, setSongHistory] = useState([]); // track previous songs
-  const [historyIndex, setHistoryIndex] = useState(-1); // current position in history
+  const [songHistory, setSongHistory] = useState([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
 
   const postedRef = useRef(false);
-  const playThresholdMs = 30000; // 30 seconds
+  const playThresholdMs = 30000;
 
   // subscription + ad state
   const [isSubscribed, setIsSubscribed] = useState(false);
@@ -43,8 +43,12 @@ export function PlayerProvider({ children }) {
   // Ad pool management
   const [adPool, setAdPool] = useState([]);
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [adPoolLoading, setAdPoolLoading] = useState(true);
+  const [adPoolError, setAdPoolError] = useState(null);
+  
   const adPoolRef = useRef([]);
   const currentAdIndexRef = useRef(0);
+  const adPoolFetchTimeRef = useRef(0);
 
   // check subscription once
   useEffect(() => {
@@ -76,21 +80,21 @@ export function PlayerProvider({ children }) {
     };
   }, []);
 
-  // Fetch active audio ads for the ad pool
+  // Fetch active audio ads for the ad pool - WITH RETRY LOGIC
   useEffect(() => {
+    let retryCount = 0;
+    const MAX_RETRIES = 3;
+    
     async function fetchAdPool() {
       try {
-        console.log("Fetching ad pool from:", `${API_BASE_URL}/advertisements/active?type=audio`);
+        console.log(`Fetching ad pool (attempt ${retryCount + 1}/${MAX_RETRIES + 1})...`);
         
         const res = await fetch(`${API_BASE_URL}/advertisements/active?type=audio`);
         
         console.log("Ad pool fetch response status:", res.status);
         
         if (!res.ok) {
-          console.warn("Failed to fetch ad pool:", res.status);
-          adPoolRef.current = [];
-          setAdPool([]);
-          return;
+          throw new Error(`HTTP ${res.status}`);
         }
         
         const data = await res.json();
@@ -104,6 +108,7 @@ export function PlayerProvider({ children }) {
           console.warn("No audio ads available in database");
           adPoolRef.current = [];
           setAdPool([]);
+          setAdPoolError("No ads available");
         } else {
           console.log("Ads in pool:", ads.map(ad => ({ 
             id: ad.AdID, 
@@ -113,16 +118,31 @@ export function PlayerProvider({ children }) {
           
           adPoolRef.current = ads;
           setAdPool(ads);
+          setAdPoolError(null);
+          adPoolFetchTimeRef.current = Date.now();
           console.log(`Successfully loaded ${ads.length} audio ads for rotation`);
         }
+        
+        setAdPoolLoading(false);
       } catch (err) {
         console.error("Error fetching ad pool:", err);
-        console.error("Error message:", err.message);
-        adPoolRef.current = [];
-        setAdPool([]);
+        
+        // Retry logic
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          console.log(`Retrying ad pool fetch in 2 seconds...`);
+          setTimeout(fetchAdPool, 2000);
+        } else {
+          console.error("Max retries reached for ad pool fetch");
+          setAdPoolError(err.message);
+          setAdPoolLoading(false);
+          adPoolRef.current = [];
+          setAdPool([]);
+        }
       }
     }
 
+    // Fetch immediately
     fetchAdPool();
     
     // Refresh ad pool every 5 minutes
@@ -130,7 +150,7 @@ export function PlayerProvider({ children }) {
     return () => clearInterval(interval);
   }, []);
 
-  // notify API of play when appropriate (never fires for ads because SongID is null)
+  // notify API of play when appropriate
   async function postPlayIfPossible(msOverride) {
     try {
       const songId = current?.SongID;
@@ -181,14 +201,21 @@ export function PlayerProvider({ children }) {
       return;
     }
 
-    console.log("playAd() called, adPoolRef.current.length:", adPoolRef.current.length);
+    console.log("playAd() called");
+    console.log("adPoolRef.current.length:", adPoolRef.current.length);
+    console.log("adPoolLoading:", adPoolLoading);
+
+    // If pool is still loading, wait a bit and try again
+    if (adPoolLoading && adPoolRef.current.length === 0) {
+      console.warn("Ad pool still loading, waiting 500ms...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
 
     // Use ads from pool if available
     if (adPoolRef.current.length === 0) {
-      console.warn("No ads available in pool, skipping ad and playing next song");
+      console.warn("No ads available in pool after waiting, skipping ad and playing next song");
       setIsPlayingAd(false);
       
-      // Play the pending song instead of getting stuck
       if (pendingSongAfterAd) {
         console.log("Playing pending song after failed ad");
         const nextSong = pendingSongAfterAd;
@@ -287,7 +314,6 @@ export function PlayerProvider({ children }) {
       setPlaying(false);
       setIsPlayingAd(false);
       
-      // If ad fails to play, play the pending song
       if (pendingSongAfterAd) {
         console.log("Ad failed, playing pending song");
         const nextSong = pendingSongAfterAd;
@@ -300,7 +326,7 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // helper: actually play a song track (no ad logic here)
+  // helper: actually play a song track
   async function playSongInternal(song) {
     const id = song?.SongID || song?.songId;
     if (!id) return;
@@ -323,13 +349,10 @@ export function PlayerProvider({ children }) {
       
       setCurrent(newSong);
       
-      // Add to song history when playing a new song
       setSongHistory((prev) => {
-        // If we're navigating history and not at the end, truncate future history
         if (historyIndex >= 0 && historyIndex < prev.length - 1) {
           return [...prev.slice(0, historyIndex + 1), newSong];
         }
-        // Otherwise append to history
         return [...prev, newSong];
       });
       setHistoryIndex((prev) => prev + 1);
@@ -341,7 +364,6 @@ export function PlayerProvider({ children }) {
       }
       setPlaying(true);
     } catch (err) {
-      // fallback if stream data fails
       const fallbackSong = {
         SongID: id,
         Title: song?.Title || "Demo Track",
@@ -354,7 +376,6 @@ export function PlayerProvider({ children }) {
       
       setCurrent(fallbackSong);
       
-      // Add to song history
       setSongHistory((prev) => {
         if (historyIndex >= 0 && historyIndex < prev.length - 1) {
           return [...prev.slice(0, historyIndex + 1), fallbackSong];
@@ -389,7 +410,6 @@ export function PlayerProvider({ children }) {
     console.log("isPlayingAd:", isPlayingAd);
     console.log("songsSinceAd:", songsSinceAd);
 
-    // subscribers never get ads
     if (isSubscribed) {
       console.log("User is subscribed, skipping ad logic");
       await playSongInternal(song);
@@ -397,25 +417,21 @@ export function PlayerProvider({ children }) {
       return;
     }
 
-    // if an ad is already playing, just queue this song to play afterwards
     if (isPlayingAd) {
       console.log("Ad is already playing, queuing song for after ad");
       setPendingSongAfterAd(song);
       return;
     }
 
-    // hit threshold: play ad first, then this song
     if (songsSinceAd >= 3) {
       console.log("Hit ad threshold (3 songs), triggering ad");
       setPendingSongAfterAd(song);
       
-      // Only try to play ad if we have ads available
       if (adPoolRef.current.length > 0) {
         console.log("Ad pool available, playing ad");
         await playAd();
       } else {
         console.warn("No ads in pool, playing song immediately without ad");
-        // Skip ad entirely and play song
         setPendingSongAfterAd(null);
         await playSongInternal(song);
         setSongsSinceAd(0);
@@ -423,7 +439,6 @@ export function PlayerProvider({ children }) {
       return;
     }
 
-    // otherwise play song and increment counter
     console.log("Playing song normally, incrementing counter");
     await playSongInternal(song);
     setSongsSinceAd((c) => c + 1);
@@ -463,7 +478,6 @@ export function PlayerProvider({ children }) {
       console.log("Audio ended, isAd:", current?.isAd);
       postPlayIfPossible();
 
-      // if an ad finished, reset counters and play the pending song if any
       if (current?.isAd) {
         console.log("Ad finished, resetting counters");
         setIsPlayingAd(false);
@@ -479,7 +493,6 @@ export function PlayerProvider({ children }) {
         return;
       }
 
-      // don't repeat ads in repeat-one
       if (repeatMode === "one") {
         seek(0);
         if (current && !current.isAd) {
@@ -521,7 +534,6 @@ export function PlayerProvider({ children }) {
     };
   }, [current, queue, currentIndex, pendingSongAfterAd, repeatMode, songsSinceAd, isPlayingAd]);
 
-  // play a list from a given index
   function playList(list = [], startIndex = 0) {
     if (!Array.isArray(list) || list.length === 0) return;
     setOriginalQueue(list.slice());
@@ -532,7 +544,6 @@ export function PlayerProvider({ children }) {
     playSong(list[idx]).catch(() => {});
   }
 
-  // play a shuffled copy of the list
   function playShuffled(list = []) {
     if (!Array.isArray(list) || list.length === 0) return;
     const cloned = list.slice();
@@ -547,7 +558,6 @@ export function PlayerProvider({ children }) {
     playSong(cloned[0]).catch(() => {});
   }
 
-  // cycle repeat mode: none -> all -> one -> none
   function toggleRepeat() {
     setRepeatMode((prev) => {
       if (prev === "none") return "all";
@@ -556,7 +566,6 @@ export function PlayerProvider({ children }) {
     });
   }
 
-  // toggle shuffle mode for current queue
   function toggleShuffle() {
     if (!queue || queue.length <= 1) {
       setShuffleMode((v) => !v);
@@ -592,7 +601,6 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // play or pause current audio
   function toggle() {
     const a = audioRef.current;
     if (!a) return;
@@ -604,15 +612,12 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // play next track in queue (ad logic will run inside playSong)
   function next() {
     if (!queue || queue.length === 0) {
-      // No queue - fetch random song
       playNext();
       return;
     }
     if (repeatMode === "one") {
-      // manual next should break out of repeat-one
       setRepeatMode("all");
     }
     const nextIndex = currentIndex + 1;
@@ -625,7 +630,6 @@ export function PlayerProvider({ children }) {
       target = queue[0];
       setCurrentIndex(0);
     } else {
-      // Reached end of queue - fetch random song
       playNext();
       return;
     }
@@ -635,7 +639,6 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // fetch and play a random song
   async function playNext() {
     try {
       const res = await fetch(`${API_BASE_URL}/songs`);
@@ -643,7 +646,6 @@ export function PlayerProvider({ children }) {
       const songs = await res.json();
       
       if (songs && songs.length > 0) {
-        // Pick a random song
         const randomIndex = Math.floor(Math.random() * songs.length);
         const randomSong = songs[randomIndex];
         await playSong(randomSong);
@@ -653,16 +655,13 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // play previous track or restart current
   function prev() {
     const a = audioRef.current;
-    // If more than 3 seconds into current song, restart it
     if (a && a.currentTime > 3) {
       seek(0);
       return;
     }
     
-    // Try to go back in song history
     if (songHistory.length > 0 && historyIndex > 0) {
       const prevHistoryIndex = historyIndex - 1;
       const prevSong = songHistory[prevHistoryIndex];
@@ -680,7 +679,6 @@ export function PlayerProvider({ children }) {
       return;
     }
     
-    // Fallback: use queue-based navigation if no history available
     if (!queue || queue.length === 0) return;
     const prevIndex = currentIndex - 1;
     if (prevIndex >= 0 && prevIndex < queue.length) {
@@ -697,14 +695,12 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // seek to time (seconds)
   function seek(seconds) {
     const a = audioRef.current;
     if (!a) return;
     a.currentTime = Math.max(0, Math.min(seconds, duration || 0));
   }
 
-  // toggle like state for current song
   async function toggleLikeCurrent() {
     const sid = current?.SongID;
     if (!sid) return { error: "no-song" };
@@ -735,7 +731,6 @@ export function PlayerProvider({ children }) {
     }
   }
 
-  // Audio volume
   function setVolumePercent(p) {
     const v = Math.max(0, Math.min(1, p));
     setVolume(v);
@@ -743,7 +738,6 @@ export function PlayerProvider({ children }) {
     if (a) a.volume = v;
   }
 
-  // Clear player state and stop playback (for logout)
   function clearPlayer() {
     const a = audioRef.current;
     if (a) {
@@ -769,6 +763,7 @@ export function PlayerProvider({ children }) {
     setAdPool([]);
     currentAdIndexRef.current = 0;
     setCurrentAdIndex(0);
+    setAdPoolLoading(true);
   }
 
   const value = useMemo(
