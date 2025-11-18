@@ -232,7 +232,11 @@ function Row({ r, to, playSong, songCovers }) {
   );
 
   if (r.type === "song") {
-    const handleClick = async () => {
+    const handleClick = async (e) => {
+      // Don't play song if clicking on the add to playlist button or its popup menu
+      if (e.target.closest('.addToPlaylistMenu-root') || e.target.closest('.addToPlaylistPopup-menu')) {
+        return;
+      }
       try {
         localStorage.setItem('lastClicked', JSON.stringify({ type: 'song', id: r.id, title: r.title, ts: Date.now() }));
       } catch (e) {
@@ -244,7 +248,7 @@ function Row({ r, to, playSong, songCovers }) {
     const handleKey = (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        handleClick();
+        handleClick(e);
       }
     };
 
@@ -319,8 +323,10 @@ function BigCard({ r, to, playSong, songCovers }) {
 
   if (r.type === "song") {
     const onClick = async (e) => {
-      // Don't play song if clicking on the add to playlist button
-      if (e.target.closest('.addToPlaylistMenu-root')) return;
+      // Don't play song if clicking on the add to playlist button or its popup menu
+      if (e.target.closest('.addToPlaylistMenu-root') || e.target.closest('.addToPlaylistPopup-menu')) {
+        return;
+      }
       try { localStorage.setItem('lastClicked', JSON.stringify({ type: 'song', id: r.id, title: r.title, ts: Date.now() })); } catch (e) {}
       if (playSong) await playSong({ songId: r.id });
     };

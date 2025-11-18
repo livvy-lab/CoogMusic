@@ -23,9 +23,33 @@ export default function Playlists() {
     fetchPlaylists();
   }, []);
 
+  // 🔁 Listen for playlist creation events
+  useEffect(() => {
+    function onCreated(e) {
+      const pl = e?.detail;
+      if (!pl || !pl.PlaylistID) return;
+      // Add new playlist to the beginning of the list
+      setPlaylists(prev => [pl, ...prev]);
+    }
+
+    window.addEventListener('playlistCreated', onCreated);
+    return () => {
+      window.removeEventListener('playlistCreated', onCreated);
+    };
+  }, []);
+
   // 🔁 Refresh after a new playlist is created
-  function handlePlaylistCreated() {
-    fetchPlaylists();
+  function handlePlaylistCreated(newPlaylist) {
+    // Dispatch event so other components can listen
+    try {
+      window.dispatchEvent(new CustomEvent('playlistCreated', { detail: newPlaylist }));
+    } catch (e) {
+      console.error('Failed to dispatch playlistCreated event:', e);
+    }
+    // Also update local state directly as fallback
+    if (newPlaylist && newPlaylist.PlaylistID) {
+      setPlaylists(prev => [newPlaylist, ...prev]);
+    }
   }
 
   return (
