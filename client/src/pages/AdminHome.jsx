@@ -5,7 +5,6 @@ import { API_BASE_URL } from "../config/api";
 import usersIcon from "../assets/icons/users-icon.svg";
 import "./AdminHome.css";
 
-// helper function to format date
 function formatDate(dateString) {
   try {
     const date = new Date(dateString);
@@ -19,7 +18,6 @@ function formatDate(dateString) {
   }
 }
 
-// recent user card component
 function RecentUserCard({ user }) {
   const isArtist = user.AccountType === "Artist";
   const profileUrl = isArtist
@@ -159,6 +157,9 @@ export default function AdminHome() {
             </Link>
             <Link className="action-btn" to="/admin/artists">
               Manage Subscriptions
+            </Link>
+            <Link className="action-btn" to="/admin/reports/songs">
+              Song Performance Report
             </Link>
           </div>
         </div>
