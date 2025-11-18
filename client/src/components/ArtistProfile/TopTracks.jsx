@@ -73,7 +73,7 @@ export default function TopTracks({ title = "Top Tracks", artistId: artistIdProp
                   </span>
                   <span className="tt__name">{t.Title}</span>
                   <span className="tt__dur">
-                    idk {plays.toLocaleString()} {plays === 1 ? "play" : "plays"}
+                   {plays.toLocaleString()} {plays === 1 ? "play" : "plays"}
                   </span>
                 </li>
               );
