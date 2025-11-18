@@ -5,6 +5,7 @@ import cat_left from '../assets/left_cat.svg';
 import cat_right from '../assets/right_cat.svg';
 import { getUser } from '../lib/userStorage';
 import { API_BASE_URL } from "../config/api";
+import { showToast } from '../lib/toast';
 
 const BuyAds = () => {
   const [activeTab, setActiveTab] = useState('banner'); // 'banner' or 'audio'
@@ -32,26 +33,26 @@ const BuyAds = () => {
     if (activeTab === 'banner') {
       // Validate image file
       if (!file.type.startsWith('image/')) {
-        alert('Please upload an image file (PNG, JPG, GIF, etc.)');
+        showToast('Please upload an image file (PNG, JPG, GIF, etc.)', 'error');
         e.target.value = '';
         return;
       }
       // Max 5MB for images
       if (file.size > 5 * 1024 * 1024) {
-        alert('Image file size must be less than 5MB');
+        showToast('Image file size must be less than 5MB', 'error');
         e.target.value = '';
         return;
       }
     } else {
       // Validate audio file
       if (!file.type.startsWith('audio/')) {
-        alert('Please upload an audio file (MP3, WAV, etc.)');
+        showToast('Please upload an audio file (MP3, WAV, etc.)', 'error');
         e.target.value = '';
         return;
       }
       // Max 10MB for audio
       if (file.size > 10 * 1024 * 1024) {
-        alert('Audio file size must be less than 10MB');
+        showToast('Audio file size must be less than 10MB', 'error');
         e.target.value = '';
         return;
       }
@@ -78,17 +79,17 @@ const BuyAds = () => {
     e.preventDefault();
     
     if (!isArtist) {
-      alert('Only artist accounts can upload ads.');
+      showToast('Only artist accounts can upload ads.', 'error');
       return;
     }
     
     if (!formData.adFile) {
-      alert(`Please select ${activeTab === 'banner' ? 'an image' : 'an audio'} file to upload.`);
+      showToast(`Please select ${activeTab === 'banner' ? 'an image' : 'an audio'} file to upload.`, 'error');
       return;
     }
     
     if (!formData.adTitle.trim()) {
-      alert('Please enter an ad title.');
+      showToast('Please enter an ad title.', 'error');
       return;
     }
 
@@ -126,9 +127,9 @@ const BuyAds = () => {
       console.log('Ad uploaded successfully:', data);
       
       if (data?.error || data?.db?.error) {
-        alert('File uploaded but database record failed. Please contact support.');
+        showToast('File uploaded but database record failed. Please contact support.', 'error');
       } else {
-        alert(`${activeTab === 'banner' ? 'Banner' : 'Audio'} ad uploaded successfully!`);
+        showToast(`${activeTab === 'banner' ? 'Banner' : 'Audio'} ad uploaded successfully!`, 'success');
         
         // Clear form
         setFormData({ adTitle: '', adDescription: '', adFile: null });
@@ -144,7 +145,7 @@ const BuyAds = () => {
       }
     } catch (err) {
       console.error('Upload error:', err);
-      alert(`Upload error: ${err.message}`);
+      showToast(`Upload error: ${err.message}`, 'error');
     } finally {
       setUploading(false);
     }

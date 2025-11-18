@@ -7,6 +7,7 @@ import "./MySongs.css";
 import { API_BASE_URL } from "../config/api";
 import { getUser } from "../lib/userStorage";
 import { usePlayer } from "../context/PlayerContext";
+import { showToast } from '../lib/toast';
 
 
 function todayOffset(days = 0) {
@@ -384,7 +385,7 @@ export default function MySongs() {
       setDeleteModal({ isOpen: false, song: null, albumsRestriction: null, type: null });
     } catch (err) {
       console.error("Error taking down song:", err);
-      alert("Failed to take down song. Please try again.");
+      showToast("Failed to take down song. Please try again.", 'error');
     }
   };
 

@@ -3,11 +3,14 @@ import './MyAds.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import { getUser } from '../lib/userStorage';
 import { API_BASE_URL } from "../config/api";
+import { showToast } from '../lib/toast';
 
 const MyAds = () => {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [adToDelete, setAdToDelete] = useState(null);
   const user = useMemo(() => getUser(), []);
   const isArtist = (user?.accountType || '').toLowerCase() === 'artist';
 
@@ -56,23 +59,29 @@ const MyAds = () => {
   };
 
   const handleDelete = async (adId, adName) => {
-    if (!window.confirm(`Are you sure you want to delete "${adName}"?`)) {
-      return;
-    }
+    setAdToDelete({ adId, adName });
+    setShowConfirm(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!adToDelete) return;
 
     try {
-      const res = await fetch(`${API_BASE_URL}/advertisements/${adId}`, {
+      const res = await fetch(`${API_BASE_URL}/advertisements/${adToDelete.adId}`, {
         method: 'DELETE'
       });
 
       if (!res.ok) throw new Error('Failed to delete ad');
 
       // Remove from UI
-      setAds(ads.filter(ad => ad.AdID !== adId));
-      alert('Ad deleted successfully!');
+      setAds(ads.filter(ad => ad.AdID !== adToDelete.adId));
+      showToast('Ad deleted successfully!', 'success');
     } catch (err) {
       console.error('Error deleting ad:', err);
-      alert('Failed to delete ad. Please try again.');
+      showToast('Failed to delete ad. Please try again.', 'error');
+    } finally {
+      setShowConfirm(false);
+      setAdToDelete(null);
     }
   };
 
@@ -181,6 +190,40 @@ const MyAds = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Confirmation Modal */}
+        {showConfirm && adToDelete && (
+          <div className="sub-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+            <div className="sub-modal" onClick={(e) => e.stopPropagation()}>
+              <h3 id="delete-title">Delete Ad?</h3>
+              <p>Are you sure you want to delete "{adToDelete.adName}"? This action cannot be undone.</p>
+              <div className="sub-modal-actions">
+                <button
+                  className="btn-secondary"
+                  onClick={() => {
+                    setShowConfirm(false);
+                    setAdToDelete(null);
+                  }}
+                  aria-label="Cancel deletion"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn-danger"
+                  onClick={confirmDelete}
+                  aria-label="Confirm delete ad"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+            {/* clicking overlay closes */}
+            <button className="sub-modal-backdrop" aria-label="Close" onClick={() => {
+              setShowConfirm(false);
+              setAdToDelete(null);
+            }} />
           </div>
         )}
       </div>

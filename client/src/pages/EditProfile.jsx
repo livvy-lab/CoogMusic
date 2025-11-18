@@ -3,6 +3,7 @@ import PageLayout from "../components/PageLayout/PageLayout";
 import "./EditProfile.css";
 import { API_BASE_URL } from "../config/api";
 import { getUser, setUser } from "../lib/userStorage";
+import { showToast } from '../lib/toast';
 
 
 export default function EditProfile() {
@@ -119,10 +120,10 @@ function EditListenerProfile({ user }) {
         }
       }
 
-      alert("Profile updated successfully!");
+      showToast("Profile updated successfully!", 'success');
     } catch (err) {
       console.error("Save failed:", err);
-      alert("Error updating profile. Please try again.");
+      showToast("Error updating profile. Please try again.", 'error');
     } finally {
       setSaving(false);
     }
@@ -335,10 +336,10 @@ function EditArtistProfile({ user }) {
         }
       }
 
-      alert("Profile updated successfully!");
+      showToast("Profile updated successfully!", 'success');
     } catch (err) {
       console.error("Save failed:", err);
-      alert("Error updating profile. Please try again.");
+      showToast("Error updating profile. Please try again.", 'error');
     } finally {
       setSaving(false);
     }

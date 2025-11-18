@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "./AddToPlaylist.css";
+import { showToast } from '../../lib/toast';
+import { showToast } from '../../lib/toast';
 
 export default function AddToPlaylist({ songId }) {
   const [open, setOpen] = useState(false);
@@ -50,7 +52,7 @@ export default function AddToPlaylist({ songId }) {
         body: JSON.stringify({ PlaylistID: playlistId, SongID: songId }),
       });
       if (res.status === 201 || res.ok) {
-        alert("Added to playlist");
+        showToast("Added to playlist", 'success');
         setOpen(false);
         try {
           window.dispatchEvent(
@@ -60,14 +62,14 @@ export default function AddToPlaylist({ songId }) {
         return;
       }
       if (res.status === 409) {
-        alert("Song already in that playlist");
+        showToast("Song already in that playlist", 'error');
         return;
       }
       const data = await res.json();
       throw new Error(data?.error || "Failed to add");
     } catch (err) {
       console.error(err);
-      alert("Failed to add to playlist");
+      showToast("Failed to add to playlist", 'error');
     } finally {
       setAdding(false);
     }
