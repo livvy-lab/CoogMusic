@@ -64,9 +64,18 @@ const ALLOWED_ORIGINS = (
 function applyCORS(req, res) {
   const origin = req.headers.origin || "";
   res.setHeader("Vary", "Origin");
+  
+  // Check if origin is in allowed list
   if (ALLOWED_ORIGINS.includes(origin)) {
     res.setHeader("Access-Control-Allow-Origin", origin);
+  } else if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    // Allow all localhost origins for development
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  } else if (ALLOWED_ORIGINS.length === 0) {
+    // Fallback if no origins configured
+    res.setHeader("Access-Control-Allow-Origin", "*");
   }
+  
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
   res.setHeader("Access-Control-Allow-Credentials", "true");
