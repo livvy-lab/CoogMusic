@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./ArtistCard.css";
 import { API_BASE_URL } from "../../config/api";
+import verifiedIcon from "../../assets/verified-icon.svg"; 
 
 function getUser() {
   try {
@@ -242,17 +243,12 @@ export default function ArtistCard({ artistId }) {
         <div className="artistCard__headingRow">
           <h1 className="artistCard__name">
             {artist?.ArtistName || "Unknown Artist"}
-            {artist?.IsVerified === 1 && (
+            {(artist?.IsVerified === 1 || artist?.IsVerified === true) && (
               <img
-                src="/assets/verified-icon.svg"
+                src={verifiedIcon} 
                 alt="Verified"
                 title="Verified Artist"
-                style={{
-                  width: "clamp(32px, 4vw, 48px)",
-                  height: "clamp(32px, 4vw, 48px)",
-                  marginLeft: 12,
-                  verticalAlign: "middle",
-                }}
+                className="artistCard__verified"
               />
             )}
           </h1>

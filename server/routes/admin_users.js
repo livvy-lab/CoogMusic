@@ -8,13 +8,7 @@ export async function handleAdminUserRoutes(req, res) {
   res.setHeader("Content-Type", "application/json");
 
   try {
-    // GET ALL USERS (Listeners + Artists, including Deleted)
     if (pathname === "/admin/users" && method === "GET") {
-      /* UPDATED QUERY:
-         1. Removed "WHERE a.IsDeleted = 0" so we see everyone.
-         2. Selected "a.IsDeleted" to track account status.
-         3. Joined "Subscription" to check for active premium status.
-      */
       const sql = `
         SELECT 
           a.AccountID, 
@@ -22,20 +16,23 @@ export async function handleAdminUserRoutes(req, res) {
           a.AccountType, 
           a.DateCreated,
           a.IsDeleted,
-          l.ListenerID, 
-          CONCAT(l.FirstName, ' ', l.LastName) as ListenerName,
-          ar.ArtistID, 
-          ar.ArtistName, 
-          ar.IsVerified,
+          MAX(l.ListenerID) as ListenerID, 
+          MAX(CONCAT(l.FirstName, ' ', l.LastName)) as ListenerName,
+          MAX(ar.ArtistID) as ArtistID, 
+          MAX(ar.ArtistName) as ArtistName, 
+          MAX(ar.IsVerified) as IsVerified,
+          
           -- Check if a Listener has ANY active, non-deleted subscription
           (SELECT COUNT(*) FROM Subscription s 
-           WHERE s.ListenerID = l.ListenerID 
+           WHERE s.ListenerID = MAX(l.ListenerID) 
            AND s.IsActive = 1 
            AND s.IsDeleted = 0) as HasActiveSub
+
         FROM AccountInfo a
         LEFT JOIN Listener l ON a.AccountID = l.AccountID
         LEFT JOIN Artist ar ON a.AccountID = ar.AccountID
         WHERE a.AccountType IN ('Listener', 'Artist')
+        GROUP BY a.AccountID
         ORDER BY a.IsDeleted ASC, a.DateCreated DESC
       `;
 

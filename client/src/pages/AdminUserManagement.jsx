@@ -91,16 +91,31 @@ export default function AdminUserManagement() {
   };
 
   const filteredUsers = users.filter(user => {
+    // 1. Filter by Role
     const matchesType = filterType === "All" || user.AccountType === filterType;
+
+    // 2. Filter by Status
     let matchesStatus = true;
     if (filterStatus === "Active") matchesStatus = user.IsDeleted === 0;
     if (filterStatus === "Inactive") matchesStatus = user.IsDeleted === 1;
-    const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = 
-      (user.Username || "").toLowerCase().includes(searchLower) ||
-      (user.ListenerName || "").toLowerCase().includes(searchLower) ||
-      (user.ArtistName || "").toLowerCase().includes(searchLower) ||
-      String(user.AccountID).includes(searchLower);
+
+    // 3. Filter by Search Term (Robust Check)
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return matchesType && matchesStatus; // Return early if no search
+
+    const usernameMatch = (user.Username || "").toLowerCase().includes(term);
+    const idMatch = String(user.AccountID).includes(term);
+    
+    // Check specific names based on type to avoid "null" matches
+    let nameMatch = false;
+    if (user.AccountType === 'Artist') {
+       nameMatch = (user.ArtistName || "").toLowerCase().includes(term);
+    } else {
+       nameMatch = (user.ListenerName || "").toLowerCase().includes(term);
+    }
+
+    const matchesSearch = usernameMatch || idMatch || nameMatch;
+
     return matchesType && matchesStatus && matchesSearch;
   });
 
@@ -245,7 +260,6 @@ export default function AdminUserManagement() {
   );
 }
 
-// === UPDATED USER PROFILE MODAL ===
 function UserProfileModal({ user, onClose }) {
   const [details, setDetails] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -279,22 +293,16 @@ function UserProfileModal({ user, onClose }) {
 
           setDetails(profileData);
 
-          // --- FIX START: Robust Image Resolution ---
-          // 1. Check for Media ID (using snake_case from DB schema)
           const mediaId = profileData.image_media_id || profileData.ImageMediaID; 
           
           if (mediaId) {
-            // Fetch fresh signed URL from Media API
             const mediaRes = await fetch(`${API_BASE_URL}/media/${mediaId}`);
             if (mediaRes.ok) {
               const mediaData = await mediaRes.json();
               setResolvedPfp(mediaData.url);
             }
           } else {
-            // 2. Fallback to PFP string
             let rawPfp = profileData.pfpUrl || profileData.PFP || null;
-            
-            // If it's a relative path (legacy upload), prepend API URL
             if (rawPfp && typeof rawPfp === 'string' && rawPfp.startsWith('/')) {
                 rawPfp = `${API_BASE_URL}${rawPfp}`;
             }
@@ -329,7 +337,6 @@ function UserProfileModal({ user, onClose }) {
           ) : (
             <>
               <div className="profile-preview-header">
-                {/* Image Rendering Logic */}
                 {resolvedPfp && !imgError ? (
                   <img 
                     src={resolvedPfp} 
@@ -338,7 +345,6 @@ function UserProfileModal({ user, onClose }) {
                     onError={() => setImgError(true)} 
                   />
                 ) : (
-                  // Fallback Circle
                   <div className="profile-preview-fallback">
                     {displayName ? displayName.charAt(0).toUpperCase() : "?"}
                   </div>
