@@ -23,13 +23,24 @@ export default function AdminRevenueReport() {
     return d.toISOString().slice(0, 10);
   });
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  
+  // PRIMARY FILTER: Source (All, Sub, Ad)
   const [sourceFilter, setSourceFilter] = useState("all");
+  
+  // SECONDARY FILTER: Specific Type (Monthly, Annual, Banner, etc.)
+  const [detailFilter, setDetailFilter] = useState("all");
 
   const fetchRevenueData = useCallback(() => {
     setLoading(true);
-    setExpandedRowKey(null); // Collapse all on refresh
+    setExpandedRowKey(null); 
     
-    const params = new URLSearchParams({ startDate, endDate, source: sourceFilter });
+    // Pass both filters to the API
+    const params = new URLSearchParams({ 
+      startDate, 
+      endDate, 
+      source: sourceFilter,
+      detail: detailFilter 
+    });
 
     fetch(`${API_BASE_URL}/api/analytics/admin/revenue?${params.toString()}`)
       .then((res) => {
@@ -46,7 +57,7 @@ export default function AdminRevenueReport() {
         setError("Failed to load revenue data.");
       })
       .finally(() => setLoading(false));
-  }, [startDate, endDate, sourceFilter]);
+  }, [startDate, endDate, sourceFilter, detailFilter]);
 
   useEffect(() => {
     fetchRevenueData();
@@ -54,6 +65,12 @@ export default function AdminRevenueReport() {
 
   const toggleExpanded = (month) => {
     setExpandedRowKey(prev => prev === month ? null : month);
+  };
+
+  // Handle changing the Primary Filter (resets the secondary filter)
+  const handleSourceChange = (e) => {
+    setSourceFilter(e.target.value);
+    setDetailFilter("all"); // Reset detail when category changes
   };
 
   return (
@@ -107,17 +124,49 @@ export default function AdminRevenueReport() {
               onChange={(e) => setEndDate(e.target.value)} 
             />
           </div>
+          
+          {/* PRIMARY FILTER: Source */}
           <div>
             <label className="arr-filter-label">Source:</label>
             <select 
               value={sourceFilter}
-              onChange={(e) => setSourceFilter(e.target.value)}
+              onChange={handleSourceChange}
             >
               <option value="all">All Sources</option>
               <option value="subscription">Subscriptions</option>
               <option value="ad">Advertisements</option>
             </select>
           </div>
+
+          {/* SECONDARY FILTER: Context-Aware Details */}
+          {sourceFilter !== 'all' && (
+            <div className="fade-in-filter">
+              <label className="arr-filter-label">
+                {sourceFilter === 'subscription' ? 'Plan Type:' : 'Ad Type:'}
+              </label>
+              <select 
+                value={detailFilter}
+                onChange={(e) => setDetailFilter(e.target.value)}
+              >
+                <option value="all">All Types</option>
+                
+                {sourceFilter === 'subscription' && (
+                  <>
+                    <option value="Monthly">Monthly Plan</option>
+                    <option value="Annual">Annual Plan</option>
+                  </>
+                )}
+
+                {sourceFilter === 'ad' && (
+                  <>
+                    <option value="banner">Banner Ads</option>
+                    <option value="audio">Audio Ads</option>
+                  </>
+                )}
+              </select>
+            </div>
+          )}
+
           <div>
             <button className="arr-filter-apply-btn" onClick={fetchRevenueData}>
               Refresh
@@ -138,7 +187,7 @@ export default function AdminRevenueReport() {
                   <tr>
                     <th>Month</th>
                     <th>Transactions</th>
-                    <th>Sub Revenue</th>
+                    <th>Subscription Revenue</th>
                     <th>Ad Revenue</th>
                     <th>Total Revenue</th>
                   </tr>
@@ -148,7 +197,6 @@ export default function AdminRevenueReport() {
                     reportData.map((row) => {
                       const isExpanded = expandedRowKey === row.FormattedMonth;
                       
-                      // Sort details by date descending (Newest first) inside the frontend to be safe
                       const details = typeof row.TransactionDetails === 'string' 
                         ? JSON.parse(row.TransactionDetails) 
                         : row.TransactionDetails || [];
@@ -181,9 +229,9 @@ export default function AdminRevenueReport() {
                                       <thead>
                                         <tr>
                                           <th>Date</th>
-                                          <th>Type</th>
+                                          <th>Source</th>
                                           <th>User</th>
-                                          <th>Plan</th>
+                                          <th>Type</th>
                                           <th>Amount</th>
                                         </tr>
                                       </thead>

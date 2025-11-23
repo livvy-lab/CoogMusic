@@ -24,6 +24,7 @@ export async function handleRevenueReport(req, res) {
   const endFull = endDate + ' 23:59:59';
   
   const sourceFilter = query.source || 'all';
+  const detailFilter = query.detail || 'all';
 
   try {
     let sql = `
@@ -32,18 +33,16 @@ export async function handleRevenueReport(req, res) {
         COUNT(*) as TransactionCount,
         SUM(Amount) as TotalRevenue,
         
-        -- We need these splits to calculate the summary cards properly
         SUM(CASE WHEN RevenueCategory = 'Subscription' THEN Amount ELSE 0 END) as MonthlySubRevenue,
         SUM(CASE WHEN RevenueCategory = 'Advertisement' THEN Amount ELSE 0 END) as MonthlyAdRevenue,
         
-        -- Combined Ledger: Both Ads and Subs in one list, sorted by Date
         JSON_ARRAYAGG(
           JSON_OBJECT(
             'id', TransactionID,
             'date', FullDate,
-            'type', RevenueCategory, -- 'Subscription' or 'Advertisement'
-            'entity', EntityName,    -- Username or ArtistName
-            'detail', DetailItem,    -- Plan Name or Ad Type
+            'type', RevenueCategory,
+            'entity', EntityName,
+            'detail', DetailItem,
             'amount', Amount
           )
         ) as TransactionDetails
@@ -56,7 +55,7 @@ export async function handleRevenueReport(req, res) {
           'Subscription' as RevenueCategory,
           s.SubscriptionID as TransactionID,
           AI.Username as EntityName, 
-          sp.PlanName as DetailItem,
+          sp.PlanName as DetailItem, -- We filter on this column
           sp.Cost as Amount
         FROM Subscription s
         JOIN SubscriptionPlan sp ON s.PlanID = sp.PlanID
@@ -74,7 +73,7 @@ export async function handleRevenueReport(req, res) {
           'Advertisement' as RevenueCategory,
           a.AdID as TransactionID,
           Art.ArtistName as EntityName,
-          a.AdType as DetailItem,
+          a.AdType as DetailItem, -- We filter on this column
           a.AdPrice as Amount
         FROM Advertisement a
         JOIN Artist Art ON a.ArtistID = Art.ArtistID
@@ -85,11 +84,23 @@ export async function handleRevenueReport(req, res) {
 
     const params = [startFull, endFull, startFull, endFull];
 
-    // Apply Filter (if user wants to see only one type)
+    let whereClauses = [];
+
+    // 1. Source Filter (Category)
     if (sourceFilter === 'subscription') {
-      sql += ` WHERE RevenueCategory = 'Subscription' `;
+      whereClauses.push("RevenueCategory = 'Subscription'");
     } else if (sourceFilter === 'ad') {
-      sql += ` WHERE RevenueCategory = 'Advertisement' `;
+      whereClauses.push("RevenueCategory = 'Advertisement'");
+    }
+
+    // 2. Detail Filter (Specific Plan Name or Ad Type)
+    if (detailFilter && detailFilter !== 'all') {
+      whereClauses.push("DetailItem = ?");
+      params.push(detailFilter);
+    }
+
+    if (whereClauses.length > 0) {
+      sql += " WHERE " + whereClauses.join(" AND ");
     }
 
     sql += `
@@ -99,7 +110,7 @@ export async function handleRevenueReport(req, res) {
 
     const [rows] = await db.query(sql, params);
 
-    // Calculate Summary Totals from the aggregated month rows
+    // Calculate Summary Totals
     const summary = rows.reduce((acc, row) => {
       acc.totalRevenue += Number(row.TotalRevenue) || 0;
       acc.totalTransactions += Number(row.TransactionCount) || 0;
