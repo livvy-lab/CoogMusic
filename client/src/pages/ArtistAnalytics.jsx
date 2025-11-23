@@ -163,7 +163,7 @@ export default function ArtistAnalytics() {
       });
   }, [artistId, startDate, endDate, sortBy, sortOrder, filterAlbum, searchTitle]);
 
-  // Fetch when filters/sort change (but not on manual date changes - use Refresh button)
+  // Fetch when filters/sort change
   useEffect(() => {
     if (!isInitLoading) fetchStats();
   }, [fetchStats, isInitLoading]);
@@ -318,7 +318,7 @@ export default function ArtistAnalytics() {
                                   <table className="listener-table">
                                     <thead>
                                       <tr>
-                                        <th>Listener ID</th>
+                                        {/* Removed Listener ID Header */}
                                         <th>Username</th>
                                         <th>Plays (Listener)</th>
                                         <th>First Played</th>
@@ -329,7 +329,7 @@ export default function ArtistAnalytics() {
                                       {listenerSummaries.length > 0 ? (
                                         listenerSummaries.map((ls) => (
                                           <tr key={`${row.SongID}-${ls.listenerId}`}>
-                                            <td>{ls.listenerId}</td>
+                                            {/* Removed Listener ID Cell */}
                                             <td>{ls.username || "-"}</td>
                                             <td>{formatNumber(ls.plays)}</td>
                                             <td>
@@ -350,7 +350,8 @@ export default function ArtistAnalytics() {
                                         ))
                                       ) : (
                                         <tr>
-                                          <td colSpan="5">
+                                          {/* Adjusted colSpan from 5 to 4 */}
+                                          <td colSpan="4">
                                             No qualifying plays for this song in this period.
                                           </td>
                                         </tr>
@@ -366,7 +367,6 @@ export default function ArtistAnalytics() {
                                   <table className="listener-table">
                                     <thead>
                                       <tr>
-                                        <th>Listener ID</th>
                                         <th>Username</th>
                                         <th>Has Streamed?</th>
                                       </tr>
@@ -375,14 +375,14 @@ export default function ArtistAnalytics() {
                                       {favoriteSummaries.length > 0 ? (
                                         favoriteSummaries.map((fav) => (
                                           <tr key={`${row.SongID}-fav-${fav.listenerId}`}>
-                                            <td>{fav.listenerId}</td>
                                             <td>{fav.username || "-"}</td>
                                             <td>{fav.hasStreams ? "Yes" : "No"}</td>
                                           </tr>
                                         ))
                                       ) : (
                                         <tr>
-                                          <td colSpan="3">
+                                          {/* Adjusted colSpan from 3 to 2 */}
+                                          <td colSpan="2">
                                             No listeners have favorited this song yet.
                                           </td>
                                         </tr>
