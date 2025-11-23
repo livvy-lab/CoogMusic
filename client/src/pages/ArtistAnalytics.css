@@ -150,6 +150,80 @@
   border-bottom: none;
 }
 
+/* Row hover and expand states */
+.aa-row {
+  transition: background-color 0.2s;
+}
+
+.aa-row:hover {
+  background-color: #fff0f7;
+}
+
+.aa-row-expanded {
+  background-color: #ffe6f6;
+  border-left: 4px solid #895674;
+}
+
+/* Listener Details Expandable Section */
+.aa-listener-row {
+  background: #fef8fc;
+}
+
+.listener-details {
+  padding: 20px;
+  border: 2px solid #f2c3d8;
+  border-radius: 8px;
+  margin: 8px;
+  background: white;
+}
+
+.listener-section {
+  margin-bottom: 24px;
+}
+
+.listener-section:last-child {
+  margin-bottom: 0;
+}
+
+.listener-section-title {
+  font-weight: 700;
+  color: #895674;
+  font-size: 16px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #f2c3d8;
+}
+
+.listener-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+
+.listener-table th {
+  background: #f2c3d8;
+  color: #501a33;
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.listener-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #ffdff1;
+  color: #501a33;
+  font-size: 13px;
+}
+
+.listener-table tbody tr:hover {
+  background-color: #fff5fb;
+}
+
+.listener-section--favorites {
+  margin-top: 20px;
+}
+
 /* === COLUMN STYLES === */
 
 .col-title {
