@@ -198,10 +198,6 @@ export default function FavPlaylist({ listenerId }) {
                 {playlist.Name || "Untitled Playlist"}
               </Link>
             </h3>
-
-            <p className="playlistCard__desc">
-              {playlist.Description || "No description available."}
-            </p>
           </div>
         </div>
       </div>

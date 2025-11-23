@@ -4,7 +4,6 @@ import { getUser } from "../../lib/userStorage";
 
 export default function CreatePlaylistForm({ listenerId, onCreated }) {
   const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState(null);
   const [coverFile, setCoverFile] = useState(null);
@@ -90,7 +89,6 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         body: JSON.stringify({
           ListenerID: listenerId,
           Name: name,
-          Description: description,
           IsPublic: isPublic,
         }),
       });
@@ -131,7 +129,6 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
         }
       } catch (e) {}
       setName("");
-      setDescription("");
       setIsPublic(true);
       setCoverFile(null);
   if (previewUrl) { try { URL.revokeObjectURL(previewUrl); } catch (e) {} }
@@ -194,12 +191,6 @@ export default function CreatePlaylistForm({ listenerId, onCreated }) {
           <button type="button" onClick={() => { setCoverFile(null); if (previewUrl) { URL.revokeObjectURL(previewUrl); } setPreviewUrl(null); }}>Remove</button>
         </div>
       )}
-
-      <textarea
-        placeholder="Description (optional)"
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
 
       <label>
         Visibility:

@@ -10,7 +10,6 @@ export default function EditAlbumModal({
   album
 }) {
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
   const [coverFile, setCoverFile] = useState(null);
   const [coverPreview, setCoverPreview] = useState(null);
   const [tracks, setTracks] = useState([]);
@@ -26,7 +25,6 @@ export default function EditAlbumModal({
   useEffect(() => {
     if (isOpen && album) {
       setTitle(album.title || "");
-      setDescription(album.description || "");
       setCoverFile(null);
       setError("");
       setToRemove([]);
@@ -190,7 +188,6 @@ export default function EditAlbumModal({
       // Start with the data we know
       const patchData = {
         Title: title.trim(),
-        Description: description,
         cover_media_id: albumCoverMediaId
       };
 
@@ -270,16 +267,6 @@ export default function EditAlbumModal({
                   type="text"
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  disabled={isSubmitting}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="album-desc">Description</label>
-                <textarea
-                  id="album-desc"
-                  rows={3}
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
                   disabled={isSubmitting}
                 />
               </div>
