@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './BuyAds.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import cat_left from '../assets/left_cat.svg';
@@ -28,6 +29,7 @@ function getAudioDuration(file) {
 }
 
 const BuyAds = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('banner');
   const [formData, setFormData] = useState({
     adTitle: '',
@@ -181,6 +183,12 @@ const BuyAds = () => {
         <div className="buyads-header">
           <h1>Advertise with Coogs Music</h1>
           <p>Upload banner ads or audio ads to reach listeners at UH and promote your music.</p>
+          <button 
+            className="transaction-history-btn"
+            onClick={() => navigate('/transaction-history')}
+          >
+            View Transaction History
+          </button>
         </div>
 
         <div className="buyads-form-container">

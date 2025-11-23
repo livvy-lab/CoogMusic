@@ -67,6 +67,13 @@ export default function NavigationBar() {
               </Link>
             )}
 
+            {!isAdmin && (
+              <Link className="navLink" to="/transaction-history">
+                <img src={isArtist ? advertisementsIcon : subscriptionIcon} alt="" className="navIcon" />
+                <span>Transaction History</span>
+              </Link>
+            )}
+
             {isArtist && (
                <Link className="navLink" to="/artist-analytics">
                  <img src={analyticsIcon} alt="" className="navIcon" />

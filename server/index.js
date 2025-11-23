@@ -49,6 +49,7 @@ import { handleRecentUsersRoutes } from "./routes/users_recent.js";
 import { handleAdminSongReport } from "./routes/admin_song_report.js";
 import { handleRevenueReport } from "./routes/revenue_report.js";
 import { handleAdminUserRoutes } from "./routes/admin_users.js";
+import { handleTransactionHistoryRoutes } from "./routes/transaction_history.js";
 
 
 const PORT = process.env.PORT || 3001;
@@ -254,6 +255,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/notifications")) { await handleNotificationRoutes(req, res); return; }
     if (pathname.startsWith("/user_reports")) { await handleUserReportsRoutes(req, res); return; }
     if (pathname.startsWith("/artist_buys")) { await handleArtistBuyRoutes(req, res); return; }
+    if (pathname.startsWith("/transaction-history")) { await handleTransactionHistoryRoutes(req, res); return; }
     if (pathname.startsWith("/listeners")) { await handleListenerRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/artist")) { await handleArtistAnalyticsRoutes(req, res); return; }
     if (pathname.startsWith("/analytics/listener")) { await handleListenerAnalyticsRoutes(req, res); return; }

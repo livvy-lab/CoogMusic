@@ -1,10 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Subscription.css';
 import PageLayout from '../components/PageLayout/PageLayout';
 import { getUser } from '../lib/userStorage';
 import { API_BASE_URL } from "../config/api";
 
 const Subscription = () => {
+  const navigate = useNavigate();
   const [activeSubscription, setActiveSubscription] = useState(null);
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -69,7 +71,6 @@ const Subscription = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ListenerID: user.listenerId,
-          DateStarted: new Date().toISOString().slice(0, 19).replace('T', ' '),
           DateEnded: null,
           IsActive: 1,
           PlanID: planId
@@ -151,6 +152,12 @@ const Subscription = () => {
         <div className="subscription-header">
           <h1>Become a premium member ≽^•⩊•^≼ </h1>
           <p>Subscribe and obtain additional benefits</p>
+          <button 
+            className="transaction-history-link"
+            onClick={() => navigate('/transaction-history')}
+          >
+            View Transaction History
+          </button>
         </div>
 
         <div className="plans-container">
