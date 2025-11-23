@@ -62,10 +62,14 @@ export async function handleTransactionHistoryRoutes(req, res) {
         `
         SELECT 
           ab.BuyID,
-          ab.PurchaseDate,
+          CONVERT_TZ(ab.PurchaseDate, '+00:00', '-06:00') AS PurchaseDate,
           ab.AdID,
           a.AdName,
-          a.Cost AS Amount,
+          CASE 
+            WHEN a.AdType = 'audio' THEN 5.00
+            WHEN a.AdType = 'banner' THEN 2.50
+            ELSE a.Cost
+          END AS Amount,
           a.AdType,
           'Ad Purchase' AS TransactionType
         FROM Artist_Buy ab
