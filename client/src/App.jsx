@@ -39,6 +39,7 @@ import AlbumView from "./pages/AlbumView";
 import AdminRevenueReport from "./pages/AdminRevenueReport"; 
 import AdminSongPerformance from "./pages/AdminSongPerformance";
 import AdminUserManagement from "./pages/AdminUserManagement";
+import TransactionHistory from "./pages/TransactionHistory";
 
 import { PlayerProvider } from "./context/PlayerContext";
 import { FavoritesPinsProvider } from "./context/FavoritesPinsContext";
@@ -83,6 +84,7 @@ function AppContent() {
           <Route path="/playlist/:id" element={<PlaylistPage />} />
           <Route path="/listeners/:id/playlists" element={<ListenerPlaylistsPage />} />
           <Route path="/subscription" element={<Subscription />} />
+          <Route path="/transaction-history" element={<TransactionHistory />} />
           
           {/* Connection Routes */}
           <Route path="/listeners/:id/follows" element={<FollowsPage />} />
