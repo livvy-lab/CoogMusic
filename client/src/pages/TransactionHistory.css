@@ -201,6 +201,11 @@
   color: #2e7d32;
 }
 
+.status-badge.deleted {
+  background: #ffcdd2;
+  color: #c62828;
+}
+
 .transaction-summary {
   background: white;
   border-radius: 12px;

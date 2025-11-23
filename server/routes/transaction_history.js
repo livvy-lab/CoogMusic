@@ -58,32 +58,37 @@ export async function handleTransactionHistoryRoutes(req, res) {
       const artistId = pathname.split("/")[3];
       console.log(`[Transaction History] Fetching artist transactions for ID: ${artistId}`);
 
-      const [rows] = await db.query(
-        `
-        SELECT 
-          ab.BuyID,
-          CONVERT_TZ(ab.PurchaseDate, '+00:00', '-06:00') AS PurchaseDate,
-          ab.AdID,
-          a.AdName,
-          CASE 
-            WHEN a.AdType = 'audio' THEN 5.00
-            WHEN a.AdType = 'banner' THEN 2.50
-            ELSE a.Cost
-          END AS Amount,
-          a.AdType,
-          'Ad Purchase' AS TransactionType
-        FROM Artist_Buy ab
-        JOIN Advertisement a ON ab.AdID = a.AdID
-        WHERE ab.ArtistID = ? AND ab.IsDeleted = 0
-        ORDER BY ab.PurchaseDate DESC
-        `,
-        [artistId]
-      );
+      try {
+        const [rows] = await db.query(
+          `
+          SELECT 
+            AdID,
+            CONVERT_TZ(CreatedAt, '+00:00', '-06:00') AS PurchaseDate,
+            AdName,
+            AdType,
+            CASE 
+              WHEN AdType = 'audio' THEN 5.00
+              WHEN AdType = 'banner' THEN 2.50
+              ELSE 0
+            END AS Amount,
+            AdFile,
+            IsDeleted,
+            'Ad Purchase' AS TransactionType
+          FROM Advertisement
+          WHERE ArtistID = ?
+          ORDER BY CreatedAt DESC
+          `,
+          [artistId]
+        );
 
-      console.log(`[Transaction History] Found ${rows.length} transactions for artist ${artistId}`);
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(rows));
-      return;
+        console.log(`[Transaction History] Found ${rows.length} transactions for artist ${artistId}`);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(rows));
+        return;
+      } catch (queryErr) {
+        console.error(`[Transaction History] Query error for artist ${artistId}:`, queryErr);
+        throw queryErr;
+      }
     }
 
     console.log(`[Transaction History] Route not found: ${pathname}`);

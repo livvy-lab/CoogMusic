@@ -158,7 +158,9 @@ export default function TransactionHistory() {
                   
                   <div className="table-cell">
                     {isArtist ? (
-                      <span className="status-badge completed">Completed</span>
+                      <span className={`status-badge ${transaction.IsDeleted ? 'deleted' : 'completed'}`}>
+                        {transaction.IsDeleted ? 'Deleted' : 'Completed'}
+                      </span>
                     ) : (
                       <span className={`status-badge ${transaction.IsActive ? 'active' : 'expired'}`}>
                         {transaction.IsActive ? 'Active' : 'Expired'}
