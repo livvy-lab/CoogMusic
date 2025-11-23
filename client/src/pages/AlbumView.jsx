@@ -215,20 +215,6 @@ export default function AlbumView() {
                 {" • "}
                 {tracks.length} track{tracks.length === 1 ? "" : "s"}
               </p>
-              {albumData.Description && (
-                <div
-                  style={{
-                    marginTop: "13px",
-                    fontSize: "1.09rem",
-                    color: "#895674",
-                    opacity: 0.95,
-                    maxWidth: "540px",
-                  }}
-                  className="albumBio"
-                >
-                  {albumData.Description}
-                </div>
-              )}
             </div>
           </div>
           <div className="albumControls">
@@ -360,7 +346,6 @@ export default function AlbumView() {
         album={{
           AlbumID: albumData.AlbumID,
           title: albumData.Title,
-          description: albumData.Description,
           artist_id: albumData.ArtistID,
           cover_media_id: albumData.cover_media_id,
         }}

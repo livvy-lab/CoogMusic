@@ -11,8 +11,7 @@ export default function AlbumForm() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     title: "",
-    artistId: "",
-    description: ""
+    artistId: ""
   });
   const [tracks, setTracks] = useState([]); // {title, audioFile, genreIds, tempId}
   const [showSongUploadModal, setShowSongUploadModal] = useState(false);
@@ -197,7 +196,6 @@ export default function AlbumForm() {
         title: formData.title,
         artistId: parseInt(formData.artistId),
         releaseDate: new Date().toISOString().split("T")[0],
-        description: formData.description.trim(), // ← ADDED: Include description
         coverMediaId: coverMediaId,
         genres: allAlbumGenres,
         tracks: uploadedTracks.map((track, idx) => ({
@@ -372,18 +370,6 @@ export default function AlbumForm() {
                     })
                   )}
                 </div>
-              </div>
-              <div className="form-field">
-                <label htmlFor="description">Description (Optional)</label>
-                <textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) =>
-                    setFormData({ ...formData, description: e.target.value })
-                  }
-                  placeholder="Write something about your album..."
-                  rows={3}
-                />
               </div>
               <button
                 type="submit"

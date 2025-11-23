@@ -49,7 +49,6 @@ export default function MyAlbums() {
       const formatted = data.map((row) => ({
         AlbumID: row.AlbumID,
         title: row.Title || "Untitled",
-        description: row.Description || "",
         artist_id: artistId,
         releaseDate: row.ReleaseDate ? new Date(row.ReleaseDate) : null,
         trackCount: row.TrackCount || 0,
@@ -260,7 +259,6 @@ export default function MyAlbums() {
         album={selectedAlbum ? {
           AlbumID: selectedAlbum.AlbumID,
           title: selectedAlbum.title,
-          description: selectedAlbum.description,
           artist_id: selectedAlbum.artist_id,
           cover_media_id: selectedAlbum.cover_media_id,
         } : null}
