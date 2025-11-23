@@ -142,11 +142,10 @@ export async function handleSubscriptionRoutes(req, res) {
           const [result] = await db.query(
             `
             INSERT INTO Subscription (ListenerID, DateStarted, DateEnded, IsActive, IsDeleted, PlanID)
-            VALUES (?, ?, ?, ?, 0, ?)
+            VALUES (?, NOW(), ?, ?, 0, ?)
             `,
             [
               ListenerID,
-              DateStarted || new Date(),
               DateEnded || null,
               IsActive ?? 1,
               PlanID,

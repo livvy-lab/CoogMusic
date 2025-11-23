@@ -31,6 +31,25 @@
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
 }
 
+.transaction-history-link {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: #895674;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.transaction-history-link:hover {
+  background: #612C4B;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(137, 86, 116, 0.3);
+}
+
 .plans-container {
   display: flex;
   justify-content: center;

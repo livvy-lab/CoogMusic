@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import PageLayout from "../components/PageLayout/PageLayout";
 import "./EditProfile.css";
 import { API_BASE_URL } from "../config/api";
@@ -17,6 +18,7 @@ export default function EditProfile() {
 }
 
 function EditListenerProfile({ user }) {
+  const navigate = useNavigate();
   const [listenerId, setListenerId] = useState(user?.listenerId || null);
   const [form, setForm] = useState({
     first: "",
@@ -121,6 +123,7 @@ function EditListenerProfile({ user }) {
       }
 
       showToast("Profile updated successfully!", 'success');
+      setTimeout(() => navigate('/home'), 1000);
     } catch (err) {
       console.error("Save failed:", err);
       showToast("Error updating profile. Please try again.", 'error');
@@ -254,6 +257,7 @@ function EditListenerProfile({ user }) {
 }
 
 function EditArtistProfile({ user }) {
+  const navigate = useNavigate();
   const [artistId, setArtistId] = useState(
     user?.artistId ?? (user?.ArtistID || null),
   );
@@ -352,6 +356,7 @@ function EditArtistProfile({ user }) {
       }
 
       showToast("Profile updated successfully!", 'success');
+      setTimeout(() => navigate('/artist-dashboard'), 1000);
     } catch (err) {
       console.error("Save failed:", err);
       showToast("Error updating profile. Please try again.", 'error');
