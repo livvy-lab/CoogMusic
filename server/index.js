@@ -6,8 +6,6 @@ import { handleAdminRoutes } from "./routes/administrator.js";
 import { handleAdViewRoutes } from "./routes/ad_view.js";
 import { handleAlbumRoutes } from "./routes/album.js";
 import { handleAdRoutes } from "./routes/advertisement.js";
-import { handleCompanyRoutes } from "./routes/company.js";
-import { handleCompanyBuyRoutes } from "./routes/company_buy.js";
 import { handleFollowsRoutes } from "./routes/follows.js";
 import { handleGenreRoutes } from "./routes/genre.js";
 import { handleListenerRoutes } from "./routes/listener.js";
@@ -221,8 +219,6 @@ const server = http.createServer(async (req, res) => {
     if (pathname.startsWith("/advertisements")) { await handleAdRoutes(req, res); return; }
     if (pathname.startsWith("/albums")) { await handleAlbumRoutes(req, res); return; }
     if (pathname.startsWith("/ad_views")) { await handleAdViewRoutes(req, res); return; }
-    if (pathname.startsWith("/companies")) { await handleCompanyRoutes(req, res); return; }
-    if (pathname.startsWith("/company_buys")) { await handleCompanyBuyRoutes(req, res); return; }
     if (pathname.startsWith("/follows")) { await handleFollowsRoutes(req, res); return; }
     if (pathname.startsWith("/genres")) { await handleGenreRoutes(req, res); return; }
     if (pathname.includes("/liked_songs")) { await handleLikedSongRoutes(req, res); return; }
