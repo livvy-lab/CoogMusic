@@ -11,6 +11,7 @@ Coog Music is a full stack web application designed as a music streaming platfor
 ---
 ## Deployment
 https://client-964167802859.us-south1.run.app/login
+
 ## User Roles
 
 ### Listener
@@ -54,6 +55,17 @@ CoogMusic/
 
 ## Installation & Setup
 
+**Terminal 1 - Backend:**
+```powershell
+cd server
+npm start
+```
+
+**Terminal 2 - Frontend:**
+```powershell
+cd client
+npm run dev
+```
 
 ## Contributors
 - [Liv](https://github.com/livvy-lab)
